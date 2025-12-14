@@ -13,3 +13,6 @@ spring:
         format_sql: true
         dialect: org.hibernate.dialect.H2Dialect
 
+jwt:
+  secret-key: dGVzdC1zZWNyZXQta2V5LXRlc3Qtc2VjcmV0LWtleS10ZXN0LXNlY3JldC1rZXk=
+  expiration: 3600000
