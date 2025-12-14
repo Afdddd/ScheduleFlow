@@ -37,9 +37,8 @@ class User(
     @Column(name = "phone", nullable = false)
     var phone: String,
 
-    @Column(name = "position", nullable = false)
-    var position: String,
-
+    @Column(name = "position", nullable = true)
+    var position: String? = null,
 ): BaseEntity() {
 
 }
