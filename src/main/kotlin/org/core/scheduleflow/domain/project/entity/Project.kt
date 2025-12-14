@@ -29,7 +29,7 @@ class Project(
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
-    var status: ProjectStatus = ProjectStatus.In_Progress,
+    var status: ProjectStatus = ProjectStatus.IN_PROGRESS,
 
     @Column(name = "name", nullable = false)
     var name: String,

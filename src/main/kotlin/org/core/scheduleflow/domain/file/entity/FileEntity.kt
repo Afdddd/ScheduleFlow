@@ -25,20 +25,20 @@ class FileEntity(
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id")
-    var project: Project,
+    val project: Project,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
-    var user: User,
+    val user: User,
 
     @Enumerated(EnumType.STRING)
     val category: FileCategory,
 
     @Column(name = "stored_file_name", nullable = false)
-    var storedFileName: String,
+    val storedFileName: String,
 
     @Column(name = "original_file_name", nullable = false)
-    var originalFileName: String,
+    val originalFileName: String,
 
     @Column(name = "file_path", nullable = false)
     var filePath: String,
