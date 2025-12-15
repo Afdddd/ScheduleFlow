@@ -14,8 +14,8 @@ import javax.crypto.SecretKey
 
 @Service
 class JwtProvider(
-    @Value($$"${jwt.secret-key}") private val secretKey: String,
-    @Value($$"${jwt.expiration}") private val expiration: Long
+    @Value("\${jwt.secret-key}") private val secretKey: String,
+    @Value("\${jwt.expiration}") private val expiration: Long
 ){
     fun generateAccessToken(
         username: String,
@@ -47,7 +47,7 @@ class JwtProvider(
             .payload
 
         val username = claims.subject
-        val role = claims["role"] as String
+        val role = claims.get("role", String::class.java)
         val authorities = listOf(SimpleGrantedAuthority("ROLE_$role"))
         return UsernamePasswordAuthenticationToken(username, null, authorities)
     }

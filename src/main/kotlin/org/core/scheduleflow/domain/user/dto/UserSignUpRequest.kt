@@ -6,5 +6,4 @@ data class UserSignUpRequest(
     val name: String,
     val email: String? = null,
     val phone: String
-) {
-}
+)
