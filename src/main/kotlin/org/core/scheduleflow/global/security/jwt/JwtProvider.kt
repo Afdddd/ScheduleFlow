@@ -4,6 +4,8 @@ import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.io.Decoders
 import io.jsonwebtoken.security.Keys
 import org.core.scheduleflow.domain.user.constant.Role
+import org.core.scheduleflow.global.exception.CustomException
+import org.core.scheduleflow.global.exception.ErrorCode
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
@@ -60,7 +62,7 @@ class JwtProvider(
                 .parseSignedClaims(token)
             return Result.success(true)
         }catch (e: Exception){
-            return Result.failure(e)
+            throw CustomException(ErrorCode.INVALID_ACCESS_TOKEN)
         }
     }
 

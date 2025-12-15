@@ -3,6 +3,8 @@ package org.core.scheduleflow.domain.user.service
 import org.core.scheduleflow.domain.user.dto.UserSignInRequest
 import org.core.scheduleflow.domain.user.dto.UserSignUpRequest
 import org.core.scheduleflow.domain.user.repository.UserRepository
+import org.core.scheduleflow.global.exception.CustomException
+import org.core.scheduleflow.global.exception.ErrorCode
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -56,9 +58,10 @@ class AuthServiceTest {
         authService.signUp(request)
 
         // When & Then
-        assertThrows<RuntimeException> {
+        val exception = assertThrows<CustomException> {
             authService.signUp(request)
         }
+        assertEquals(ErrorCode.DUPLICATE_USERNAME, exception.errorCode)
     }
 
     @Test
@@ -104,9 +107,48 @@ class AuthServiceTest {
         )
 
         // When & Then
-        assertThrows<RuntimeException> {
+        val exception = assertThrows<CustomException> {
             authService.signIn(signInRequest)
         }
+        assertEquals(ErrorCode.INVALID_CREDENTIALS, exception.errorCode)
+    }
+
+    @Test
+    @DisplayName("로그인 실패 - 존재하지 않는 사용자")
+    fun signIn_fail_user_not_found() {
+        // Given
+        val signInRequest = UserSignInRequest(
+            username = "nonexistent",
+            password = "password123"
+        )
+
+        // When & Then
+        val exception = assertThrows<CustomException> {
+            authService.signIn(signInRequest)
+        }
+        assertEquals(ErrorCode.INVALID_CREDENTIALS, exception.errorCode)
+    }
+
+    @Test
+    @DisplayName("회원가입 - 비밀번호 암호화 확인")
+    fun signUp_password_encoded() {
+        // Given
+        val plainPassword = "mySecretPassword"
+        val request = UserSignUpRequest(
+            username = "encodedUser",
+            password = plainPassword,
+            name = "Encoded User",
+            phone = "010-5555-5555"
+        )
+
+        // When
+        val userId = authService.signUp(request)
+
+        // Then
+        val savedUser = userRepository.findById(userId).orElse(null)
+        assertNotNull(savedUser)
+        assertNotEquals(plainPassword, savedUser.password) // 평문 비밀번호와 달라야 함
+        assertTrue(savedUser.password.length > plainPassword.length) // 암호화되면 길이가 길어짐
     }
 
 }
