@@ -1,63 +1,64 @@
-package org.core.scheduleflow.domain.partner.service;
+package org.core.scheduleflow.domain.partner.service
 
-import org.core.scheduleflow.domain.partner.dto.PartnerContactRequestDto;
-import org.core.scheduleflow.domain.partner.dto.PartnerContactResponseDto;
-import org.core.scheduleflow.domain.partner.dto.PartnerResponseDto;
-import org.core.scheduleflow.domain.partner.entity.PartnerContact;
-import org.core.scheduleflow.domain.partner.repository.PartnerContactRepository;
-import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
+import org.core.scheduleflow.domain.partner.dto.PartnerContactRequestDto
+import org.core.scheduleflow.domain.partner.dto.PartnerContactResponseDto
+import org.core.scheduleflow.domain.partner.dto.PartnerContactResponseDto.Companion.fromEntity
+import org.core.scheduleflow.domain.partner.entity.PartnerContact
+import org.core.scheduleflow.domain.partner.repository.PartnerContactRepository
+import org.springframework.stereotype.Service
+import java.util.*
+import java.util.stream.Collectors
 
 @Service
-public class PartnerContactService {
+class PartnerContactService (
+    private val partnerContactRepository: PartnerContactRepository
+){
 
-    private PartnerContactRepository partnerContactRepository;
 
-    public PartnerContactRepository getPartnerContactRepository() {
-        return partnerContactRepository;
-    }
+    fun findPartnerContactByPartnerId(partnerId: Long?): List<PartnerContactResponseDto> {
+        // 1. id가 null이면 빈 리스트 반환 (안전한 처리)
+        if (partnerId == null) return emptyList()
 
-    public List<PartnerContactResponseDto> selectPartnerContactByPartnerId(Long partnerId) {
-        List<PartnerContact> partnerContacts = partnerContactRepository.findByPartnerId(partnerId);
+        // 2. 레포지토리가 null이 아님을 보장한다면 !! 대신 주입 방식을 점검하세요.
+        // 결과가 null일 수 있다면 ?: emptyList()로 방어 처리를 합니다.
+        val partnerContacts = partnerContactRepository?.findByPartnerId(partnerId) ?: emptyList()
 
-        return partnerContacts.stream().map(PartnerContactResponseDto::fromEntity).collect(Collectors.toList());
-    }
-
-    public PartnerContactResponseDto createPartnerContact(PartnerContactRequestDto requestDto){
-
-        /* 유효성 검증 시작 */
-        Objects.requireNonNull(requestDto, "요청 데이터(PartnerRequestDto)는 null일 수 없습니다.");
-        if (requestDto.getName() == null || requestDto.getName().trim().isEmpty()) {
-            throw new IllegalArgumentException("이름은 필수 입력 항목입니다.");
+        // 3. 간결한 map 변환
+        return partnerContacts.mapNotNull { contact ->
+            PartnerContactResponseDto.fromEntity(contact)
         }
-        /* 유효성 검증 끝 */
-
-        PartnerContact partnerContact = requestDto.toEntity();
-
-        PartnerContact savedPartnerContact = partnerContactRepository.save(partnerContact);
-
-        return PartnerContactResponseDto.fromEntity(savedPartnerContact);
     }
 
-    public PartnerContactResponseDto updatePartnerContact(PartnerContactRequestDto requestDto){
+    fun createPartnerContact(requestDto: PartnerContactRequestDto?): PartnerContactResponseDto {
         /* 유효성 검증 시작 */
-        Objects.requireNonNull(requestDto, "요청 데이터(PartnerRequestDto)는 null일 수 없습니다.");
-        if (requestDto.getName() == null || requestDto.getName().trim().isEmpty()) {
-            throw new IllegalArgumentException("이름은 필수 입력 항목입니다.");
-        }
+
+        Objects.requireNonNull<PartnerContactRequestDto?>(requestDto, "요청 데이터(PartnerRequestDto)는 null일 수 없습니다.")
+        require(!(requestDto!!.getName() == null || requestDto.getName().trim { it <= ' ' }
+            .isEmpty())) { "이름은 필수 입력 항목입니다." }
+
         /* 유효성 검증 끝 */
+        val partnerContact = requestDto.toEntity()
 
-        PartnerContact partnerContact = requestDto.toEntity();
+        val savedPartnerContact = partnerContactRepository!!.save<PartnerContact>(partnerContact)
 
-        PartnerContact savedPartnerContact = partnerContactRepository.save(partnerContact);
-
-        return PartnerContactResponseDto.fromEntity(savedPartnerContact);
+        return fromEntity(savedPartnerContact)
     }
 
-    public void deletePartnerContactById(Long id){
-        partnerContactRepository.deleteById(id);
+    fun updatePartnerContact(requestDto: PartnerContactRequestDto?): PartnerContactResponseDto {
+        /* 유효성 검증 시작 */
+        Objects.requireNonNull<PartnerContactRequestDto?>(requestDto, "요청 데이터(PartnerRequestDto)는 null일 수 없습니다.")
+        require(!(requestDto!!.getName() == null || requestDto.getName().trim { it <= ' ' }
+            .isEmpty())) { "이름은 필수 입력 항목입니다." }
+
+        /* 유효성 검증 끝 */
+        val partnerContact = requestDto.toEntity()
+
+        val savedPartnerContact = partnerContactRepository!!.save<PartnerContact>(partnerContact)
+
+        return fromEntity(savedPartnerContact)
+    }
+
+    fun deletePartnerContactById(id: Long) {
+        partnerContactRepository!!.deleteById(id)
     }
 }

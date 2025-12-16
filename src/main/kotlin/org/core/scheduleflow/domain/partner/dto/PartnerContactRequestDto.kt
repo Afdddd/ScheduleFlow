@@ -1,72 +1,41 @@
-package org.core.scheduleflow.domain.partner.dto;
+package org.core.scheduleflow.domain.partner.dto
 
-import org.core.scheduleflow.domain.partner.entity.Partner;
-import org.core.scheduleflow.domain.partner.entity.PartnerContact;
+import org.core.scheduleflow.domain.partner.entity.Partner
+import org.core.scheduleflow.domain.partner.entity.PartnerContact
 
-public class PartnerContactRequestDto {
+class PartnerContactRequestDto {
+    private var partner: Partner? = null
+    private var name: String? = null
+    var position: String? = null
+    var department: String? = null
+    var phone: String? = null
+    var email: String? = null
 
-    private Partner partner;
-    private String name;
-    private String position;
-    private String department;
-    private String phone;
-    private String email;
-
-    public PartnerContactRequestDto() {}
-
-    public Partner getPartner() {
-        return partner;
-    }
-    public void setPartner(Partner partner) {
-        this.partner = partner;
+    fun getPartner(): Partner {
+        return partner!!
     }
 
-    public String getName() {
-        return name;
+    fun setPartner(partner: Partner) {
+        this.partner = partner
     }
 
-    public void setName(String name) {
-        this.name = name;
+    fun getName(): String {
+        return name!!
     }
 
-    public String getPosition() {
-        return position;
+    fun setName(name: String) {
+        this.name = name
     }
 
-    public void setPosition(String position) {
-        this.position = position;
+    fun toEntity(): PartnerContact {
+        return PartnerContact(
+            null,  // 자동 할당
+            this.partner!!,
+            this.name!!,
+            this.position,
+            this.department,
+            this.phone,
+            this.email
+        )
     }
-
-    public String getDepartment() {
-        return department;
-    }
-
-    public void setDepartment(String department) {
-        this.department = department;
-    }
-    public String getPhone() {
-        return phone;
-    }
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
-    public String getEmail() {
-        return email;
-    }
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public PartnerContact toEntity(){
-        return new PartnerContact(
-                null, // 자동 할당
-                this.partner,
-                this.name,
-                this.position,
-                this.department,
-                this.phone,
-                this.email
-        );
-    }
-
 }

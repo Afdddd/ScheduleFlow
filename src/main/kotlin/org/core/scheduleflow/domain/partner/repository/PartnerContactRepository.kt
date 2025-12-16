@@ -1,13 +1,10 @@
-package org.core.scheduleflow.domain.partner.repository;
+package org.core.scheduleflow.domain.partner.repository
 
-import org.core.scheduleflow.domain.partner.entity.PartnerContact;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
-import java.util.List;
+import org.core.scheduleflow.domain.partner.entity.PartnerContact
+import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.stereotype.Repository
 
 @Repository
-public interface PartnerContactRepository extends JpaRepository<PartnerContact,Long> {
-
-    List<PartnerContact> findByPartnerId(Long aLong);
+interface PartnerContactRepository : JpaRepository<PartnerContact, Long> {
+    fun findByPartnerId(aLong: Long?): List<PartnerContact>
 }

@@ -1,94 +1,84 @@
-package org.core.scheduleflow.domain.partner.service;
+package org.core.scheduleflow.domain.partner.service
 
-import org.core.scheduleflow.domain.partner.dto.PartnerRequestDto;
-import org.core.scheduleflow.domain.partner.dto.PartnerResponseDto;
-import org.core.scheduleflow.domain.partner.entity.Partner;
-import org.core.scheduleflow.domain.partner.repository.PartnerRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import org.core.scheduleflow.domain.partner.dto.PartnerRequestDto
+import org.core.scheduleflow.domain.partner.dto.PartnerResponseDto
+import org.core.scheduleflow.domain.partner.entity.Partner
+import org.core.scheduleflow.domain.partner.repository.PartnerRepository
+import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
+import java.util.*
+import java.util.function.Function
+import java.util.stream.Collectors
 
 @Service
-public class PartnerService {
-
-    private final PartnerRepository partnerRepository;
-
-    public PartnerService(PartnerRepository partnerRepository) {
-        this.partnerRepository = partnerRepository;
-    }
-
+class PartnerService(private val partnerRepository: PartnerRepository) {
     /*==========================================================Partner READ====================================================================*/
+    fun findAll(): List<PartnerResponseDto> {
+        val partners = partnerRepository.findAll()
 
-    public List<PartnerResponseDto> findAll(){
-        List<Partner> partners = partnerRepository.findAll();
-
-        return partners.stream()
-                .map(PartnerResponseDto::fromEntity)
-                .collect(Collectors.toList());
+        return partners.mapNotNull { partner ->
+            partner?.let { PartnerResponseDto.fromEntity(it) }
+        }
     }
 
-    public Optional<PartnerResponseDto> selectPartnerById(Long id){
-        Optional<Partner> partner = partnerRepository.findById(id);
+    fun findPartnerById(id: Long?): PartnerResponseDto? {
+        // id가 null이면 바로 null 반환
+        if (id == null) return null
 
+        // findById 대신 findByIdOrNull (Spring Data JPA 확장 함수) 사용 권장
+        val partner = partnerRepository.findById(id).orElse(null) ?: return null
 
-        return partner.map(PartnerResponseDto::fromEntity);
+        return PartnerResponseDto.fromEntity(partner)
     }
 
-    public List<PartnerResponseDto> selectPartnerByNameContains(String name){
-        List<Partner> partners = partnerRepository.selectPartnerByNameContains(name);
+    fun findPartnerByNameContains(companyName: String?): List<PartnerResponseDto> {
+        val partners = partnerRepository.findByCompanyNameContains(companyName)
 
-        return partners.stream()
-                .map(PartnerResponseDto::fromEntity)
-                .collect(Collectors.toList());
+        // mapNotNull을 사용하여 null 요소는 제외하고 DTO로 변환합니다.
+        if (partners != null) {
+            return partners.mapNotNull { it?.let { partner -> PartnerResponseDto.fromEntity(partner) } }
+        }
+
+        return emptyList()
     }
 
     /*===========================================================Partner CREATE================================================================*/
-
     @Transactional
-    public PartnerResponseDto createPartner(PartnerRequestDto requestDto){
-
+    fun createPartner(requestDto: PartnerRequestDto?): PartnerResponseDto {
         /* 유효성 검증 시작 */
-        Objects.requireNonNull(requestDto, "요청 데이터(PartnerRequestDto)는 null일 수 없습니다.");
-        if (requestDto.getCompanyName() == null || requestDto.getCompanyName().trim().isEmpty()) {
-            throw new IllegalArgumentException("회사 이름은 필수 입력 항목입니다.");
-        }
+
+        Objects.requireNonNull<PartnerRequestDto?>(requestDto, "요청 데이터(PartnerRequestDto)는 null일 수 없습니다.")
+        require(!(requestDto!!.getCompanyName() == null || requestDto.getCompanyName().trim { it <= ' ' }
+            .isEmpty())) { "회사 이름은 필수 입력 항목입니다." }
+
         /* 유효성 검증 끝 */
+        val partner = requestDto.toEntity()
 
-        Partner partner = requestDto.toEntity();
+        val savedPartner = partnerRepository.save<Partner>(partner)
 
-        Partner savedPartner = partnerRepository.save(partner);
-
-        return PartnerResponseDto.fromEntity(savedPartner);
+        return PartnerResponseDto.Companion.fromEntity(savedPartner)
     }
 
     /*===========================================================Partner UPDATE================================================================*/
-    
     @Transactional
-    public PartnerResponseDto updatePartner(PartnerRequestDto requestDto){
-
+    fun updatePartner(requestDto: PartnerRequestDto?): PartnerResponseDto {
         /* 유효성 검증 시작 */
-        Objects.requireNonNull(requestDto, "요청 데이터(PartnerRequestDto)는 null일 수 없습니다.");
-        if (requestDto.getCompanyName() == null || requestDto.getCompanyName().trim().isEmpty()) {
-            throw new IllegalArgumentException("회사 이름은 필수 입력 항목입니다.");
-        }
+
+        Objects.requireNonNull<PartnerRequestDto?>(requestDto, "요청 데이터(PartnerRequestDto)는 null일 수 없습니다.")
+        require(!(requestDto!!.getCompanyName() == null || requestDto.getCompanyName().trim { it <= ' ' }
+            .isEmpty())) { "회사 이름은 필수 입력 항목입니다." }
+
         /* 유효성 검증 끝 */
+        val partner = requestDto.toEntity()
 
-        Partner partner = requestDto.toEntity();
+        val savedPartner = partnerRepository.save<Partner>(partner)
 
-        Partner savedPartner = partnerRepository.save(partner);
-
-        return PartnerResponseDto.fromEntity(savedPartner);
+        return PartnerResponseDto.Companion.fromEntity(savedPartner)
     }
 
     /*==========================================================Partner DELETE=================================================================*/
-
     @Transactional
-    public void deletePartnerById(Long id){
-        partnerRepository.deleteById(id);
+    fun deletePartnerById(id: Long) {
+        partnerRepository.deleteById(id)
     }
-
 }
