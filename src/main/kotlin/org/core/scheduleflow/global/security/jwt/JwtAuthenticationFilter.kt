@@ -18,7 +18,6 @@ class JwtAuthenticationFilter(
         val token = resolveToken(request)
 
         if(token != null) {
-            // TODO: jwt 검증 실패시 예외 처리
             jwtProvider.validateToken(token)
                 .onSuccess {
                     val authentication = jwtProvider.getAuthentication(token)

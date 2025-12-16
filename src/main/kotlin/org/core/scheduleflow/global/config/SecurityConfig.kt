@@ -1,5 +1,7 @@
 package org.core.scheduleflow.global.config
 
+import org.core.scheduleflow.global.exception.JwtAccessDeniedHandler
+import org.core.scheduleflow.global.exception.JwtAuthenticationEntryPoint
 import org.core.scheduleflow.global.security.jwt.JwtAuthenticationFilter
 import org.core.scheduleflow.global.security.jwt.JwtProvider
 import org.springframework.context.annotation.Bean
@@ -26,7 +28,10 @@ class SecurityConfig {
     fun authenticationManager(config: AuthenticationConfiguration): AuthenticationManager = config.authenticationManager
     
     @Bean
-    fun defaultSecurityFilterChain(http: HttpSecurity, jwtProvider: JwtProvider): SecurityFilterChain {
+    fun defaultSecurityFilterChain(http: HttpSecurity, jwtProvider: JwtProvider,
+                                   jwtAuthenticationEntryPoint: JwtAuthenticationEntryPoint,
+                                   jwtAccessDeniedHandler: JwtAccessDeniedHandler
+    ): SecurityFilterChain {
         http
             .csrf { it.disable() }
             .cors { it.configurationSource(corsConfigurationSource()) }
@@ -44,7 +49,10 @@ class SecurityConfig {
                     SessionCreationPolicy.STATELESS
                 )
             }
-        // TODO: 인증/인가 예외 처리
+            .exceptionHandling {
+                it.authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                it.accessDeniedHandler(jwtAccessDeniedHandler)
+            }
         return http.build()
     }
 

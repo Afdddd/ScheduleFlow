@@ -4,6 +4,8 @@ import org.core.scheduleflow.domain.user.dto.UserSignInRequest
 import org.core.scheduleflow.domain.user.dto.UserSignUpRequest
 import org.core.scheduleflow.domain.user.entity.User
 import org.core.scheduleflow.domain.user.repository.UserRepository
+import org.core.scheduleflow.global.exception.CustomException
+import org.core.scheduleflow.global.exception.ErrorCode
 import org.core.scheduleflow.global.security.jwt.JwtProvider
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
@@ -22,7 +24,7 @@ class AuthService(
     @Transactional
     fun signUp(request: UserSignUpRequest): Long {
         if(userRepository.existsByUsername(request.username))
-            throw RuntimeException("Username already exists")
+            throw CustomException(ErrorCode.DUPLICATE_USERNAME)
 
         val user = User(
             username = request.username,
@@ -40,7 +42,7 @@ class AuthService(
     fun signIn(request: UserSignInRequest): String {
         authenticateUser(request)
         val user = userRepository.findByUsername(request.username)
-            ?: throw RuntimeException("Not found user with username: ${request.username}")
+            ?: throw CustomException(ErrorCode.NOT_FOUND_USER)
         return jwtProvider.generateAccessToken(user.username, user.userRole )
     }
 
@@ -49,6 +51,6 @@ class AuthService(
             authenticationManager.authenticate(
                 UsernamePasswordAuthenticationToken(request.username, request.password)
             )
-        }.onFailure { throw RuntimeException("Invalid ID or Password") }
+        }.onFailure { throw CustomException(ErrorCode.INVALID_CREDENTIALS) }
     }
 }

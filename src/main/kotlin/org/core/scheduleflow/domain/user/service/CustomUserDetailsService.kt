@@ -2,9 +2,10 @@ package org.core.scheduleflow.domain.user.service
 
 import org.core.scheduleflow.domain.user.entity.CustomUserDetails
 import org.core.scheduleflow.domain.user.repository.UserRepository
+import org.core.scheduleflow.global.exception.CustomException
+import org.core.scheduleflow.global.exception.ErrorCode
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
-import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.stereotype.Service
 
 @Service
@@ -14,7 +15,7 @@ class CustomUserDetailsService(
 
     override fun loadUserByUsername(username: String): UserDetails {
         val user = userRepository.findByUsername(username)
-            ?: throw UsernameNotFoundException("User not found with username: $username")
+            ?: throw CustomException(ErrorCode.NOT_FOUND_USER)
 
         return CustomUserDetails(user)
     }
