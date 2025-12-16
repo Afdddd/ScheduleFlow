@@ -1,5 +1,6 @@
 package org.core.scheduleflow.global.exception
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.servlet.http.HttpServletRequest
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -12,6 +13,9 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 @RestControllerAdvice
 class GlobalExceptionHandler {
 
+
+
+    private val log = KotlinLogging.logger {}
     /**
      * 커스텀 예외 처리
      */
@@ -21,11 +25,11 @@ class GlobalExceptionHandler {
         request: HttpServletRequest
     ): ResponseEntity<ErrorResponse> {
         val errorResponse = ErrorResponse(
-            status = ex.errorCode.getHttpStatus().value(),
-            message = ex.errorCode.getMessage(),
+            status = ex.errorCode.httpStatus.value(),
+            message = ex.errorCode.message,
             path = request.requestURI
         )
-        return ResponseEntity.status(ex.errorCode.getHttpStatus()).body(errorResponse)
+        return ResponseEntity.status(ex.errorCode.httpStatus).body(errorResponse)
     }
 
     /**
@@ -38,6 +42,8 @@ class GlobalExceptionHandler {
     ): ResponseEntity<ErrorResponse> {
         val errors = ex.bindingResult.fieldErrors
             .joinToString(", ") { "${it.field}: ${it.defaultMessage}" }
+
+        log.error { "BindException 발생 - URI: ${request.requestURI}, Errors: $errors"}
 
         val errorResponse = ErrorResponse(
             status = HttpStatus.BAD_REQUEST.value(),
@@ -55,6 +61,10 @@ class GlobalExceptionHandler {
         ex: HttpMessageNotReadableException,
         request: HttpServletRequest
     ): ResponseEntity<ErrorResponse> {
+        log.warn("HttpMessageNotReadableException 발생 - URI: {}, Message: {}",
+            request.requestURI, ex.message)
+        log.error {"HttpMessageNotReadableException 발생 - URI: ${request.requestURI}, Message: ${ex.message}"}
+
         val errorResponse = ErrorResponse(
             status = HttpStatus.BAD_REQUEST.value(),
             message = "잘못된 요청 형식입니다",
@@ -71,6 +81,8 @@ class GlobalExceptionHandler {
         ex: MethodArgumentTypeMismatchException,
         request: HttpServletRequest
     ): ResponseEntity<ErrorResponse> {
+        log.error { "MethodArgumentTypeMismatchException 발생 - URI: ${request.requestURI}, Parameter: ${ex.name}, Message: ${ex.message}" }
+
         val errorResponse = ErrorResponse(
             status = HttpStatus.BAD_REQUEST.value(),
             message = "잘못된 파라미터 타입입니다: ${ex.name}",
@@ -87,6 +99,8 @@ class GlobalExceptionHandler {
         ex: Exception,
         request: HttpServletRequest
     ): ResponseEntity<ErrorResponse> {
+        log.error { "예상하지 못한 예외 발생 - URI: ${request.requestURI}, Exception: ${ex.javaClass.simpleName}, Message: ${ex.message}" }
+
         val errorResponse = ErrorResponse(
             status = HttpStatus.INTERNAL_SERVER_ERROR.value(),
             message = "서버 내부 오류가 발생했습니다",
