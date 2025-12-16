@@ -61,8 +61,6 @@ class GlobalExceptionHandler {
         ex: HttpMessageNotReadableException,
         request: HttpServletRequest
     ): ResponseEntity<ErrorResponse> {
-        log.warn("HttpMessageNotReadableException 발생 - URI: {}, Message: {}",
-            request.requestURI, ex.message)
         log.error {"HttpMessageNotReadableException 발생 - URI: ${request.requestURI}, Message: ${ex.message}"}
 
         val errorResponse = ErrorResponse(
