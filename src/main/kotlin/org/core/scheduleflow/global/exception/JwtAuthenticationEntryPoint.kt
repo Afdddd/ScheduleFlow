@@ -19,11 +19,11 @@ class JwtAuthenticationEntryPoint(
 
         val errorCode = ErrorCode.NOT_AUTHORIZED
         val body = ErrorResponse(
-            status = errorCode.getHttpStatus().value(),
-            message = errorCode.getMessage(),
+            status = errorCode.httpStatus.value(),
+            message = errorCode.message,
             path = request.requestURI
         )
-        response.status = errorCode.getHttpStatus().value()
+        response.status = errorCode.httpStatus.value()
         response.contentType = "application/json;charset=UTF-8"
         response.writer.write(
             objectMapper.writeValueAsString(body)
