@@ -123,6 +123,11 @@ class GlobalExceptionHandler {
         ex: Exception,
         request: HttpServletRequest
     ): ResponseEntity<ErrorResponse> {
+        if (ex is org.springframework.security.access.AccessDeniedException ||
+            ex is org.springframework.security.core.AuthenticationException) {
+            throw ex
+        }
+
         log.error { "예상하지 못한 예외 발생 - URI: ${request.requestURI}, Exception: ${ex.javaClass.simpleName}, Message: ${ex.message}" }
 
         val errorResponse = ErrorResponse(
