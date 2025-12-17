@@ -4,6 +4,7 @@ import org.core.scheduleflow.domain.user.dto.UserResponse
 import org.core.scheduleflow.domain.user.dto.UserUpdateRequest
 import org.core.scheduleflow.domain.user.service.UserService
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
@@ -36,6 +37,7 @@ class UserController(
         return ResponseEntity.ok(service.updateUser(userId, request))
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{userId}")
     fun deleteUser(@PathVariable userId: Long): ResponseEntity<Void> {
         service.deleteUser(userId)
