@@ -41,4 +41,7 @@ class User(
     var position: String? = null,
 ): BaseEntity() {
 
+    fun updateRole(role: Role) {
+        this.userRole = role
+    }
 }
