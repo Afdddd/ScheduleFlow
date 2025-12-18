@@ -10,6 +10,7 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import org.core.scheduleflow.domain.partner.entity.Partner
 import org.core.scheduleflow.domain.project.constant.ProjectStatus
@@ -24,8 +25,11 @@ class Project(
     val id: Long? = null,
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "partner_id")
-    var partner: Partner,
+    @JoinColumn(name = "client_id")
+    var client: Partner,
+
+    @OneToMany(mappedBy = "project", fetch = FetchType.LAZY)
+    var partnerContacts: MutableList<ProjectPartnerContact> = mutableListOf(),
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
