@@ -43,7 +43,10 @@ class AuthService(
         authenticateUser(request)
         val user = userRepository.findByUsername(request.username)
             ?: throw CustomException(ErrorCode.NOT_FOUND_USER)
-        return jwtProvider.generateAccessToken(user.username, user.userRole )
+        val userId = checkNotNull(user.id) {
+            "findByUsername() 후에는 userId가 DB에 존재해야한다."
+        }
+        return jwtProvider.generateAccessToken(userId, user.username, user.userRole )
     }
 
     private fun authenticateUser(request: UserSignInRequest) {

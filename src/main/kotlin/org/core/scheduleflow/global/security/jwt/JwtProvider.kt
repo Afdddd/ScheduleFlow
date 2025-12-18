@@ -20,17 +20,18 @@ class JwtProvider(
     @Value("\${jwt.expiration}") private val expiration: Long
 ){
     fun generateAccessToken(
+        userId: Long,
         username: String,
         role: Role,
         extraClaims: Map<String, Any> = emptyMap()
     ): String {
-
         val now = Date()
         val expiry = Date(now.time + expiration)
 
         val claims = mutableMapOf<String, Any>()
         claims.putAll(extraClaims)
         claims["role"] = role.name
+        claims["userId"] = userId
 
         return Jwts.builder()
             .claims(claims)
@@ -48,10 +49,9 @@ class JwtProvider(
             .parseSignedClaims(token)
             .payload
 
-        val username = claims.subject
         val role = claims.get("role", String::class.java)
         val authorities = listOf(SimpleGrantedAuthority("ROLE_$role"))
-        return UsernamePasswordAuthenticationToken(username, null, authorities)
+        return UsernamePasswordAuthenticationToken(claims, null, authorities)
     }
 
     fun validateToken(token: String): Result<Boolean> {

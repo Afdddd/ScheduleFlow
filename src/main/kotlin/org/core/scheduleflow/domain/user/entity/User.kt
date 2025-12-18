@@ -22,13 +22,13 @@ class User(
     @Column(name = "user_role", nullable = false)
     var userRole: Role = Role.STAFF,
 
-    @Column(name = "username", nullable = false)
+    @Column(name = "username", nullable = false, unique = true)
     var username: String,
 
     @Column(name = "password", nullable = false)
     var password: String,
 
-    @Column(name = "name", nullable = false)
+    @Column(name = "name", nullable = false, unique = true)
     var name: String,
 
     @Column(name = "email", nullable = true)
@@ -41,4 +41,7 @@ class User(
     var position: String? = null,
 ): BaseEntity() {
 
+    fun updateRole(role: Role) {
+        this.userRole = role
+    }
 }
