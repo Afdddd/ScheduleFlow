@@ -26,10 +26,7 @@ class Project(
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "client_id")
-    var client: Partner,
-
-    @OneToMany(mappedBy = "project", fetch = FetchType.LAZY)
-    var partnerContacts: MutableList<ProjectPartnerContact> = mutableListOf(),
+    var client: Partner? = null,
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
@@ -51,5 +48,11 @@ class Project(
     var colorCode: String? = null
 ): BaseEntity() {
 
+    fun updateStatus(status: ProjectStatus) {
+        this.status = status
+    }
 
+    fun updateClient(client: Partner) {
+        this.client = client
+    }
 }
