@@ -91,28 +91,34 @@ class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse)
     }
 
-    @ExceptionHandler(
-        IllegalStateException::class,
-        IllegalArgumentException::class
-    )
-    fun handleIllegalPrecondition(
-        ex: RuntimeException,
+    @ExceptionHandler(IllegalArgumentException::class)
+    fun handleIllegalArgumentException(
+        ex: IllegalArgumentException,
         request: HttpServletRequest
     ): ResponseEntity<ErrorResponse> {
+        log.error { "잘못된 인자 값 - URI: ${request.requestURI}, Message: ${ex.message}" }
 
-        log.error {
-            "Precondition 실패 - URI: ${request.requestURI}, Message: ${ex.message}"
-        }
+        val errorResponse = ErrorResponse(
+            status = HttpStatus.BAD_REQUEST.value(),
+            message = "잘못된 요청 값입니다.",
+            path = request.requestURI
+        )
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse)
+    }
+
+    @ExceptionHandler(IllegalStateException::class)
+    fun handleIllegalStateException(
+        ex: IllegalStateException,
+        request: HttpServletRequest
+    ): ResponseEntity<ErrorResponse> {
+        log.error { "Precondition 실패 - URI: ${request.requestURI}, Message: ${ex.message}" }
 
         val errorResponse = ErrorResponse(
             status = HttpStatus.INTERNAL_SERVER_ERROR.value(),
             message = "서버 내부 오류가 발생했습니다",
             path = request.requestURI
         )
-
-        return ResponseEntity
-            .status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .body(errorResponse)
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse)
     }
 
     /**
