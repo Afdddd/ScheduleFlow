@@ -23,7 +23,7 @@ class JwtProviderTest {
     @DisplayName("정상 토큰을 반환한다.")
     fun validateToken_validToken_success() {
         // given
-        val token = jwtProvider.generateAccessToken("testUser", Role.STAFF)
+        val token = jwtProvider.generateAccessToken(1L, "testUser", Role.STAFF)
 
         // when
         val result = jwtProvider.validateToken(token)

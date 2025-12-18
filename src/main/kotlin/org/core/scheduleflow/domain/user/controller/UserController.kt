@@ -19,16 +19,19 @@ class UserController(
     private val service: UserService
 ) {
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     fun getUsers(): ResponseEntity<List<UserResponse>> {
         return ResponseEntity.ok(service.findUsers())
     }
 
+    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.['userId']")
     @GetMapping("/{userId}")
     fun getUser(@PathVariable userId: Long):ResponseEntity<UserResponse> {
         return ResponseEntity.ok(service.findUserById(userId))
     }
 
+    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.['userId']")
     @PatchMapping("/{userId}")
     fun updateUser(
         @PathVariable userId: Long,
