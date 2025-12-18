@@ -2,6 +2,7 @@ package org.core.scheduleflow.domain.user.service
 
 import org.core.scheduleflow.domain.user.dto.UserResponse
 import org.core.scheduleflow.domain.user.dto.UserUpdateRequest
+import org.core.scheduleflow.domain.user.entity.User
 import org.core.scheduleflow.domain.user.repository.UserRepository
 import org.core.scheduleflow.global.exception.CustomException
 import org.core.scheduleflow.global.exception.ErrorCode
@@ -19,17 +20,7 @@ class UserService(
        val userList = userRepository.findAll()
 
         return userList.map { user ->
-            val userId = requireNotNull(user.id) {
-                "User 엔티티의 id가 null입니다."
-            }
-
-            UserResponse(
-                id = userId,
-                name = user.name,
-                email = user.email,
-                phone = user.phone,
-                position = user.position
-            )
+            user.toResponse()
         }
     }
 
@@ -62,17 +53,7 @@ class UserService(
         request.position?.let { user.position = it }
 
         val updatedUser = userRepository.save(user)
-        val id = requireNotNull(updatedUser.id) {
-            "User 엔티티의 id가 null입니다."
-        }
-
-        return UserResponse(
-            id = id,
-            name = updatedUser.name,
-            email = updatedUser.email,
-            phone = updatedUser.phone,
-            position = updatedUser.position
-        )
+        return updatedUser.toResponse()
     }
 
     @Transactional
@@ -83,4 +64,13 @@ class UserService(
         userRepository.delete(user)
     }
 
+    private fun User.toResponse(): UserResponse {
+        return UserResponse(
+            id = requireNotNull(id) { "User 엔티티의 id가 null입니다." },
+            name = name,
+            email = email,
+            phone = phone,
+            position = position
+        )
+    }
 }
