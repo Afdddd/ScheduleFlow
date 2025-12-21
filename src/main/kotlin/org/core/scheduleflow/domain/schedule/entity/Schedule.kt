@@ -1,13 +1,7 @@
 package org.core.scheduleflow.domain.schedule.entity
 
-import jakarta.persistence.Column
-import jakarta.persistence.Entity
-import jakarta.persistence.EnumType
-import jakarta.persistence.Enumerated
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
-import jakarta.persistence.Id
-import jakarta.persistence.Table
+import jakarta.persistence.*
+import org.core.scheduleflow.domain.project.entity.Project
 import org.core.scheduleflow.domain.schedule.constant.ScheduleType
 import org.core.scheduleflow.global.entity.BaseEntity
 import java.time.LocalDate
@@ -30,5 +24,24 @@ class Schedule(
     var startDate : LocalDate,
 
     @Column(name = "end_date", nullable = false)
-    var endDate : LocalDate
-): BaseEntity()
+    var endDate : LocalDate,
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "project_id")
+    var project: Project? = null,
+
+    @OneToMany(mappedBy = "schedule", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+    val members: MutableList<ScheduleMember> = mutableListOf()
+
+): BaseEntity() {
+    fun updateProject(project: Project) {
+        this.project = project
+    }
+
+    fun updateScheduleMembers(scheduleMembers: List<ScheduleMember>) {
+        members.clear()
+        scheduleMembers.forEach { member
+            -> members.add(member)
+        }
+    }
+}

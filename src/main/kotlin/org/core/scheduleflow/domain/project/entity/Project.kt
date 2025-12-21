@@ -1,5 +1,6 @@
 package org.core.scheduleflow.domain.project.entity
 
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
@@ -13,8 +14,12 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import org.core.scheduleflow.domain.partner.entity.Partner
+import org.core.scheduleflow.domain.partner.entity.PartnerContact
 import org.core.scheduleflow.domain.project.constant.ProjectStatus
+import org.core.scheduleflow.domain.user.entity.User
 import org.core.scheduleflow.global.entity.BaseEntity
+import org.core.scheduleflow.global.exception.CustomException
+import org.core.scheduleflow.global.exception.ErrorCode
 import java.time.LocalDate
 
 @Entity
@@ -26,7 +31,13 @@ class Project(
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "client_id")
-    var client: Partner? = null,
+    var client: Partner,
+
+    @OneToMany(mappedBy = "project", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+    var members: MutableList<ProjectMembers> = mutableListOf(),
+
+    @OneToMany(mappedBy = "project", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+    var contacts: MutableList<ProjectPartnerContact> = mutableListOf(),
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
@@ -54,5 +65,21 @@ class Project(
 
     fun updateClient(client: Partner) {
         this.client = client
+    }
+
+    fun updateMembers(users: List<User>) {
+        members.clear()
+        users.forEach { user ->
+            val member = ProjectMembers(project = this, user = user)
+            members.add(member)
+        }
+    }
+
+    fun updateContacts(partnerContacts: List<PartnerContact>) {
+        contacts.clear()
+        partnerContacts.forEach { contact ->
+            val projectContact = ProjectPartnerContact(project = this, partnerContact = contact)
+            contacts.add(projectContact)
+        }
     }
 }

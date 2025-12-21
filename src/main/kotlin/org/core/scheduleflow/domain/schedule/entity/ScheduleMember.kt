@@ -12,7 +12,7 @@ import org.core.scheduleflow.domain.user.entity.User
 
 @Entity
 @Table(name = "schedule_members")
-class ScheduleMembers(
+class ScheduleMember(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
