@@ -77,15 +77,25 @@ class ProjectService(
 
     @Transactional(readOnly = true)
     fun findProjects(): List<ProjectSummaryResponse> {
-        val projectList = projectRepository.findAllWithClient()
-        return projectList.map { toProjectSummaryResponse(it) }
+        val projects = projectRepository.findAllWithClient()
+        if (projects.isEmpty()) {
+            return emptyList()
+        }
+
+        val members = projectMemberRepository.findByProjectInWithUser(projects)
+        val membersByProjectId = members.groupBy { it.project.id!! }
+
+        return projects.map { project ->
+            val projectMembers = membersByProjectId[project.id!!] ?: emptyList()
+            val memberNames = projectMembers.map { it.user.name }
+            ProjectSummaryResponse.from(project, memberNames)
+        }
     }
 
     fun updateProject(projectId: Long, request: ProjectUpdateRequest): ProjectDetailResponse {
         val project = projectRepository.findByIdOrNull(projectId)
             ?: throw CustomException(ErrorCode.NOT_FOUND_PROJECT)
 
-        // 기본 필드 업데이트
         request.name?.let { project.name = it }
         request.description?.let { project.description = it }
         request.startDate?.let { project.startDate = it }
@@ -145,11 +155,6 @@ class ProjectService(
         }
 
         return ProjectDetailResponse.from(project, contacts, members, scheduleDtoList)
-    }
-
-    private fun toProjectSummaryResponse(project: Project): ProjectSummaryResponse {
-        val membersNames = projectMemberRepository.findByProjectWithUser(project).map { it.user.name }
-        return ProjectSummaryResponse.from(project, membersNames)
     }
 
     private fun validateProjectName(name: String) {

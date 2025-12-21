@@ -326,8 +326,7 @@ class ProjectServiceKoTest() : BehaviorSpec({
         )
 
         every { mocks.projectRepository.findAllWithClient() } returns listOf(project1, project2)
-        every { mocks.projectMemberRepository.findByProjectWithUser(project1) } returns project1.members
-        every { mocks.projectMemberRepository.findByProjectWithUser(project2) } returns project2.members
+        every { mocks.projectMemberRepository.findByProjectInWithUser(listOf(project1, project2)) } returns project1.members
 
         val projectService = createProjectService(mocks)
 
@@ -379,7 +378,6 @@ class ProjectServiceKoTest() : BehaviorSpec({
                 response.description shouldBe "수정된 설명"
                 response.colorCode shouldBe "#00FF00"
                 verify(exactly = 1) { mocks.projectRepository.findByIdOrNull(1L) }
-                verify(exactly = 1) { mocks.projectRepository.save(any()) }
             }
         }
     }

@@ -7,6 +7,6 @@ import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 
 interface ProjectMemberRepository: JpaRepository<ProjectMember, Long> {
-    @Query("SELECT pm FROM ProjectMember pm JOIN FETCH pm.user WHERE pm.project = :project")
-    fun findByProjectWithUser(@Param("project") project: Project): List<ProjectMember>
+    @Query("SELECT pm FROM ProjectMember pm JOIN FETCH pm.user WHERE pm.project IN :projects")
+    fun findByProjectInWithUser(@Param("projects") projects: List<Project>): List<ProjectMember>
 }
