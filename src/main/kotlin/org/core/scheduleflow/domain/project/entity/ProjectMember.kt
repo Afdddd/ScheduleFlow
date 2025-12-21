@@ -1,4 +1,4 @@
-package org.core.scheduleflow.domain.schedule.entity
+package org.core.scheduleflow.domain.project.entity
 
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
@@ -11,18 +11,17 @@ import jakarta.persistence.Table
 import org.core.scheduleflow.domain.user.entity.User
 
 @Entity
-@Table(name = "schedule_members")
-class ScheduleMembers(
+@Table(name = "project_members")
+class ProjectMember(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "schedule_id")
-    var schedule: Schedule,
+    @JoinColumn(name = "project_id")
+    var project: Project,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     var user: User
-) {
-}
+)
