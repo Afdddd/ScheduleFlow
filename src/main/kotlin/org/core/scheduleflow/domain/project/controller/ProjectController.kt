@@ -7,6 +7,7 @@ import org.core.scheduleflow.domain.project.dto.ProjectUpdateRequest
 import org.core.scheduleflow.domain.project.service.ProjectService
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
@@ -31,6 +32,7 @@ class ProjectController(
         return ResponseEntity.ok(service.findProject(projectId))
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     fun createProject(
         @RequestBody request: ProjectCreateRequest
@@ -38,6 +40,7 @@ class ProjectController(
         service.createProject(request)
     )
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{projectId}")
     fun updateProject(
         @PathVariable projectId: Long,
@@ -45,6 +48,7 @@ class ProjectController(
         return ResponseEntity.ok(service.updateProject(projectId, request))
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{projectId}")
     fun deleteProject(@PathVariable projectId: Long): ResponseEntity<Void> {
         service.deleteProject(projectId)
