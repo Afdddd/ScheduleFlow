@@ -18,7 +18,7 @@ class ScheduleRepositoryImpl(
 
         return queryFactory
             .selectFrom(schedule)
-            .leftJoin(schedule.scheduleMembers, scheduleMember).fetchJoin()
+            .leftJoin(schedule.members, scheduleMember).fetchJoin()
             .leftJoin(scheduleMember.user, user).fetchJoin()
             .where(schedule.project.id.eq(projectId))
             .distinct()

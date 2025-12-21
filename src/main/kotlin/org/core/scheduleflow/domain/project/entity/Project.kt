@@ -18,8 +18,6 @@ import org.core.scheduleflow.domain.partner.entity.PartnerContact
 import org.core.scheduleflow.domain.project.constant.ProjectStatus
 import org.core.scheduleflow.domain.user.entity.User
 import org.core.scheduleflow.global.entity.BaseEntity
-import org.core.scheduleflow.global.exception.CustomException
-import org.core.scheduleflow.global.exception.ErrorCode
 import java.time.LocalDate
 
 @Entity
@@ -34,7 +32,7 @@ class Project(
     var client: Partner,
 
     @OneToMany(mappedBy = "project", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
-    var members: MutableList<ProjectMembers> = mutableListOf(),
+    var members: MutableList<ProjectMember> = mutableListOf(),
 
     @OneToMany(mappedBy = "project", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
     var contacts: MutableList<ProjectPartnerContact> = mutableListOf(),
@@ -70,7 +68,7 @@ class Project(
     fun updateMembers(users: List<User>) {
         members.clear()
         users.forEach { user ->
-            val member = ProjectMembers(project = this, user = user)
+            val member = ProjectMember(project = this, user = user)
             members.add(member)
         }
     }
