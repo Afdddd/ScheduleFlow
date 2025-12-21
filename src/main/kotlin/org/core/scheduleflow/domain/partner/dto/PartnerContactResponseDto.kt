@@ -1,11 +1,12 @@
 package org.core.scheduleflow.domain.partner.dto
 
-import org.core.scheduleflow.domain.partner.entity.Partner
+
 import org.core.scheduleflow.domain.partner.entity.PartnerContact
+
 
 class PartnerContactResponseDto(
     val id: Long?,
-    val partner: Partner?,
+    val partnerId: Long?,
     val name: String?,
     val position: String?,
     val department: String?,
@@ -17,7 +18,7 @@ class PartnerContactResponseDto(
         fun fromEntity(partnerContact: PartnerContact): PartnerContactResponseDto {
             return PartnerContactResponseDto(
                 partnerContact.id,
-                partnerContact.partner,
+                partnerContact.partner.id,
                 partnerContact.name,
                 partnerContact.position,
                 partnerContact.department,

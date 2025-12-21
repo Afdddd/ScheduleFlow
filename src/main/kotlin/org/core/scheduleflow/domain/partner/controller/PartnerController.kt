@@ -4,11 +4,11 @@ import org.core.scheduleflow.domain.partner.dto.PartnerContactRequestDto
 import org.core.scheduleflow.domain.partner.dto.PartnerContactResponseDto
 import org.core.scheduleflow.domain.partner.dto.PartnerRequestDto
 import org.core.scheduleflow.domain.partner.dto.PartnerResponseDto
-import org.core.scheduleflow.domain.partner.entity.PartnerContact
+
 import org.core.scheduleflow.domain.partner.service.PartnerContactService
 import org.core.scheduleflow.domain.partner.service.PartnerService
 import org.springframework.web.bind.annotation.*
-import java.util.*
+
 
 @RestController
 @RequestMapping("/partners")
@@ -17,36 +17,37 @@ class PartnerController(
     private val partnerContactService: PartnerContactService
 ) {
     /*==========================================================Partner READ====================================================================*/
-    @get:GetMapping
-    val allPartners: List<PartnerResponseDto>
-         get() = partnerService.findAll()
+    @GetMapping
+    fun allPartners() : List<PartnerResponseDto> {
+         return partnerService.findAll()
+    }
 
     @GetMapping("/{id}")
-    fun findPartnerById(@PathVariable id: Long?): PartnerResponseDto? {
+    fun findPartnerById(@PathVariable id: Long): PartnerResponseDto? {
         return partnerService.findPartnerById(id)
     }
 
-    @GetMapping("/{name}")
-    fun findPartnerByName(@PathVariable name: String?): List<PartnerResponseDto> {
+    @GetMapping("/search")
+    fun findPartnerByName(@RequestParam name: String?): List<PartnerResponseDto> {
         return partnerService.findPartnerByNameContains(name)
     }
 
     /*===========================================================Partner CREATE================================================================*/
     @PostMapping
-    fun createPartner(@RequestBody requestDto: PartnerRequestDto?): PartnerResponseDto? {
-        return partnerService.createPartner(requestDto)
+    fun createPartner(@RequestBody partnerRequestDto : PartnerRequestDto): PartnerResponseDto? {
+        return partnerService.createPartner(partnerRequestDto)
     }
 
     /*===========================================================Partner UPDATE================================================================*/
     @PutMapping
-    fun updatePartner(@RequestBody requestDto: PartnerRequestDto?): PartnerResponseDto? {
-        return partnerService.updatePartner(requestDto)
+    fun updatePartner(@RequestBody partnerRequestDto : PartnerRequestDto): PartnerResponseDto? {
+        return partnerService.updatePartner(partnerRequestDto)
     }
 
     /*==========================================================Partner DELETE=================================================================*/
-    @DeleteMapping
-    fun deletePartnerById(@PathVariable Id: Long) {
-        partnerService.deletePartnerById(Id)
+    @DeleteMapping("/{id}")
+    fun deletePartnerById(@PathVariable id: Long) {
+        partnerService.deletePartnerById(id)
     }
 
     /*======================================================PartnerContact READ=================================================================*/
@@ -57,19 +58,19 @@ class PartnerController(
 
     /*======================================================PartnerContact CREATE=================================================================*/
     @PostMapping("/{partnerId}/contacts")
-    fun createPartnerContact(@RequestBody requestDto: PartnerContactRequestDto?): PartnerContactResponseDto? {
-        return partnerContactService.createPartnerContact(requestDto)
+    fun createPartnerContact(@RequestBody PartnerContactRequestDto: PartnerContactRequestDto, @PathVariable partnerId : Long): PartnerContactResponseDto? {
+        return partnerContactService.createPartnerContact(PartnerContactRequestDto, partnerId)
     }
 
     /*======================================================PartnerContact UPDATE=================================================================*/
     @PutMapping("/{partnerId}/contacts")
-    fun updatePartnerContact(@RequestBody requestDto: PartnerContactRequestDto?): PartnerContactResponseDto? {
-        return partnerContactService.updatePartnerContact(requestDto)
+    fun updatePartnerContact(@RequestBody PartnerContactRequestDto: PartnerContactRequestDto, @PathVariable partnerId : Long): PartnerContactResponseDto? {
+        return partnerContactService.updatePartnerContact(PartnerContactRequestDto, partnerId)
     }
 
     /*======================================================PartnerContact DELETE=================================================================*/
-    @DeleteMapping("/{partnerId}/contacts")
-    fun deletePartnerContactById(@RequestBody partnerContact: PartnerContact) {
-        partnerContact.id?.let { partnerContactService.deletePartnerContactById(it) }
+    @DeleteMapping("/{partnerId}/contacts/{id}")
+    fun deletePartnerContactById(@PathVariable partnerId: Long, @PathVariable id: Long) {
+        partnerContactService.deletePartnerContactById(partnerId,id)
     }
 }

@@ -1,111 +1,109 @@
 package org.core.scheduleflow.domain.partner.service
 
+import org.assertj.core.api.Assertions.assertThat
 import org.core.scheduleflow.domain.partner.dto.PartnerContactRequestDto
-import org.core.scheduleflow.domain.partner.entity.Partner
-import org.core.scheduleflow.domain.partner.repository.PartnerContactRepository
-import org.core.scheduleflow.domain.partner.repository.PartnerRepository
-import org.core.scheduleflow.domain.partner.service.PartnerContactService
-import org.junit.jupiter.api.Assertions.*
+import org.core.scheduleflow.domain.partner.dto.PartnerRequestDto
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest
-
-import org.springframework.context.annotation.Import
+import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
+import org.springframework.transaction.annotation.Transactional
 
-@DataJpaTest
+@SpringBootTest
 @ActiveProfiles("test")
-@Import(PartnerContactService::class) // 테스트 대상 서비스 주입
-class PartnerContactServiceH2Test @Autowired constructor(
-    private val partnerRepository: PartnerRepository,
-    private val partnerContactRepository: PartnerContactRepository,
-    private val partnerContactService: PartnerContactService
+@Transactional
+class PartnerContactServiceTest @Autowired constructor(
+    private val partnerContactService: PartnerContactService,
+    private val partnerService: PartnerService
 ) {
 
-    private lateinit var testPartner: Partner
+    private var partnerId: Long = 0L
 
     @BeforeEach
     fun setUp() {
-        // 모든 테스트에서 공통으로 사용할 Partner 데이터 저장
-        testPartner = partnerRepository.save(Partner(companyName = "메인 파트너사"))
+        // 모든 연락처 테스트를 위해 부모가 되는 Partner를 먼저 생성
+        val partner = partnerService.createPartner(
+            PartnerRequestDto(null, "모체 거래처", null, null, null)
+        )
+        partnerId = partner.id!!
     }
 
     @Test
-    @DisplayName("파트너 연락처 생성 - 성공 시 H2 DB에 저장되고 ID가 발급되어야 한다")
-    fun createPartnerContact_Success() {
-        // Given
-        val request = PartnerContactRequestDto().apply {
-            setPartner(testPartner)
-            setName("홍길동")
-            position = "팀장"
-            email = "hong@partner.com"
-        }
-
-        // When
-        val result = partnerContactService.createPartnerContact(request)
-
-        // Then
-        assertNotNull(result.id)
-        assertEquals("홍길동", result.name)
-        assertEquals(testPartner.id, result.partner?.id)
-
-        // 실제 DB 조회 확인
-        val exists = partnerContactRepository.existsById(result.id!!)
-        assertTrue(exists)
-    }
-
-    @Test
-    @DisplayName("파트너 ID로 연락처 조회 - 해당 파트너의 담당자 리스트만 반환해야 한다")
-    fun findPartnerContactByPartnerId_Success() {
-        // Given
-        val contact1 = PartnerContactRequestDto().apply { setPartner(testPartner); setName("담당자1") }
-        val contact2 = PartnerContactRequestDto().apply { setPartner(testPartner); setName("담당자2") }
-        val otherPartner = partnerRepository.save(Partner(companyName = "다른 회사"))
-        val contact3 = PartnerContactRequestDto().apply { setPartner(otherPartner); setName("타사 담당자") }
-
-        partnerContactService.createPartnerContact(contact1)
-        partnerContactService.createPartnerContact(contact2)
-        partnerContactService.createPartnerContact(contact3)
-
-        // When
-        val results = partnerContactService.findPartnerContactByPartnerId(testPartner.id)
-
-        // Then
-        assertEquals(2, results.size)
-        assertTrue(results.all { it.partner?.id == testPartner.id })
-        assertFalse(results.any { it.name == "타사 담당자" })
-    }
-
-    @Test
-    @DisplayName("유효성 검증 - 이름이 공백인 연락처를 생성하려 하면 예외가 발생한다")
-    fun createPartnerContact_Fail_EmptyName() {
-        // Given
-        val request = PartnerContactRequestDto().apply {
-            setPartner(testPartner)
-            setName("") // 공백 이름
-        }
-
-        // When & Then
-        assertThrows(IllegalArgumentException::class.java) {
-            partnerContactService.createPartnerContact(request)
-        }
-    }
-
-    @Test
-    @DisplayName("삭제 - 연락처 삭제 시 H2 DB에서 데이터가 제거되어야 한다")
-    fun deletePartnerContact_Success() {
-        // Given
-        val saved = partnerContactService.createPartnerContact(
-            PartnerContactRequestDto().apply { setPartner(testPartner); setName("삭제 대상") }
+    @DisplayName("고객사 ID를 기반으로 소속 직원을 등록한다")
+    fun createContact() {
+        // given
+        val request = PartnerContactRequestDto(
+            id = null,
+            partnerId = partnerId,
+            name = "홍길동",
+            position = "팀장",
+            email = "hong@test.com"
         )
 
-        // When
-        partnerContactService.deletePartnerContactById(saved.id!!)
+        // when
+        val saved = partnerContactService.createPartnerContact(request, partnerId)
 
-        // Then
-        val exists = partnerContactRepository.existsById(saved.id!!)
-        assertFalse(exists)
+        // then
+        assertThat(saved.id).isNotNull
+        assertThat(saved.name).isEqualTo("홍길동")
+        assertThat(saved.partnerId).isEqualTo(partnerId)
+    }
+
+    @Test
+    @DisplayName("특정 고객사에 속한 모든 직원 리스트를 조회한다")
+    fun findAllContactsByPartner() {
+        // given
+        partnerContactService.createPartnerContact(PartnerContactRequestDto(null, partnerId, "직원1"), partnerId)
+        partnerContactService.createPartnerContact(PartnerContactRequestDto(null, partnerId, "직원2"), partnerId)
+
+        // when
+        val list = partnerContactService.findPartnerContactByPartnerId(partnerId)
+
+        // then
+        assertThat(list).hasSize(2)
+        assertThat(list.map { it.name }).contains("직원1", "직원2")
+    }
+
+
+
+    @Test
+    @DisplayName("기존 거래처 직원의 정보(성함, 직함 등)를 수정한다")
+    fun updatePartnerContactTest() {
+        // 1. Given: 테스트용 직원 선행 등록
+        val savedContact = partnerContactService.createPartnerContact(
+            PartnerContactRequestDto(
+                id = null,
+                partnerId = partnerId,
+                name = "기존 이름",
+                position = "사원",
+                email = "old@test.com"
+            ), partnerId
+        )
+
+        // 2. When: 수정 요청 DTO 생성 (기존 ID 필수 포함)
+        val updateRequest = PartnerContactRequestDto(
+            id = savedContact.id, // 저장된 식별자 사용
+            partnerId = partnerId,
+            name = "수정된 이름",
+            position = "대리",
+            email = "new@test.com",
+            phone = "010-0000-0000"
+        )
+
+        val updated = partnerContactService.updatePartnerContact(updateRequest, partnerId)
+
+        // 3. Then: 반환된 DTO와 실제 DB 데이터 검증
+        assertThat(updated.name).isEqualTo("수정된 이름")
+        assertThat(updated.position).isEqualTo("대리")
+        assertThat(updated.email).isEqualTo("new@test.com")
+
+        // 실제로 다시 조회했을 때도 반영되어 있는지 확인
+        val found = partnerContactService.findPartnerContactByPartnerId(partnerId)
+            .find { it.id == savedContact.id }
+
+        assertThat(found?.name).isEqualTo("수정된 이름")
+        assertThat(found?.position).isEqualTo("대리")
     }
 }

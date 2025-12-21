@@ -2,28 +2,22 @@ package org.core.scheduleflow.domain.partner.dto
 
 import org.core.scheduleflow.domain.partner.entity.Partner
 
-class PartnerRequestDto {
-    private var companyName: String? = null
-    var mainPhone: String? = null
-    var address: String? = null
-    var description: String? = null
-
-    fun getCompanyName(): String {
-        return companyName!!
-    }
-
-    fun setCompanyName(companyName: String) {
-        this.companyName = companyName
-    }
+data class PartnerRequestDto(
+    val id : Long?,
+    var companyName: String,
+    var mainPhone: String?,
+    var address: String?,
+    var description: String?
+) {
 
 
     fun toEntity(): Partner {
         return Partner(
-            null,  // ID는 DB 자동 할당 (null)
-            this.companyName!!,
-            this.mainPhone,
-            this.address,
-            this.description
+            id = this.id,  // ID는 DB 자동 할당 (null)
+            companyName = this.companyName,
+            mainPhone = this.mainPhone,
+            address = this.address,
+            description = this.description
         )
     }
 }

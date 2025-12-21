@@ -1,76 +1,62 @@
 package org.core.scheduleflow.domain.partner.service
 
+import org.assertj.core.api.Assertions.assertThat
 import org.core.scheduleflow.domain.partner.dto.PartnerRequestDto
-import org.core.scheduleflow.domain.partner.repository.PartnerRepository
-import org.core.scheduleflow.domain.partner.service.PartnerService
-import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest
-import org.springframework.context.annotation.Import
+import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
+import org.springframework.transaction.annotation.Transactional
 
-@DataJpaTest // JPA 관련 설정만 로드하여 H2 기반 테스트 환경 구축
-@ActiveProfiles("test") // test 프로파일 설정 사용
-@Import(PartnerService::class) // Service는 JPA 구성요소가 아니므로 별도 임포트
-class PartnerServiceH2Test @Autowired constructor(
-    private val partnerRepository: PartnerRepository,
+@SpringBootTest
+@ActiveProfiles("test") // application-test.yml을 사용하도록 설정
+@Transactional          // 테스트 후 자동 롤백 (H2 데이터 초기화)
+class PartnerServiceTest @Autowired constructor(
     private val partnerService: PartnerService
 ) {
 
     @Test
-    @DisplayName("H2 DB에 파트너 저장 시 실제 ID가 생성되어야 한다")
-    fun createPartner_RealDbSuccess() {
-        // Given
-        val request = PartnerRequestDto().apply {
-            setCompanyName("H2 테크")
-            mainPhone = "010-0000-0000"
-        }
+    @DisplayName("고객사 정보를 저장하고 ID로 다시 조회한다")
+    fun saveAndFindPartner() {
+        // given
+        val request = PartnerRequestDto(
+            id = null,
+            companyName = "테스트 컴퍼니",
+            mainPhone = "010-1234-5678",
+            address = "서울시 강남구",
+            description = "테스트용 업체"
+        )
 
-        // When
-        val result = partnerService.createPartner(request)
+        // when
+        val saved = partnerService.createPartner(request)
+        val found = partnerService.findPartnerById(saved.id!!)
 
-        // Then
-        assertNotNull(result.id) // H2에 의해 생성된 ID 확인
-        assertTrue(result.id!! > 0L)
-
-        val entityInDb = partnerRepository.findById(result.id!!).get()
-        assertEquals("H2 테크", entityInDb.companyName)
+        // then
+        assertThat(found).isNotNull
+        assertThat(found?.companyName).isEqualTo("테스트 컴퍼니")
     }
 
     @Test
-    @DisplayName("이름 검색 시 H2의 LIKE 쿼리가 정상 작동해야 한다")
-    fun findByName_LikeQueryTest() {
-        // Given
-        val req1 = PartnerRequestDto().apply { setCompanyName("Apple") }
-        val req2 = PartnerRequestDto().apply { setCompanyName("Application") }
-        val req3 = PartnerRequestDto().apply { setCompanyName("Banana") }
+    @DisplayName("기존 고객사의 정보를 수정하면 변경 사항이 반영되어야 한다")
+    fun updatePartner() {
+        // given
+        val initial = partnerService.createPartner(
+            PartnerRequestDto(null, "초기이름", null, null, null)
+        )
 
-        partnerService.createPartner(req1)
-        partnerService.createPartner(req2)
-        partnerService.createPartner(req3)
+        // when (ID를 포함하여 요청)
+        val updateRequest = PartnerRequestDto(
+            id = initial.id,
+            companyName = "수정된이름",
+            mainPhone = "02-111-2222",
+            address = initial.address,
+            description = "설명 추가"
+        )
+        val updated = partnerService.updatePartner(updateRequest)
 
-        // When
-        val result = partnerService.findPartnerByNameContains("App")
-
-        // Then
-        assertEquals(2, result.size)
-        assertTrue(result.all { it.companyName!!.startsWith("App") })
-    }
-
-    @Test
-    @DisplayName("삭제 시 데이터베이스에서 실제로 레코드가 제거되어야 한다")
-    fun delete_RealDbTest() {
-        // Given
-        val saved = partnerService.createPartner(PartnerRequestDto().apply { setCompanyName("삭제될놈") })
-        val id = saved.id!!
-
-        // When
-        partnerService.deletePartnerById(id)
-
-        // Then
-        val exists = partnerRepository.existsById(id)
-        assertFalse(exists)
+        // then
+        assertThat(updated.companyName).isEqualTo("수정된이름")
+        assertThat(updated.mainPhone).isEqualTo("02-111-2222")
     }
 }

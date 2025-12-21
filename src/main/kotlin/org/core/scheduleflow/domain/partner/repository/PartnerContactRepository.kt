@@ -6,5 +6,6 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface PartnerContactRepository : JpaRepository<PartnerContact, Long> {
-    fun findByPartnerId(aLong: Long?): List<PartnerContact>
+    fun findByPartnerId(partnerId: Long?): List<PartnerContact>
+
 }
