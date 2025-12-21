@@ -52,20 +52,20 @@ class PartnerController(
 
     /*======================================================PartnerContact READ=================================================================*/
     @GetMapping("/{partnerId}/contacts")
-    fun findPartnerContactByPartnerId(@PathVariable partnerId: Long?): List<PartnerContactResponseDto> {
+    fun findPartnerContactByPartnerId(@PathVariable partnerId: Long): List<PartnerContactResponseDto> {
         return partnerContactService.findPartnerContactByPartnerId(partnerId)
     }
 
     /*======================================================PartnerContact CREATE=================================================================*/
     @PostMapping("/{partnerId}/contacts")
-    fun createPartnerContact(@RequestBody PartnerContactRequestDto: PartnerContactRequestDto, @PathVariable partnerId : Long): PartnerContactResponseDto? {
-        return partnerContactService.createPartnerContact(PartnerContactRequestDto, partnerId)
+    fun createPartnerContact(@RequestBody partnerContactRequestDto: PartnerContactRequestDto, @PathVariable partnerId : Long): PartnerContactResponseDto? {
+        return partnerContactService.createPartnerContact(partnerContactRequestDto, partnerId)
     }
 
     /*======================================================PartnerContact UPDATE=================================================================*/
     @PutMapping("/{partnerId}/contacts")
-    fun updatePartnerContact(@RequestBody PartnerContactRequestDto: PartnerContactRequestDto, @PathVariable partnerId : Long): PartnerContactResponseDto? {
-        return partnerContactService.updatePartnerContact(PartnerContactRequestDto, partnerId)
+    fun updatePartnerContact(@RequestBody partnerContactRequestDto: PartnerContactRequestDto, @PathVariable partnerId : Long): PartnerContactResponseDto? {
+        return partnerContactService.updatePartnerContact(partnerContactRequestDto, partnerId)
     }
 
     /*======================================================PartnerContact DELETE=================================================================*/

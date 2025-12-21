@@ -4,7 +4,7 @@ package org.core.scheduleflow.domain.partner.dto
 import org.core.scheduleflow.domain.partner.entity.PartnerContact
 
 
-class PartnerContactResponseDto(
+data class PartnerContactResponseDto(
     val id: Long?,
     val partnerId: Long?,
     val name: String?,

@@ -71,7 +71,11 @@ class PartnerContactService (
 
         partnerRepository.findById(partnerId).orElseThrow() { IllegalArgumentException("존재하지 않는 고객사 ID입니다: $partnerId") }
 
-        partnerContactRepository.findById(id).orElseThrow() {IllegalArgumentException("수정할 직원이 존재하지 않습니다.")}
+        val contact = partnerContactRepository.findById(id).orElseThrow() {IllegalArgumentException("삭제할 직원이 존재하지 않습니다.")}
+
+        if (contact.partner.id != partnerId) {
+            throw IllegalArgumentException("해당 고객사에 소속된 직원이 아닙니다.")
+        }
 
 
         partnerContactRepository.deleteById(id)

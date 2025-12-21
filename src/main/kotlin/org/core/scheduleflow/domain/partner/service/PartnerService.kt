@@ -30,12 +30,8 @@ class PartnerService(private val partnerRepository: PartnerRepository) {
     fun findPartnerByNameContains(companyName: String?): List<PartnerResponseDto> {
         val partners = partnerRepository.findByCompanyNameContains(companyName)
 
-        // mapNotNull을 사용하여 null 요소는 제외하고 DTO로 변환합니다.
-        if (partners != null) {
-            return partners.mapNotNull { it?.let { partner -> PartnerResponseDto.fromEntity(partner) } }
-        }
+        return partners.mapNotNull { it?.let { partner -> PartnerResponseDto.fromEntity(partner) } }
 
-        return emptyList()
     }
 
     /*===========================================================Partner CREATE================================================================*/
@@ -43,7 +39,7 @@ class PartnerService(private val partnerRepository: PartnerRepository) {
     fun createPartner(partnerRequestDto: PartnerRequestDto): PartnerResponseDto {
         /* 유효성 검증 시작 */
 
-        require(!(partnerRequestDto.companyName.trim { it <= ' ' }.isEmpty())) { "회사 이름은 필수 입력 항목입니다." }
+        require(partnerRequestDto.companyName.isNotBlank()) { "회사 이름은 필수 입력 항목입니다." }
 
         /* 유효성 검증 끝 */
         val partner = partnerRequestDto.toEntity()
@@ -74,6 +70,10 @@ class PartnerService(private val partnerRepository: PartnerRepository) {
     /*==========================================================Partner DELETE=================================================================*/
     @Transactional
     fun deletePartnerById(id: Long) {
+        if (!partnerRepository.existsById(id)) {
+            throw IllegalArgumentException("존재하지 않는 고객사 ID입니다: $id")
+        }
+
         partnerRepository.deleteById(id)
     }
 }
