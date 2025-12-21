@@ -7,10 +7,10 @@ data class ProjectCreateRequest(
     val name: String,
     val clientId: Long,
     val partnerContactIds: List<Long>,
-    val projectManagerIds: List<Long>,
-    val status: ProjectStatus?,
+    val memberIds: List<Long>,
+    val status: ProjectStatus? = ProjectStatus.IN_PROGRESS,
     val startDate: LocalDate,
     val endDate: LocalDate,
-    val description: String?,
-    val colorCode: String?
+    val description: String? = null,
+    val colorCode: String? = null
 )
