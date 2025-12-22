@@ -1,11 +1,8 @@
 package org.core.scheduleflow.domain.schedule.repository
 
 import com.querydsl.jpa.impl.JPAQueryFactory
-import org.core.scheduleflow.domain.project.entity.Project
 import org.core.scheduleflow.domain.schedule.entity.QSchedule
-import org.core.scheduleflow.domain.schedule.entity.QScheduleMember
 import org.core.scheduleflow.domain.schedule.entity.Schedule
-import org.core.scheduleflow.domain.user.entity.QUser
 import org.springframework.stereotype.Repository
 
 @Repository
