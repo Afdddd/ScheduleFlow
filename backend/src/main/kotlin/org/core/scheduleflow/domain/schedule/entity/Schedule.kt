@@ -44,4 +44,8 @@ class Schedule(
             -> members.add(member)
         }
     }
+
+    fun updateScheduleType(type: ScheduleType) {
+        this.type = type
+    }
 }

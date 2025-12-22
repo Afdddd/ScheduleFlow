@@ -17,6 +17,7 @@ enum class ErrorCode(
     NOT_FOUND_PARTNER(HttpStatus.NOT_FOUND, "해당 거래처를 찾을 수 없습니다."),
     NOT_FOUND_PARTNER_CONTACT(HttpStatus.NOT_FOUND, "해당 거래처 직원을 찾을 수 없습니다."),
     NOT_FOUND_PROJECT(HttpStatus.NOT_FOUND, "해당 프로젝트를 찾을 수 없습니다."),
+    NOT_FOUND_SCHEDULE(HttpStatus.NOT_FOUND, "해당 일정을 찾을 수 없습니다."),
 
 
 
