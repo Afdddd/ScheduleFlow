@@ -83,7 +83,8 @@ apiClient.interceptors.response.use(
       removeAuthToken();
       
       // 로그인 페이지로 리다이렉트
-      // TODO: React Router 설정 후 useNavigate로 변경 예정
+      // 인터셉터는 컴포넌트 외부에서 실행되므로 window.location 사용
+      // React Router가 설정되어 있으면 자동으로 라우팅 처리됨
       window.location.href = '/login';
     }
     
