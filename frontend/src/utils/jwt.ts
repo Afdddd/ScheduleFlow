@@ -34,9 +34,14 @@ export const decodeJwtPayload = (token: string): JwtPayload | null => {
     // Base64 URL 디코딩
     // Base64 URL은 + -> -, / -> _ 변환이 필요하고, padding(=) 제거
     const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
-    const decoded = atob(base64);
+    const jsonPayload = decodeURIComponent( //유니코드 처리
+        atob(base64)
+            .split('')
+            .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+            .join('')
+    );
+    return JSON.parse(jsonPayload) as JwtPayload;
     
-    return JSON.parse(decoded) as JwtPayload;
   } catch (error) {
     console.error('JWT 디코딩 실패:', error);
     return null;
@@ -67,6 +72,21 @@ export const isAdmin = (): boolean => {
  * 현재 사용자가 인증되었는지 확인
  */
 export const isAuthenticated = (): boolean => {
-  return getAuthToken() !== null;
+    const token = getAuthToken();
+    if (!token) {
+        return false;
+    }
+
+    const payload = decodeJwtPayload(token);
+    if (!payload?.exp) {
+        // 토큰을 디코딩할 수 없거나 만료 시간이 없으면 유효하지 않은 것으로 간주합니다.
+        return false;
+    }
+
+    // 만료 시간(초)을 현재 시간(밀리초)과 비교합니다.
+    const isExpired = Date.now() >= payload.exp * 1000;
+
+    return !isExpired;
 };
+
 
