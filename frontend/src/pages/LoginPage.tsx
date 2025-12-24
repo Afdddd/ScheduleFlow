@@ -1,14 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { signIn } from '../api/auth';
 import { AxiosError } from 'axios';
 import { ErrorResponse } from '../api/types';
+import { isAuthenticated } from '../utils/jwt';
 
 /**
  * 로그인 페이지
  */
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  
+  // 이미 로그인한 사용자는 대시보드로 리다이렉트
+  useEffect(() => {
+    if (isAuthenticated()) {
+      navigate('/', { replace: true });
+    }
+  }, [navigate]);
+  
   const [formData, setFormData] = useState({
     username: '',
     password: '',
