@@ -79,13 +79,22 @@ apiClient.interceptors.response.use(
   (error: AxiosError<ErrorResponse>) => {
     // 401 Unauthorized: 인증 실패
     if (error.response?.status === 401) {
-      // 토큰 삭제
+      const requestUrl = error.config?.url || '';
+      
+      // 로그인 API는 401이 정상적인 응답일 수 있으므로 리다이렉트하지 않음
+      // (예: 잘못된 아이디/비밀번호)
+      if (requestUrl.includes('/auth/sign-in') || requestUrl.includes('/auth/sign-up')) {
+        // 로그인/회원가입 API는 에러를 그대로 반환하여 컴포넌트에서 처리
+        return Promise.reject(error);
+      }
+      
+      // 다른 API의 401 에러는 인증이 필요한 상황이므로 리다이렉트
       removeAuthToken();
       
-      // 로그인 페이지로 리다이렉트
-      // 인터셉터는 컴포넌트 외부에서 실행되므로 window.location 사용
-      // React Router가 설정되어 있으면 자동으로 라우팅 처리됨
-      window.location.href = '/login';
+      // 현재 페이지가 로그인 페이지가 아닌 경우에만 리다이렉트
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
     }
     
     // 에러 응답 반환 (컴포넌트에서 처리할 수 있도록)
