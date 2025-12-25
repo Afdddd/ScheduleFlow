@@ -60,18 +60,19 @@ export const useAuthStore = create<AuthState>()(
 
       // 로그인
       login: (token: string) => {
-        // 토큰 저장
-        setAuthToken(token);
-        
-        // 사용자 정보 추출
         const user = extractUserFromToken(token);
-        
-        // 상태 업데이트
-        set({
-          isAuthenticated: true,
-          user,
-          token,
-        });
+
+        if (user) {
+          setAuthToken(token);
+          set({
+                isAuthenticated: true,
+                user,
+                token,
+            });
+        } else {
+            // 유효하지 않은 토큰이면 로그아웃 처리
+            useAuthStore.getState().logout();
+        }
       },
 
       // 로그아웃
@@ -91,18 +92,14 @@ export const useAuthStore = create<AuthState>()(
       initialize: () => {
         const token = getAuthToken();
         if (token) {
-          const user = extractUserFromToken(token);
-          set({
-            isAuthenticated: true,
-            user,
-            token,
-          });
+            useAuthStore.getState().login(token);
         } else {
-          set({
-            isAuthenticated: false,
-            user: null,
-            token: null,
-          });
+            // 토큰이 없으면 상태를 명확히 초기화합니다.
+            set({
+                isAuthenticated: false,
+                user: null,
+                token: null,
+            });
         }
       },
     }),
