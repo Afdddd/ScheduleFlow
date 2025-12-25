@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 @Transactional
 class ScheduleService(
+
     private val scheduleRepository: ScheduleRepository,
     private val projectRepository: ProjectRepository,
     private val userRepository: UserRepository,
@@ -48,14 +49,11 @@ class ScheduleService(
             ?.let { memberIds ->
                 val members = userRepository.findAllById(memberIds)
                     .map { user ->
-                        scheduleMemberRepository.save(
-                            ScheduleMember(
-                                schedule = savedSchedule,
-                                user = user
-                            )
+                        ScheduleMember(
+                            schedule = savedSchedule,
+                            user = user
                         )
                     }
-
                 savedSchedule.updateScheduleMembers(members)
             }
         return savedSchedule.id!!
@@ -104,7 +102,7 @@ class ScheduleService(
                     userRepository.findByIdOrNull(userId)
                         ?: throw CustomException(ErrorCode.NOT_FOUND_USER)
                 }
-                
+
                 val scheduleMembers = users.map { user ->
                     scheduleMemberRepository.save(
                         ScheduleMember(
@@ -113,7 +111,7 @@ class ScheduleService(
                         )
                     )
                 }
-                
+
                 savedSchedule.updateScheduleMembers(scheduleMembers)
             }
 
