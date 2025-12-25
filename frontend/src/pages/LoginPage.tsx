@@ -2,20 +2,22 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { AxiosError } from 'axios';
 import { ErrorResponse } from '../api/types';
-import { isAuthenticated } from '../utils/jwt';
+import { useAuthStore } from '../stores/authStore';
+import { signIn } from '../api/auth';
 
 /**
  * 로그인 페이지
  */
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   
   // 이미 로그인한 사용자는 대시보드로 리다이렉트
   useEffect(() => {
-    if (isAuthenticated()) {
+    if (isAuthenticated) {
       navigate('/', { replace: true });
     }
-  }, [navigate]);
+  }, [isAuthenticated, navigate]);
   
   const [formData, setFormData] = useState({
     username: '',
@@ -44,13 +46,16 @@ const LoginPage: React.FC = () => {
   // 폼 제출
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setApiError('');
-
+    
     // Validation
     if (!validate()) {
+      // validation 실패 시 API 에러는 유지
       return;
     }
 
+    // Validation 통과 후에만 에러 메시지 제거
+    // (API 호출 직전에 제거하여 사용자가 에러 메시지를 볼 수 있도록)
+    setApiError('');
     setLoading(true);
 
     try {
@@ -74,13 +79,13 @@ const LoginPage: React.FC = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // 입력 시 에러 메시지 제거
+    // 입력 시 validation 에러 메시지 제거
     if (errors[name as keyof typeof errors]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
-    if (apiError) {
-      setApiError('');
-    }
+    // API 에러는 입력 시 바로 지우지 않음
+    // 사용자가 에러 메시지를 읽을 수 있도록 유지
+    // 다음 로그인 시도 시에만 제거 (handleSubmit에서 setApiError('') 처리)
   };
 
   return (
@@ -187,9 +192,29 @@ const LoginPage: React.FC = () => {
                 marginBottom: '20px',
                 color: '#c33',
                 fontSize: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
               }}
             >
-              {apiError}
+              <span>{apiError}</span>
+              <button
+                type="button"
+                onClick={() => setApiError('')}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#c33',
+                  fontSize: '20px',
+                  cursor: 'pointer',
+                  padding: '0 8px',
+                  marginLeft: '12px',
+                  lineHeight: '1',
+                }}
+                aria-label="에러 메시지 닫기"
+              >
+                ×
+              </button>
             </div>
           )}
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { isAuthenticated, isAdmin } from '../utils/jwt';
+import { useAuthStore } from '../stores/authStore';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -27,13 +27,16 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children, 
   requireAdmin = false 
 }) => {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const user = useAuthStore((state) => state.user);
+
   // 인증 체크
-  if (!isAuthenticated()) {
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
   // ADMIN 권한 체크
-  if (requireAdmin && !isAdmin()) {
+  if (requireAdmin && user?.role !== 'ADMIN') {
     // ADMIN 권한이 없으면 홈으로 리다이렉트
     // TODO: 권한 없음 메시지 표시하는 페이지로 변경 가능
     return <Navigate to="/" replace />;

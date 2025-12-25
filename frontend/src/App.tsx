@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
+import { useAuthStore } from './stores/authStore';
 
 // Pages
 import LoginPage from './pages/LoginPage';
@@ -13,6 +14,13 @@ import UserManagementPage from './pages/UserManagementPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 function App() {
+  const initialize = useAuthStore((state) => state.initialize);
+
+  // 앱 시작 시 인증 상태 초기화 (localStorage에서 토큰 복원)
+  useEffect(() => {
+    initialize();
+  }, [initialize]);
+
   return (
     <BrowserRouter>
       <Routes>
