@@ -11,17 +11,27 @@ import org.springframework.stereotype.Repository
 class ScheduleRepositoryImpl(
     private val queryFactory: JPAQueryFactory
 ): ScheduleRepositoryCustom {
-    override fun findSchedulesWithMembers(projectId: Long): List<Schedule> {
+
+    override fun findByIdWithAll(scheduleId: Long): Schedule? {
         val schedule = QSchedule.schedule
-        val scheduleMember = QScheduleMember.scheduleMember
+        val member = QScheduleMember.scheduleMember
         val user = QUser.user
 
         return queryFactory
             .selectFrom(schedule)
-            .leftJoin(schedule.members, scheduleMember).fetchJoin()
-            .leftJoin(scheduleMember.user, user).fetchJoin()
-            .where(schedule.project.id.eq(projectId))
-            .distinct()
+            .leftJoin(schedule.project).fetchJoin()
+            .leftJoin(schedule.members, member).fetchJoin()
+            .leftJoin(member.user, user).fetchJoin()
+            .where(schedule.id.eq(scheduleId))
+            .fetchOne()
+    }
+
+    override fun findAllWithProject(): List<Schedule> {
+        val schedule = QSchedule.schedule
+
+        return queryFactory
+            .selectFrom(schedule)
+            .leftJoin(schedule.project).fetchJoin()
             .fetch()
     }
 }
