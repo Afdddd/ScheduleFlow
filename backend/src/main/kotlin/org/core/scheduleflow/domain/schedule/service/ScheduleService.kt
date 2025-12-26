@@ -9,7 +9,6 @@ import org.core.scheduleflow.domain.schedule.dto.ScheduleSummaryResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleUpdateRequest
 import org.core.scheduleflow.domain.schedule.entity.Schedule
 import org.core.scheduleflow.domain.schedule.entity.ScheduleMember
-import org.core.scheduleflow.domain.schedule.repository.ScheduleMemberRepository
 import org.core.scheduleflow.domain.schedule.repository.ScheduleRepository
 import org.core.scheduleflow.domain.user.repository.UserRepository
 import org.core.scheduleflow.global.exception.CustomException
@@ -25,7 +24,6 @@ class ScheduleService(
     private val scheduleRepository: ScheduleRepository,
     private val projectRepository: ProjectRepository,
     private val userRepository: UserRepository,
-    private val scheduleMemberRepository: ScheduleMemberRepository
 ) {
 
     fun createSchedule(request: ScheduleCreateRequest): Long {
@@ -107,6 +105,4 @@ class ScheduleService(
     fun deleteSchedule(id: Long) {
         scheduleRepository.deleteById(id)
     }
-
-
 }

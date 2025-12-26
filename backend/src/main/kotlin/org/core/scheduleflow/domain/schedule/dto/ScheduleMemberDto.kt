@@ -10,7 +10,7 @@ data class ScheduleMemberDto(
     companion object {
         fun from(scheduleMember: ScheduleMember): ScheduleMemberDto {
             return ScheduleMemberDto(
-                id = scheduleMember.id!!,
+                id = scheduleMember.id ?: 0L,
                 name = scheduleMember.user.name,
                 position = scheduleMember.user.position ?: ""
             )

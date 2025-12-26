@@ -8,7 +8,6 @@ data class ScheduleUpdateRequest(
     val startDate: LocalDate?,
     val endDate: LocalDate?,
     val scheduleType: ScheduleType?,
-    val type: ScheduleType?,
     val projectId: Long?,
     val memberIds: List<Long>?
 )
