@@ -14,9 +14,7 @@ data class ScheduleDetailResponse(
     val members: List<ScheduleMemberDto>
 ) {
     companion object {
-        fun from(
-            schedule: Schedule,
-            members: List<ScheduleMemberDto>): ScheduleDetailResponse {
+        fun from(schedule: Schedule): ScheduleDetailResponse {
             return ScheduleDetailResponse(
                 schedule.id!!,
                 schedule.title,
@@ -24,7 +22,7 @@ data class ScheduleDetailResponse(
                 schedule.endDate,
                 schedule.type,
                 schedule.project?.id,
-                members
+                schedule.members.map { ScheduleMemberDto.from(it) }
             )
         }
     }

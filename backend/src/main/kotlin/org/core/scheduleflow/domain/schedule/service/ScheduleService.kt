@@ -59,10 +59,9 @@ class ScheduleService(
 
     @Transactional(readOnly = true)
     fun findSchedule(id: Long): ScheduleDetailResponse {
-        val schedule = scheduleRepository.findByIdWithProject(id)
+        val schedule = scheduleRepository.findByIdWithAll(id)
             ?: throw CustomException(ErrorCode.NOT_FOUND_SCHEDULE)
-        val members = schedule.members.map { ScheduleMemberDto.from(it) }
-        return ScheduleDetailResponse.from(schedule, members)
+        return ScheduleDetailResponse.from(schedule)
     }
 
     @Transactional(readOnly = true)
@@ -99,7 +98,7 @@ class ScheduleService(
             schedule.updateScheduleMembers(newMembers)
         }
 
-        return ScheduleDetailResponse.from(schedule, schedule.members.map { ScheduleMemberDto.from(it) })
+        return ScheduleDetailResponse.from(schedule)
     }
 
     fun deleteSchedule(id: Long) {

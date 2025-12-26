@@ -9,6 +9,6 @@ interface ScheduleRepository: JpaRepository<Schedule, Long>, ScheduleRepositoryC
 }
 
 interface ScheduleRepositoryCustom {
-    fun findByIdWithProject(scheduleId: Long): Schedule?
+    fun findByIdWithAll(scheduleId: Long): Schedule?
     fun findAllWithProject(): List<Schedule>
 }
