@@ -80,44 +80,28 @@ class ScheduleService(
         val schedule = scheduleRepository.findByIdOrNull(id)
             ?: throw CustomException(ErrorCode.NOT_FOUND_SCHEDULE)
 
+        // 필드 업데이트
         request.title?.let { schedule.title = it }
         request.startDate?.let { schedule.startDate = it }
         request.endDate?.let { schedule.endDate = it }
         request.scheduleType?.let { schedule.updateScheduleType(it) }
 
-        request.projectId?.let { projectId ->
-            val project = projectRepository.findByIdOrNull(projectId)
-                ?: throw CustomException(ErrorCode.NOT_FOUND_PROJECT)
+        // 프로젝트 업데이트
+        request.projectId?.let {
+            val project = projectRepository.findByIdOrNull(it) ?: throw CustomException(ErrorCode.NOT_FOUND_PROJECT)
             schedule.updateProject(project)
         }
 
-        // 기본 필드와 프로젝트 업데이트 후 저장
-        val savedSchedule = scheduleRepository.save(schedule)
-
         // 멤버 업데이트
-        request.memberIds
-            ?.takeIf { it.isNotEmpty() }
-            ?.let { memberIds ->
-                val users = memberIds.map { userId ->
-                    userRepository.findByIdOrNull(userId)
-                        ?: throw CustomException(ErrorCode.NOT_FOUND_USER)
-                }
+        request.memberIds?.let { ids ->
+            val users = userRepository.findAllById(ids)
+            if (users.size != ids.size) throw CustomException(ErrorCode.NOT_FOUND_USER)
 
-                val scheduleMembers = users.map { user ->
-                    scheduleMemberRepository.save(
-                        ScheduleMember(
-                            schedule = savedSchedule,
-                            user = user
-                        )
-                    )
-                }
+            val newMembers = users.map { ScheduleMember(schedule = schedule, user = it) }
+            schedule.updateScheduleMembers(newMembers)
+        }
 
-                savedSchedule.updateScheduleMembers(scheduleMembers)
-            }
-
-        // 저장된 schedule의 members를 DTO로 변환
-        val members = savedSchedule.members.map { ScheduleMemberDto.from(it) }
-        return ScheduleDetailResponse.from(savedSchedule, members)
+        return ScheduleDetailResponse.from(schedule, schedule.members.map { ScheduleMemberDto.from(it) })
     }
 
     fun deleteSchedule(id: Long) {
