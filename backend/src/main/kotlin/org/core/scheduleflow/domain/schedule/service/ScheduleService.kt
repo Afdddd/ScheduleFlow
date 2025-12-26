@@ -4,7 +4,6 @@ import org.core.scheduleflow.domain.project.repository.ProjectRepository
 import org.core.scheduleflow.domain.schedule.constant.ScheduleType
 import org.core.scheduleflow.domain.schedule.dto.ScheduleCreateRequest
 import org.core.scheduleflow.domain.schedule.dto.ScheduleDetailResponse
-import org.core.scheduleflow.domain.schedule.dto.ScheduleMemberDto
 import org.core.scheduleflow.domain.schedule.dto.ScheduleSummaryResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleUpdateRequest
 import org.core.scheduleflow.domain.schedule.entity.Schedule
@@ -45,14 +44,17 @@ class ScheduleService(
         request.memberIds
             ?.takeIf { it.isNotEmpty() }
             ?.let { memberIds ->
-                val members = userRepository.findAllById(memberIds)
-                    .map { user ->
-                        ScheduleMember(
-                            schedule = savedSchedule,
-                            user = user
-                        )
-                    }
-                savedSchedule.updateScheduleMembers(members)
+                val users = userRepository.findAllById(memberIds)
+                if (users.size != memberIds.size) {
+                    throw CustomException(ErrorCode.NOT_FOUND_USER)
+                }
+                val scheduleMembers = users.map { user ->
+                    ScheduleMember(
+                        schedule = savedSchedule,
+                        user = user
+                    )
+                }
+                savedSchedule.updateScheduleMembers(scheduleMembers)
             }
         return savedSchedule.id!!
     }
