@@ -69,9 +69,6 @@ class ScheduleService(
     @Transactional(readOnly = true)
     fun findSchedules(): List<ScheduleSummaryResponse> {
         val schedules = scheduleRepository.findAllWithProject()
-        if (schedules.isEmpty()) {
-            return emptyList()
-        }
         return schedules.map { ScheduleSummaryResponse.from(it) }
     }
 
