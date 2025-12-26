@@ -77,16 +77,18 @@ class ScheduleServiceTest : BehaviorSpec({
             }
         }
 
-        When("일부 사원 ID가 유효하지 않아도") {
+        When("일부 사원 ID가 유효하지 않으면") {
             // 10L은 있고, 20L은 DB에 없는 상황
             every { scheduleRepository.save(any()) } returns savedSchedule
             every { projectRepository.findByIdOrNull(1L) } returns mockProject
             every { userRepository.findAllById(listOf(10L, 20L)) } returns listOf(mockUser)
 
-            val resultId = service.createSchedule(request)
+            val exception = shouldThrow<CustomException>{
+                service.createSchedule(request)
+            }
 
-            Then("존재하는 사원(1명)만 등록되고 일정이 생성된다") {
-                resultId shouldBe 1L
+            Then("NOT_FOUND_USER 예외가 발생한다.") {
+                exception.message shouldBe ErrorCode.NOT_FOUND_USER.message
             }
         }
     }
@@ -103,7 +105,7 @@ class ScheduleServiceTest : BehaviorSpec({
         )
 
         When("주어진 ID에 해당하는 일정이 존재하면") {
-            every { scheduleRepository.findByIdWithProject(requestId) } returns mockSchedule
+            every { scheduleRepository.findByIdWithAll(requestId) } returns mockSchedule
 
             val result = service.findSchedule(requestId)
 
@@ -111,18 +113,18 @@ class ScheduleServiceTest : BehaviorSpec({
                 result.id shouldBe requestId
                 result.title shouldBe "test-schedule"
                 result.projectId shouldBe 1L
-                verify(exactly = 1) { scheduleRepository.findByIdWithProject(any()) }
+                verify(exactly = 1) { scheduleRepository.findByIdWithAll(any()) }
             }
         }
 
         When("주어진 ID에 해당하는 일정이 없을 경우") {
-            every { scheduleRepository.findByIdWithProject(requestId) } returns null
+            every { scheduleRepository.findByIdWithAll(requestId) } returns null
             val exception = shouldThrow<CustomException> {
                 service.findSchedule(requestId)
             }
             Then("NOT_FOUND_SCHEDULE 예외가 발생한다.") {
                 exception.errorCode shouldBe ErrorCode.NOT_FOUND_SCHEDULE
-                verify(exactly = 1) { scheduleRepository.findByIdWithProject(requestId) }
+                verify(exactly = 1) { scheduleRepository.findByIdWithAll(requestId) }
             }
         }
     }
