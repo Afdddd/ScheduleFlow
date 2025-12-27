@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
+import Layout from './Layout';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -13,6 +14,7 @@ interface ProtectedRouteProps {
  * 기능:
  * 1. 인증되지 않은 사용자는 로그인 페이지로 리다이렉트
  * 2. requireAdmin이 true인 경우 ADMIN 권한 체크
+ * 3. 인증된 사용자는 Layout(Header + Sidebar)으로 감싸서 페이지 렌더링
  * 
  * 사용 예시:
  * <ProtectedRoute>
@@ -42,7 +44,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/" replace />;
   }
 
-  return <>{children}</>;
+  // Layout으로 감싸서 반환 (Header + Sidebar 포함)
+  return <Layout>{children}</Layout>;
 };
 
 export default ProtectedRoute;
