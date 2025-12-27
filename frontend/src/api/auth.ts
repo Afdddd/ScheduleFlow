@@ -10,6 +10,14 @@ export interface SignInRequest {
   password: string;
 }
 
+export interface SignUpRequest {
+  username: string;
+  password: string;
+  name: string;
+  email?: string;
+  phone: string;
+}
+
 /**
  * 로그인
  * @param request 로그인 요청 (username, password)
@@ -25,5 +33,15 @@ export const signIn = async (request: SignInRequest): Promise<string> => {
   useAuthStore.getState().login(token);
   
   return token;
+};
+
+/**
+ * 회원가입
+ * @param request 회원가입 요청 (username, password, name, email, phone)
+ * @returns 생성된 사용자 ID
+ */
+export const signUp = async (request: SignUpRequest): Promise<number> => {
+  const response = await apiClient.post<number>('/auth/sign-up', request);
+  return response.data;
 };
 
