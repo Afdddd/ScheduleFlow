@@ -1,5 +1,6 @@
 package org.core.scheduleflow.domain.user.controller
 
+import jakarta.validation.Valid
 import org.core.scheduleflow.domain.user.dto.UserSignInRequest
 import org.core.scheduleflow.domain.user.dto.UserSignUpRequest
 import org.core.scheduleflow.domain.user.service.AuthService
@@ -17,7 +18,7 @@ class AuthController(
 ) {
 
     @PostMapping("/sign-up")
-    fun signUp(@RequestBody request: UserSignUpRequest): ResponseEntity<Long> {
+    fun signUp(@RequestBody @Valid request: UserSignUpRequest): ResponseEntity<Long> {
         return ResponseEntity.status(HttpStatus.CREATED).body(
             authService.signUp(request)
         )
