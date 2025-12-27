@@ -1,11 +1,12 @@
 import React from 'react';
+import Calendar from '../components/Calendar';
 
 /**
  * 대시보드 페이지
  * 
  * 레이아웃 구조:
- * - 캘린더 영역: 좌측 40%
- * - 우측 영역: 60%
+ * - 캘린더 영역: 좌측 65%
+ * - 우측 영역: 35%
  *   - 상단: My Tasks (50%)
  *   - 하단: 팀원 오늘 일정 (50%)
  */
@@ -13,12 +14,9 @@ const DashboardPage: React.FC = () => {
   return (
     <div className="h-full p-6">
       <div className="flex gap-6 h-full">
-        {/* 캘린더 영역 - 좌측 40% */}
+        {/* 캘린더 영역 - 좌측 65% */}
         <div className="flex-1" style={{ flexBasis: '65%' }}>
-          <div className="bg-white rounded-lg shadow p-6 h-full">
-            <h2 className="text-xl font-bold mb-4">캘린더</h2>
-            <p className="text-gray-500">캘린더가 여기에 표시됩니다.</p>
-          </div>
+          <Calendar />
         </div>
 
         {/* 우측 영역 - 60% */}
