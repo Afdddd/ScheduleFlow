@@ -4,6 +4,7 @@ import { AxiosError } from 'axios';
 import { ErrorResponse } from '../api/types';
 import { useAuthStore } from '../stores/authStore';
 import { signIn } from '../api/auth';
+import Alert from '../components/Alert';
 
 /**
  * 로그인 페이지
@@ -183,39 +184,11 @@ const LoginPage: React.FC = () => {
 
           {/* API 에러 메시지 */}
           {apiError && (
-            <div
-              style={{
-                padding: '12px',
-                backgroundColor: '#fee',
-                border: '1px solid #fcc',
-                borderRadius: '4px',
-                marginBottom: '20px',
-                color: '#c33',
-                fontSize: '14px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-              }}
-            >
-              <span>{apiError}</span>
-              <button
-                type="button"
-                onClick={() => setApiError('')}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#c33',
-                  fontSize: '20px',
-                  cursor: 'pointer',
-                  padding: '0 8px',
-                  marginLeft: '12px',
-                  lineHeight: '1',
-                }}
-                aria-label="에러 메시지 닫기"
-              >
-                ×
-              </button>
-            </div>
+            <Alert
+              type="error"
+              message={apiError}
+              onClose={() => setApiError('')}
+            />
           )}
 
           {/* 로그인 버튼 */}
