@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   startOfMonth, 
   endOfMonth, 
@@ -9,8 +9,18 @@ import {
   subMonths,
   isSameMonth,
   isToday,
+  isAfter,
+  isBefore,
+  isEqual,
 } from 'date-fns';
-import { ko } from 'date-fns/locale';
+import { 
+  getProjectsByPeriod, 
+  getProjectsByPeriodWithSchedules, 
+  getSchedulesByPeriod,
+  ProjectCalendarResponse,
+  ProjectCalendarWithSchedulesResponse,
+  ScheduleCalendarResponse,
+} from '../api/calendar';
 
 /**
  * 캘린더 모드 타입
@@ -25,28 +35,17 @@ export type CalendarMode = 'PROJECT' | 'PROJECT_WITH_TASK' | 'BASE_TODO';
  * 2. 이전/다음 월 네비게이션
  * 3. 토글 모드 (프로젝트 / 프로+일정 / 기본일정)
  * 4. 오늘 날짜 강조 표시
- * 
- * 설계 포인트:
- * 
- * 1. **날짜 계산**
- *    - date-fns를 사용하여 월의 첫날, 마지막날, 주의 시작/끝 계산
- *    - eachDayOfInterval로 캘린더에 표시할 모든 날짜 생성
- * 
- * 2. **레이아웃**
- *    - CSS Grid로 7열 (일주일) 그리드 구성
- *    - 각 셀은 상대 위치(position: relative)로 프로젝트 바 배치 가능
- * 
- * 3. **토글 모드**
- *    - useState로 현재 모드 관리
- *    - 추후 백엔드 API 연동 시 모드에 따라 다른 데이터 로드
- * 
- * 4. **오늘 날짜 강조**
- *    - isToday 함수로 오늘 날짜 판단
- *    - 파란색 배경으로 시각적 강조
+ * 5. 프로젝트 바 및 일정 렌더링
  */
 const Calendar: React.FC = () => {
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [mode, setMode] = useState<CalendarMode>('PROJECT');
+  const [loading, setLoading] = useState<boolean>(false);
+  
+  // 데이터 상태
+  const [projects, setProjects] = useState<ProjectCalendarResponse[]>([]);
+  const [projectsWithSchedules, setProjectsWithSchedules] = useState<ProjectCalendarWithSchedulesResponse[]>([]);
+  const [baseSchedules, setBaseSchedules] = useState<ScheduleCalendarResponse[]>([]);
 
   // 현재 월의 시작일과 종료일
   const monthStart = startOfMonth(currentDate);
@@ -56,6 +55,33 @@ const Calendar: React.FC = () => {
   const calendarStart = startOfWeek(monthStart, { weekStartsOn: 0 }); // 일요일 시작
   const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
 
+  // 데이터 로딩
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        if (mode === 'PROJECT') {
+          const data = await getProjectsByPeriod(monthStart, monthEnd);
+          setProjects(data);
+        } else if (mode === 'PROJECT_WITH_TASK') {
+          const data = await getProjectsByPeriodWithSchedules(monthStart, monthEnd);
+          setProjectsWithSchedules(data);
+        } else if (mode === 'BASE_TODO') {
+          const data = await getSchedulesByPeriod(monthStart, monthEnd);
+          setBaseSchedules(data);
+        }
+      } catch (error) {
+        console.error('캘린더 데이터 로딩 실패:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+    // currentDate를 문자열로 변환하여 의존성 배열에 추가 (Date 객체의 참조 변경 문제 방지)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, format(currentDate, 'yyyy-MM')]);
+
   // 캘린더에 표시할 모든 날짜 생성
   const calendarDays: Date[] = [];
   const currentDay = new Date(calendarStart);
@@ -63,6 +89,50 @@ const Calendar: React.FC = () => {
     calendarDays.push(new Date(currentDay));
     currentDay.setDate(currentDay.getDate() + 1);
   }
+
+
+  // 날짜가 프로젝트 기간 내에 있는지 확인
+  const isDateInProjectRange = (date: Date, startDateStr: string, endDateStr: string): boolean => {
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+    // 날짜 비교를 위해 시간 부분 제거
+    const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const startDateOnly = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+    const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+    
+    return (
+      (isEqual(dateOnly, startDateOnly) || isAfter(dateOnly, startDateOnly)) &&
+      (isEqual(dateOnly, endDateOnly) || isBefore(dateOnly, endDateOnly))
+    );
+  };
+
+  // 특정 날짜에 해당하는 프로젝트/일정 가져오기
+  const getItemsForDate = (date: Date) => {
+    if (mode === 'PROJECT') {
+      return projects.filter((project) =>
+        isDateInProjectRange(date, project.startDate, project.endDate)
+      );
+    } else if (mode === 'PROJECT_WITH_TASK') {
+      const items: Array<{ type: 'project' | 'schedule'; data: any }> = [];
+      projectsWithSchedules.forEach((projectWithSchedule) => {
+        const { project, schedules } = projectWithSchedule;
+        if (isDateInProjectRange(date, project.startDate, project.endDate)) {
+          items.push({ type: 'project', data: project });
+        }
+        schedules.forEach((schedule) => {
+          if (isDateInProjectRange(date, schedule.startDate, schedule.endDate)) {
+            items.push({ type: 'schedule', data: schedule });
+          }
+        });
+      });
+      return items;
+    } else if (mode === 'BASE_TODO') {
+      return baseSchedules.filter((schedule) =>
+        isDateInProjectRange(date, schedule.startDate, schedule.endDate)
+      );
+    }
+    return [];
+  };
 
   // 이전 월로 이동
   const handlePrevMonth = () => {
@@ -133,58 +203,160 @@ const Calendar: React.FC = () => {
 
       {/* 캘린더 그리드 */}
       <div className="flex-1 overflow-auto">
-        {/* 요일 헤더 */}
-        <div className="grid grid-cols-7 gap-px bg-gray-200 mb-px">
-          {weekDays.map((day) => (
-            <div
-              key={day}
-              className="bg-gray-100 py-2 text-center text-sm font-medium text-gray-700"
-            >
-              {day}
-            </div>
-          ))}
-        </div>
-
-        {/* 날짜 그리드 */}
-        <div className="grid grid-cols-7 gap-px bg-gray-200">
-          {calendarDays.map((day: Date) => {
-            const isCurrentMonth = isSameMonth(day, currentDate);
-            const isTodayDate = isToday(day);
-
-            return (
-              <div
-                key={day.toISOString()}
-                className={`
-                  bg-white min-h-[100px] p-2 relative
-                  ${!isCurrentMonth ? 'text-gray-400' : 'text-gray-900'}
-                  ${isTodayDate ? 'bg-blue-50 border-2 border-blue-500' : ''}
-                `}
-              >
-                {/* 날짜 표시 */}
+        {loading && (
+          <div className="text-center py-8 text-gray-500">로딩 중...</div>
+        )}
+        
+        {!loading && (
+          <>
+            {/* 요일 헤더 */}
+            <div className="grid grid-cols-7 border border-gray-200 border-b-0">
+              {weekDays.map((day) => (
                 <div
-                  className={`
-                    text-sm font-medium mb-1
-                    ${isTodayDate ? 'text-blue-600' : ''}
-                  `}
+                  key={day}
+                  className="bg-gray-100 py-2 text-center text-sm font-medium text-gray-700 border-r border-gray-200 last:border-r-0"
                 >
-                  {format(day, 'd')}
+                  {day}
                 </div>
+              ))}
+            </div>
 
-                {/* 프로젝트/일정 영역 (추후 데이터 연동) */}
-                <div className="space-y-1">
-                  {/* TODO: 프로젝트 바 또는 일정 아이템 렌더링 */}
-                  {/* {mode === 'PROJECT' && day.projects?.map(...)} */}
-                  {/* {mode === 'PROJECT_WITH_TASK' && day.projectTodos?.map(...)} */}
-                  {/* {mode === 'BASE_TODO' && day.baseTodos?.map(...)} */}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+            {/* 날짜 그리드 */}
+            <div className="grid grid-cols-7 border border-gray-200">
+              {calendarDays.map((day: Date) => {
+                const isCurrentMonth = isSameMonth(day, currentDate);
+                const isTodayDate = isToday(day);
+                const items = getItemsForDate(day);
+
+                return (
+                  <div
+                    key={day.toISOString()}
+                    className={`
+                      bg-white min-h-[100px] p-2 relative border-r border-b border-gray-200
+                      ${!isCurrentMonth ? 'text-gray-400' : 'text-gray-900'}
+                      ${isTodayDate ? 'bg-blue-50' : ''}
+                    `}
+                  >
+                    {/* 날짜 표시 */}
+                    <div
+                      className={`
+                        text-sm font-medium mb-1
+                        ${isTodayDate ? 'text-blue-600' : ''}
+                      `}
+                    >
+                      {format(day, 'd')}
+                    </div>
+
+                    {/* 프로젝트/일정 영역 */}
+                    <div className="space-y-1 mt-1 -mx-2">
+                      {mode === 'PROJECT' &&
+                        (items as ProjectCalendarResponse[]).map((project) => {
+                          const startDate = new Date(project.startDate);
+                          const endDate = new Date(project.endDate);
+                          const dayStr = format(day, 'yyyy-MM-dd');
+                          const startDateStr = format(startDate, 'yyyy-MM-dd');
+                          const endDateStr = format(endDate, 'yyyy-MM-dd');
+                          
+                          const isStart = dayStr === startDateStr;
+                          const isEnd = dayStr === endDateStr;
+                          const isOnlyOneDay = isStart && isEnd;
+                          
+                          // 둥근 모서리 결정
+                          let roundedClass = 'rounded-none'; // 기본: 직사각형
+                          if (isOnlyOneDay) {
+                            roundedClass = 'rounded'; // 하루짜리: 모든 모서리
+                          } else if (isStart) {
+                            roundedClass = 'rounded-l'; // 시작일: 왼쪽만
+                          } else if (isEnd) {
+                            roundedClass = 'rounded-r'; // 종료일: 오른쪽만
+                          }
+                          
+                          return (
+                            <div
+                              key={project.id}
+                              className={`h-5 ${roundedClass} text-xs px-2 flex items-center truncate`}
+                              style={{
+                                backgroundColor: project.colorCode || '#3b82f6',
+                                color: 'white',
+                              }}
+                              title={project.name}
+                            >
+                              {(isStart || isEnd) && project.name}
+                            </div>
+                          );
+                        })}
+
+                      {mode === 'PROJECT_WITH_TASK' &&
+                        (items as Array<{ type: 'project' | 'schedule'; data: any }>).map((item, index) => {
+                          if (item.type === 'project') {
+                            const project = item.data as ProjectCalendarResponse;
+                            const startDate = new Date(project.startDate);
+                            const endDate = new Date(project.endDate);
+                            const dayStr = format(day, 'yyyy-MM-dd');
+                            const startDateStr = format(startDate, 'yyyy-MM-dd');
+                            const endDateStr = format(endDate, 'yyyy-MM-dd');
+                            
+                            const isStart = dayStr === startDateStr;
+                            const isEnd = dayStr === endDateStr;
+                            const isOnlyOneDay = isStart && isEnd;
+                            
+                            // 둥근 모서리 결정
+                            let roundedClass = 'rounded-none'; // 기본: 직사각형
+                            if (isOnlyOneDay) {
+                              roundedClass = 'rounded'; // 하루짜리: 모든 모서리
+                            } else if (isStart) {
+                              roundedClass = 'rounded-l'; // 시작일: 왼쪽만
+                            } else if (isEnd) {
+                              roundedClass = 'rounded-r'; // 종료일: 오른쪽만
+                            }
+                            
+                            return (
+                              <div
+                                key={`project-${project.id}`}
+                                className={`h-4 ${roundedClass} text-xs px-2 flex items-center truncate`}
+                                style={{
+                                  backgroundColor: project.colorCode || '#3b82f6',
+                                  color: 'white',
+                                }}
+                                title={project.name}
+                              >
+                                {isStart && `█ ${project.name}`}
+                              </div>
+                            );
+                          } else {
+                            const schedule = item.data as ScheduleCalendarResponse;
+                            return (
+                              <div
+                                key={`schedule-${schedule.scheduleId}`}
+                                className="text-xs truncate"
+                                title={schedule.title}
+                              >
+                                ✓ {schedule.title}
+                              </div>
+                            );
+                          }
+                        })}
+
+                      {mode === 'BASE_TODO' &&
+                        (items as ScheduleCalendarResponse[]).map((schedule) => (
+                          <div
+                            key={schedule.scheduleId}
+                            className="text-xs truncate"
+                            title={schedule.title}
+                          >
+                            ● {schedule.title}
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
 };
 
 export default Calendar;
-
