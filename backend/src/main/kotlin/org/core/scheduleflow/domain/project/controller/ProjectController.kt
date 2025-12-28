@@ -5,6 +5,7 @@ import org.core.scheduleflow.domain.project.dto.ProjectDetailResponse
 import org.core.scheduleflow.domain.project.dto.ProjectSummaryResponse
 import org.core.scheduleflow.domain.project.dto.ProjectUpdateRequest
 import org.core.scheduleflow.domain.project.service.ProjectService
+import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
@@ -15,7 +16,9 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import java.time.LocalDate
 
 @RestController
 @RequestMapping("/projects")
@@ -31,6 +34,32 @@ class ProjectController(
     fun getProject(@PathVariable projectId: Long): ResponseEntity<ProjectDetailResponse> {
         return ResponseEntity.ok(service.findProject(projectId))
     }
+
+    @GetMapping("/period")
+    fun getProjectsByPeriodWith(
+        @RequestParam
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+        startDate: LocalDate,
+
+        @RequestParam
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+        endDate: LocalDate,
+    ): ResponseEntity<List<Any>> {
+        return ResponseEntity.ok(service.findProjectsByPeriod(startDate, endDate))
+    }
+
+    @GetMapping("/period/with-schedules")
+    fun getProjectsByPeriodWithSchedules(
+        @RequestParam
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+        startDate: LocalDate,
+
+        @RequestParam
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+        endDate: LocalDate,
+    ): ResponseEntity<List<Any>> {
+            return ResponseEntity.ok(service.findProjectsByPeriodWithSchedules(startDate, endDate))
+        }
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping

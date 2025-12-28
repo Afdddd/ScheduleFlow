@@ -4,6 +4,8 @@ import org.core.scheduleflow.domain.partner.dto.ProjectPartnerContactDto
 import org.core.scheduleflow.domain.partner.repository.PartnerContactRepository
 import org.core.scheduleflow.domain.partner.repository.PartnerRepository
 import org.core.scheduleflow.domain.project.constant.ProjectStatus
+import org.core.scheduleflow.domain.project.dto.ProjectCalendarResponse
+import org.core.scheduleflow.domain.project.dto.ProjectCalendarWithSchedulesResponse
 import org.core.scheduleflow.domain.project.dto.ProjectCreateRequest
 import org.core.scheduleflow.domain.project.dto.ProjectDetailResponse
 import org.core.scheduleflow.domain.project.dto.ProjectSummaryResponse
@@ -18,9 +20,11 @@ import org.core.scheduleflow.domain.user.dto.ProjectMemberDto
 import org.core.scheduleflow.domain.user.repository.UserRepository
 import org.core.scheduleflow.global.exception.CustomException
 import org.core.scheduleflow.global.exception.ErrorCode
+import org.springframework.cglib.core.Local
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDate
 
 @Service
 @Transactional
@@ -90,6 +94,22 @@ class ProjectService(
             val memberNames = projectMembers.map { it.user.name }
             ProjectSummaryResponse.from(project, memberNames)
         }
+    }
+
+    @Transactional(readOnly = true)
+    fun findProjectsByPeriodWithSchedules(startDate: LocalDate, endDate: LocalDate)
+    :List<ProjectCalendarWithSchedulesResponse>  {
+        if (startDate.isAfter(endDate)) { throw CustomException(ErrorCode.INVALID_PERIOD) }
+        val projects = projectRepository.findByStartDateBetweenWithSchedules(startDate, endDate)
+        return projects.map { project ->
+            ProjectCalendarWithSchedulesResponse.from(project)
+        }
+    }
+
+    @Transactional(readOnly = true)
+    fun findProjectsByPeriod(startDate: LocalDate, endDate: LocalDate): List<ProjectCalendarResponse> {
+        if (startDate.isAfter(endDate)) { throw CustomException(ErrorCode.INVALID_PERIOD) }
+        return projectRepository.findByStartDateBetween(startDate, endDate)
     }
 
     fun updateProject(projectId: Long, request: ProjectUpdateRequest): ProjectDetailResponse {
