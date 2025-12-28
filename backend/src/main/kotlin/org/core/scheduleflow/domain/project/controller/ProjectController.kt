@@ -1,5 +1,7 @@
 package org.core.scheduleflow.domain.project.controller
 
+import org.core.scheduleflow.domain.project.dto.ProjectCalendarResponse
+import org.core.scheduleflow.domain.project.dto.ProjectCalendarWithSchedulesResponse
 import org.core.scheduleflow.domain.project.dto.ProjectCreateRequest
 import org.core.scheduleflow.domain.project.dto.ProjectDetailResponse
 import org.core.scheduleflow.domain.project.dto.ProjectSummaryResponse
@@ -44,7 +46,7 @@ class ProjectController(
         @RequestParam
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
         endDate: LocalDate,
-    ): ResponseEntity<List<Any>> {
+    ): ResponseEntity<List<ProjectCalendarResponse>> {
         return ResponseEntity.ok(service.findProjectsByPeriod(startDate, endDate))
     }
 
@@ -57,7 +59,7 @@ class ProjectController(
         @RequestParam
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
         endDate: LocalDate,
-    ): ResponseEntity<List<Any>> {
+    ): ResponseEntity<List<ProjectCalendarWithSchedulesResponse>> {
             return ResponseEntity.ok(service.findProjectsByPeriodWithSchedules(startDate, endDate))
         }
 

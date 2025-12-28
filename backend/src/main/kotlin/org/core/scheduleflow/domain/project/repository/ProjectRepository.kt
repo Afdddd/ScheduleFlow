@@ -36,7 +36,7 @@ interface ProjectRepository: JpaRepository<Project, Long>, ProjectRepositoryCust
     fun findByStartDateBetween(startDate: LocalDate, endDate: LocalDate): List<ProjectCalendarResponse>
 
     @Query("""
-        select p
+        select distinct p
         from Project p
         left join fetch p.schedules s
         where p.startDate <= :endDate
