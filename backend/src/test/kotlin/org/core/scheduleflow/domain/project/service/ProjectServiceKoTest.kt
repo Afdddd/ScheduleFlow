@@ -19,8 +19,6 @@ import org.core.scheduleflow.domain.project.entity.Project
 import org.core.scheduleflow.domain.project.entity.ProjectMember
 import org.core.scheduleflow.domain.project.repository.ProjectMemberRepository
 import org.core.scheduleflow.domain.project.repository.ProjectRepository
-import org.core.scheduleflow.domain.schedule.constant.ScheduleType
-import org.core.scheduleflow.domain.schedule.dto.ScheduleCalenderResponse
 import org.core.scheduleflow.domain.schedule.repository.ScheduleMemberRepository
 import org.core.scheduleflow.domain.schedule.repository.ScheduleRepository
 import org.core.scheduleflow.domain.user.entity.User

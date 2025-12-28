@@ -20,7 +20,6 @@ import org.core.scheduleflow.domain.user.dto.ProjectMemberDto
 import org.core.scheduleflow.domain.user.repository.UserRepository
 import org.core.scheduleflow.global.exception.CustomException
 import org.core.scheduleflow.global.exception.ErrorCode
-import org.springframework.cglib.core.Local
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
