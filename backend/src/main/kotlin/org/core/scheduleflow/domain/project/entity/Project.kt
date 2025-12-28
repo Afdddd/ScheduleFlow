@@ -16,6 +16,7 @@ import jakarta.persistence.Table
 import org.core.scheduleflow.domain.partner.entity.Partner
 import org.core.scheduleflow.domain.partner.entity.PartnerContact
 import org.core.scheduleflow.domain.project.constant.ProjectStatus
+import org.core.scheduleflow.domain.schedule.entity.Schedule
 import org.core.scheduleflow.domain.user.entity.User
 import org.core.scheduleflow.global.entity.BaseEntity
 import java.time.LocalDate
@@ -36,6 +37,9 @@ class Project(
 
     @OneToMany(mappedBy = "project", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
     var contacts: MutableList<ProjectPartnerContact> = mutableListOf(),
+
+    @OneToMany(mappedBy = "project", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+    var schedules: MutableList<Schedule> = mutableListOf(),
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
