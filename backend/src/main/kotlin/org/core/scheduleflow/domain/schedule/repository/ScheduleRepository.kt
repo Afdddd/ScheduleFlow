@@ -1,7 +1,9 @@
 package org.core.scheduleflow.domain.schedule.repository
 
 import org.core.scheduleflow.domain.project.entity.Project
+import org.core.scheduleflow.domain.schedule.dto.MyTaskResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleCalenderResponse
+import org.core.scheduleflow.domain.schedule.dto.TodayTeamTaskResponse
 import org.core.scheduleflow.domain.schedule.entity.Schedule
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
@@ -18,6 +20,30 @@ interface ScheduleRepository: JpaRepository<Schedule, Long>, ScheduleRepositoryC
         and s.project is null
     """)
     fun findByStartDateBetween(startDate: LocalDate, endDate: LocalDate): List<ScheduleCalenderResponse>
+
+    @Query("""
+        select new org.core.scheduleflow.domain.schedule.dto.MyTaskResponse(s.id, s.title, p.name, s.startDate, s.endDate, p.colorCode, s.type) 
+        from Schedule s
+        join s.members m 
+        join m.user u 
+        join s.project p 
+        where u.id = :userId
+        and s.startDate <= :startDate and s.endDate >= :endDate
+    """
+    )
+    fun findMyTasksByUserIdAndPeriod(userId: Long, startDate: LocalDate, endDate: LocalDate): List<MyTaskResponse>
+
+
+    @Query("""
+        select new org.core.scheduleflow.domain.schedule.dto.TodayTeamTaskResponse(u.name, s.title, p.name, p.colorCode)
+        from Schedule s
+         join s.members m 
+         join m.user u 
+         join s.project p 
+         where s.startDate <= :date and s.endDate >= :date
+         order by u.name asc
+    """)
+    fun findTeamTasksByDate(date: LocalDate): List<TodayTeamTaskResponse>
 }
 
 interface ScheduleRepositoryCustom {

@@ -1,10 +1,12 @@
 package org.core.scheduleflow.domain.schedule.controller
 
+import org.core.scheduleflow.domain.schedule.dto.MyTaskResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleCalenderResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleCreateRequest
 import org.core.scheduleflow.domain.schedule.dto.ScheduleDetailResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleSummaryResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleUpdateRequest
+import org.core.scheduleflow.domain.schedule.dto.TodayTeamTaskResponse
 import org.core.scheduleflow.domain.schedule.service.ScheduleService
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
@@ -46,6 +48,26 @@ class ScheduleController(
         @RequestParam endDate: LocalDate
     ): ResponseEntity<List<ScheduleCalenderResponse>> {
         return ResponseEntity.ok(service.findSchedulesByPeriod(startDate, endDate))
+    }
+
+    @GetMapping("/my-tasks")
+    fun getMyTasks(
+        @RequestParam
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+        startDate: LocalDate,
+
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+        @RequestParam endDate: LocalDate,
+
+        @RequestParam userId: Long
+    ): ResponseEntity<List<MyTaskResponse>> {
+        return ResponseEntity.ok(service.findMyTask(userId, startDate, endDate))
+    }
+
+    @GetMapping("/team-tasks")
+    fun getTodayTeamTasks(@RequestParam @DateTimeFormat date: LocalDate)
+    : ResponseEntity<List<TodayTeamTaskResponse>> {
+        return ResponseEntity.ok(service.findTodayTeamTasks(date))
     }
 
     @PreAuthorize("hasRole('ADMIN')")
