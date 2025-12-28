@@ -2,6 +2,7 @@ package org.core.scheduleflow.domain.schedule.service
 
 import org.core.scheduleflow.domain.project.repository.ProjectRepository
 import org.core.scheduleflow.domain.schedule.constant.ScheduleType
+import org.core.scheduleflow.domain.schedule.dto.ScheduleCalenderResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleCreateRequest
 import org.core.scheduleflow.domain.schedule.dto.ScheduleDetailResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleSummaryResponse
@@ -15,6 +16,7 @@ import org.core.scheduleflow.global.exception.ErrorCode
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDate
 
 @Service
 @Transactional
@@ -70,6 +72,12 @@ class ScheduleService(
     fun findSchedules(): List<ScheduleSummaryResponse> {
         val schedules = scheduleRepository.findAllWithProject()
         return schedules.map { ScheduleSummaryResponse.from(it) }
+    }
+
+    @Transactional(readOnly = true)
+    fun findSchedulesByPeriod(startDate: LocalDate, endDate: LocalDate): List<ScheduleCalenderResponse> {
+        if(startDate.isAfter(endDate)) throw CustomException(ErrorCode.INVALID_PERIOD)
+        return scheduleRepository.findByStartDateBetween(startDate, endDate)
     }
 
     fun updateSchedule(id: Long, request: ScheduleUpdateRequest): ScheduleDetailResponse {

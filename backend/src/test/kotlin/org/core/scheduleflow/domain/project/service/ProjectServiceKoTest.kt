@@ -1,6 +1,7 @@
 package org.core.scheduleflow.domain.project.service
 
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.shouldBe
@@ -11,6 +12,7 @@ import org.core.scheduleflow.domain.partner.entity.Partner
 import org.core.scheduleflow.domain.partner.repository.PartnerContactRepository
 import org.core.scheduleflow.domain.partner.repository.PartnerRepository
 import org.core.scheduleflow.domain.project.constant.ProjectStatus
+import org.core.scheduleflow.domain.project.dto.ProjectCalendarResponse
 import org.core.scheduleflow.domain.project.dto.ProjectCreateRequest
 import org.core.scheduleflow.domain.project.dto.ProjectUpdateRequest
 import org.core.scheduleflow.domain.project.entity.Project
@@ -28,43 +30,25 @@ import java.time.LocalDate
 
 class ProjectServiceKoTest() : BehaviorSpec({
 
-    // ============================================
-    // Helper 메서드들
-    // ============================================
+    isolationMode = IsolationMode.InstancePerLeaf
 
-    data class TestMocks(
-        val projectRepository: ProjectRepository,
-        val partnerRepository: PartnerRepository,
-        val partnerContactRepository: PartnerContactRepository,
-        val userRepository: UserRepository,
-        val projectMemberRepository: ProjectMemberRepository,
-        val scheduleRepository: ScheduleRepository,
-        val scheduleMemberRepository: ScheduleMemberRepository
+    val projectRepository = mockk<ProjectRepository>()
+    val partnerRepository = mockk<PartnerRepository>()
+    val partnerContactRepository = mockk<PartnerContactRepository>()
+    val userRepository = mockk<UserRepository>()
+    val projectMemberRepository = mockk<ProjectMemberRepository>()
+    val scheduleRepository = mockk<ScheduleRepository>()
+    val scheduleMemberRepository = mockk<ScheduleMemberRepository>()
+
+    val projectService = ProjectService(
+        projectRepository,
+        partnerRepository,
+        partnerContactRepository,
+        userRepository,
+        projectMemberRepository,
+        scheduleRepository,
+        scheduleMemberRepository
     )
-
-    fun createMocks(): TestMocks {
-        return TestMocks(
-            projectRepository = mockk<ProjectRepository>(),
-            partnerRepository = mockk<PartnerRepository>(),
-            partnerContactRepository = mockk<PartnerContactRepository>(),
-            userRepository = mockk<UserRepository>(),
-            projectMemberRepository = mockk<ProjectMemberRepository>(),
-            scheduleRepository = mockk<ScheduleRepository>(),
-            scheduleMemberRepository = mockk<ScheduleMemberRepository>()
-        )
-    }
-
-    fun createProjectService(mocks: TestMocks): ProjectService {
-        return ProjectService(
-            mocks.projectRepository,
-            mocks.partnerRepository,
-            mocks.partnerContactRepository,
-            mocks.userRepository,
-            mocks.projectMemberRepository,
-            mocks.scheduleRepository,
-            mocks.scheduleMemberRepository
-        )
-    }
 
     fun createPartner(id: Long = 1L, companyName: String = "발주처"): Partner {
         return Partner(
@@ -119,8 +103,8 @@ class ProjectServiceKoTest() : BehaviorSpec({
         return project
     }
 
-    fun setupSaveWithMemberIds(mocks: TestMocks) {
-        every { mocks.projectRepository.save(any()) } answers {
+    fun setupSaveWithMemberIds() {
+        every { projectRepository.save(any()) } answers {
             val savedProject = firstArg<Project>()
             // 저장 후 members에 ID 설정 (새 ProjectMember 생성)
             val membersWithId = savedProject.members.mapIndexed { index, member ->
@@ -136,9 +120,9 @@ class ProjectServiceKoTest() : BehaviorSpec({
         }
     }
 
-    fun setupScheduleMocks(mocks: TestMocks) {
-        every { mocks.scheduleRepository.findByProject(any()) } returns emptyList()
-        every { mocks.scheduleMemberRepository.findByScheduleIdIn(any()) } returns emptyList()
+    fun setupScheduleMocks() {
+        every { scheduleRepository.findByProject(any()) } returns emptyList()
+        every { scheduleMemberRepository.findByScheduleIdIn(any()) } returns emptyList()
     }
 
     Given("정상적인 프로젝트 생성 요청이 주어지고") {
@@ -152,15 +136,14 @@ class ProjectServiceKoTest() : BehaviorSpec({
             endDate = LocalDate.now().plusDays(10)
         )
 
-        val mocks = createMocks()
         val client = createPartner()
         val user1 = createUser(1L, "user1", "홍길동")
         val user2 = createUser(2L, "user2", "김철수")
 
-        every { mocks.projectRepository.existsByName("test-project") } returns false
-        every { mocks.partnerRepository.findByIdOrNull(1L) } returns client
-        every { mocks.userRepository.findByIdOrNull(1L) } returns user1
-        every { mocks.userRepository.findByIdOrNull(2L) } returns user2
+        every { projectRepository.existsByName("test-project") } returns false
+        every { partnerRepository.findByIdOrNull(1L) } returns client
+        every { userRepository.findByIdOrNull(1L) } returns user1
+        every { userRepository.findByIdOrNull(2L) } returns user2
 
         val savedProject = createProjectWithSavedMembers(
             id = 1L,
@@ -169,9 +152,8 @@ class ProjectServiceKoTest() : BehaviorSpec({
             users = listOf(user1, user2)
         )
 
-        every { mocks.projectRepository.save(any()) } returns savedProject
+        every { projectRepository.save(any()) } returns savedProject
 
-        val projectService = createProjectService(mocks)
 
         When("생성을 하면") {
             val projectId = projectService.createProject(request)
@@ -179,9 +161,9 @@ class ProjectServiceKoTest() : BehaviorSpec({
             Then("프로젝트가 생성되고 ID가 반환된다") {
                 projectId shouldBe 1L
                 verify(exactly = 1) {
-                    mocks.projectRepository.existsByName("test-project")
+                    projectRepository.existsByName("test-project")
                 }
-                verify(exactly = 1) { mocks.projectRepository.save(any()) }
+                verify(exactly = 1) { projectRepository.save(any()) }
             }
         }
 
@@ -207,10 +189,8 @@ class ProjectServiceKoTest() : BehaviorSpec({
             endDate = LocalDate.now().plusDays(10)
         )
 
-        val mocks = createMocks()
-        every { mocks.projectRepository.existsByName("test-project") } returns true
+        every { projectRepository.existsByName("test-project") } returns true
 
-        val projectService = createProjectService(mocks)
 
         When("생성을 하면") {
             val exception = shouldThrow<CustomException> {
@@ -218,8 +198,8 @@ class ProjectServiceKoTest() : BehaviorSpec({
             }
             Then("DUPLICATE_PROJECT 예외가 발생한다.") {
                 exception.errorCode shouldBe ErrorCode.DUPLICATE_PROJECT
-                verify(exactly = 1) { mocks.projectRepository.existsByName("test-project") }
-                verify(exactly = 0) { mocks.projectRepository.save(any()) }
+                verify(exactly = 1) { projectRepository.existsByName("test-project") }
+                verify(exactly = 0) { projectRepository.save(any()) }
             }
         }
     }
@@ -234,11 +214,8 @@ class ProjectServiceKoTest() : BehaviorSpec({
             endDate = LocalDate.now().plusDays(30)
         )
 
-        val mocks = createMocks()
-        every { mocks.projectRepository.existsByName("test-project") } returns false
-        every { mocks.partnerRepository.findByIdOrNull(9999L) } returns null
-
-        val projectService = createProjectService(mocks)
+        every { projectRepository.existsByName("test-project") } returns false
+        every { partnerRepository.findByIdOrNull(9999L) } returns null
 
         When("생성 요청을 하면") {
             val exception = shouldThrow<CustomException> {
@@ -247,8 +224,8 @@ class ProjectServiceKoTest() : BehaviorSpec({
 
             Then("NOT_FOUND_PARTNER 예외가 발생한다") {
                 exception.errorCode shouldBe ErrorCode.NOT_FOUND_PARTNER
-                verify(exactly = 1) { mocks.partnerRepository.findByIdOrNull(9999L) }
-                verify(exactly = 0) { mocks.projectRepository.save(any()) }
+                verify(exactly = 1) { partnerRepository.findByIdOrNull(9999L) }
+                verify(exactly = 0) { projectRepository.save(any()) }
             }
         }
     }
@@ -258,7 +235,6 @@ class ProjectServiceKoTest() : BehaviorSpec({
     // ============================================
 
     Given("존재하는 프로젝트 ID로 조회 요청이 주어지고") {
-        val mocks = createMocks()
         val client = createPartner()
         val user = createUser(1L, "user1", "홍길동")
         val project = createProjectWithSavedMembers(
@@ -268,10 +244,8 @@ class ProjectServiceKoTest() : BehaviorSpec({
             users = listOf(user)
         )
 
-        every { mocks.projectRepository.findByIdWithClient(1L) } returns project
-        setupScheduleMocks(mocks)
-
-        val projectService = createProjectService(mocks)
+        every { projectRepository.findByIdWithClient(1L) } returns project
+        setupScheduleMocks()
 
         When("조회 요청을 하면") {
             val response = projectService.findProject(1L)
@@ -281,16 +255,13 @@ class ProjectServiceKoTest() : BehaviorSpec({
                 response.name shouldBe "프로젝트"
                 response.members.size shouldBe 1
                 response.members.first().name shouldBe "홍길동"
-                verify(exactly = 1) { mocks.projectRepository.findByIdWithClient(1L) }
+                verify(exactly = 1) { projectRepository.findByIdWithClient(1L) }
             }
         }
     }
 
     Given("존재하지 않는 프로젝트 ID로 조회 요청이 주어지고") {
-        val mocks = createMocks()
-        every { mocks.projectRepository.findByIdWithClient(9999L) } returns null
-
-        val projectService = createProjectService(mocks)
+        every { projectRepository.findByIdWithClient(9999L) } returns null
 
         When("조회 요청을 하면") {
             val exception = shouldThrow<CustomException> {
@@ -299,13 +270,12 @@ class ProjectServiceKoTest() : BehaviorSpec({
 
             Then("NOT_FOUND_PROJECT 예외가 발생한다") {
                 exception.errorCode shouldBe ErrorCode.NOT_FOUND_PROJECT
-                verify(exactly = 1) { mocks.projectRepository.findByIdWithClient(9999L) }
+                verify(exactly = 1) { projectRepository.findByIdWithClient(9999L) }
             }
         }
     }
 
     Given("프로젝트 목록 조회 요청이 주어지고") {
-        val mocks = createMocks()
         val client = createPartner()
         val user1 = createUser(1L, "user1", "홍길동")
         val user2 = createUser(2L, "user2", "김철수")
@@ -325,10 +295,8 @@ class ProjectServiceKoTest() : BehaviorSpec({
             endDate = LocalDate.now().plusDays(60)
         )
 
-        every { mocks.projectRepository.findAllWithClient() } returns listOf(project1, project2)
-        every { mocks.projectMemberRepository.findByProjectInWithUser(listOf(project1, project2)) } returns project1.members
-
-        val projectService = createProjectService(mocks)
+        every { projectRepository.findAllWithClient() } returns listOf(project1, project2)
+        every { projectMemberRepository.findByProjectInWithUser(listOf(project1, project2)) } returns project1.members
 
         When("조회 요청을 하면") {
             val projects = projectService.findProjects()
@@ -336,7 +304,7 @@ class ProjectServiceKoTest() : BehaviorSpec({
             Then("모든 프로젝트 목록이 반환된다") {
                 projects.size shouldBe 2
                 projects.map { it.name } shouldContainAll listOf("프로젝트 1", "프로젝트 2")
-                verify(exactly = 1) { mocks.projectRepository.findAllWithClient() }
+                verify(exactly = 1) { projectRepository.findAllWithClient() }
             }
         }
     }
@@ -346,7 +314,6 @@ class ProjectServiceKoTest() : BehaviorSpec({
     // ============================================
 
     Given("정상적인 프로젝트 수정 요청이 주어지고") {
-        val mocks = createMocks()
         val client = createPartner()
         val user = createUser(1L, "user1", "홍길동")
         val project = createProjectWithSavedMembers(
@@ -364,11 +331,9 @@ class ProjectServiceKoTest() : BehaviorSpec({
             colorCode = "#00FF00"
         )
 
-        every { mocks.projectRepository.findByIdOrNull(1L) } returns project
-        setupSaveWithMemberIds(mocks)
-        setupScheduleMocks(mocks)
-
-        val projectService = createProjectService(mocks)
+        every { projectRepository.findByIdOrNull(1L) } returns project
+        setupSaveWithMemberIds()
+        setupScheduleMocks()
 
         When("수정 요청을 하면") {
             val response = projectService.updateProject(1L, updateRequest)
@@ -377,13 +342,12 @@ class ProjectServiceKoTest() : BehaviorSpec({
                 response.name shouldBe "수정된 프로젝트"
                 response.description shouldBe "수정된 설명"
                 response.colorCode shouldBe "#00FF00"
-                verify(exactly = 1) { mocks.projectRepository.findByIdOrNull(1L) }
+                verify(exactly = 1) { projectRepository.findByIdOrNull(1L) }
             }
         }
     }
 
     Given("프로젝트 멤버 변경 요청이 주어지고") {
-        val mocks = createMocks()
         val client = createPartner()
         val user1 = createUser(1L, "user1", "홍길동")
         val user2 = createUser(2L, "user2", "김철수")
@@ -398,33 +362,28 @@ class ProjectServiceKoTest() : BehaviorSpec({
             memberIds = listOf(2L)
         )
 
-        every { mocks.projectRepository.findByIdOrNull(1L) } returns project
-        every { mocks.userRepository.findByIdOrNull(2L) } returns user2
-        setupSaveWithMemberIds(mocks)
-        setupScheduleMocks(mocks)
-
-        val projectService = createProjectService(mocks)
+        every { projectRepository.findByIdOrNull(1L) } returns project
+        every { userRepository.findByIdOrNull(2L) } returns user2
+        setupSaveWithMemberIds()
+        setupScheduleMocks()
 
         When("수정 요청을 하면") {
             val response = projectService.updateProject(1L, updateRequest)
             Then("멤버가 변경된다") {
                 response.members.size shouldBe 1
                 response.members.first().name shouldBe "김철수"
-                verify(exactly = 1) { mocks.userRepository.findByIdOrNull(2L) }
-                verify(exactly = 1) { mocks.projectRepository.save(any()) }
+                verify(exactly = 1) { userRepository.findByIdOrNull(2L) }
+                verify(exactly = 1) { projectRepository.save(any()) }
             }
         }
     }
 
     Given("존재하지 않는 프로젝트 ID로 수정 요청이 주어지고") {
-        val mocks = createMocks()
         val updateRequest = ProjectUpdateRequest(
             name = "수정된 이름"
         )
 
-        every { mocks.projectRepository.findByIdOrNull(9999L) } returns null
-
-        val projectService = createProjectService(mocks)
+        every { projectRepository.findByIdOrNull(9999L) } returns null
 
         When("수정 요청을 하면") {
             val exception = shouldThrow<CustomException> {
@@ -433,23 +392,66 @@ class ProjectServiceKoTest() : BehaviorSpec({
 
             Then("NOT_FOUND_PROJECT 예외가 발생한다") {
                 exception.errorCode shouldBe ErrorCode.NOT_FOUND_PROJECT
-                verify(exactly = 1) { mocks.projectRepository.findByIdOrNull(9999L) }
-                verify(exactly = 0) { mocks.projectRepository.save(any()) }
+                verify(exactly = 1) { projectRepository.findByIdOrNull(9999L) }
+                verify(exactly = 0) { projectRepository.save(any()) }
             }
         }
     }
 
     Given("프로젝트 삭제 요청이 주어지고") {
-        val mocks = createMocks()
-        every { mocks.projectRepository.deleteById(1L) } returns Unit
-
-        val projectService = createProjectService(mocks)
+        every { projectRepository.deleteById(1L) } returns Unit
 
         When("삭제 요청을 하면") {
             projectService.deleteProject(1L)
 
             Then("프로젝트가 삭제된다") {
-                verify(exactly = 1) { mocks.projectRepository.deleteById(1L) }
+                verify(exactly = 1) { projectRepository.deleteById(1L) }
+            }
+        }
+    }
+
+    Given("대시보드 프로젝트 조회 요청이 주어지고") {
+        When("startDate가 endDate보다 크다면") {
+
+            val startDate = LocalDate.of(2025, 1, 31)
+            val endDate = LocalDate.of(2025, 1, 1)
+
+            val exception = shouldThrow<CustomException> {
+                projectService.findProjectsByPeriod(startDate, endDate)
+            }
+
+            Then("INVALID_PERIOD 예외가 발생한다.") {
+                exception.errorCode shouldBe ErrorCode.INVALID_PERIOD
+            }
+        }
+        When("요청이 정상적이라면") {
+            val startDate = LocalDate.of(2025, 1, 1)
+            val endDate = LocalDate.of(2025, 1, 31)
+
+            val response1 = ProjectCalendarResponse(
+                id = 1L,
+                name = "test-project",
+                startDate = LocalDate.of(2025, 1, 1),
+                endDate = LocalDate.of(2025, 1, 10),
+                colorCode = "#FF0000",
+                status = ProjectStatus.IN_PROGRESS
+            )
+
+            val response2 = ProjectCalendarResponse(
+                id = 2L,
+                name = "test-project2",
+                startDate = LocalDate.of(2025, 1, 12),
+                endDate = LocalDate.of(2025, 2, 5),
+                colorCode = "#00FF00",
+                status = ProjectStatus.ON_HOLD
+            )
+
+            every { projectRepository.findByStartDateBetween(startDate, endDate) } returns listOf(response1, response2)
+
+            val result = projectService.findProjectsByPeriod(startDate, endDate)
+            Then("프로젝트 정보를 가져온다.") {
+                result.size shouldBe 2
+                verify(exactly = 1) { projectRepository.findByStartDateBetween(startDate, endDate) }
             }
         }
     }

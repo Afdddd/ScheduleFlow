@@ -11,6 +11,7 @@ import org.core.scheduleflow.domain.partner.entity.Partner
 import org.core.scheduleflow.domain.project.entity.Project
 import org.core.scheduleflow.domain.project.repository.ProjectRepository
 import org.core.scheduleflow.domain.schedule.constant.ScheduleType
+import org.core.scheduleflow.domain.schedule.dto.ScheduleCalenderResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleCreateRequest
 import org.core.scheduleflow.domain.schedule.dto.ScheduleUpdateRequest
 import org.core.scheduleflow.domain.schedule.entity.Schedule
@@ -226,6 +227,55 @@ class ScheduleServiceTest : BehaviorSpec({
 
             Then("NOT_FOUND_PROJECT 예외가 발생한다") {
                 exception.errorCode shouldBe ErrorCode.NOT_FOUND_PROJECT
+            }
+        }
+    }
+
+    Given("대시보드 일정 조회 요청이 주어지고") {
+        When("startDate가 endDate보다 크다면") {
+            val startDate = LocalDate.of(2025, 1, 31)
+            val endDate = LocalDate.of(2025, 1, 1)
+
+            val exception = shouldThrow<CustomException> {
+                service.findSchedulesByPeriod(startDate, endDate)
+            }
+
+            Then("INVALID_PERIOD 예외를 발생시킨다.") {
+                exception.errorCode shouldBe ErrorCode.INVALID_PERIOD
+            }
+        }
+
+        When("요청이 정상적이라면") {
+            val startDate = LocalDate.of(2025,1,1)
+            val endDate = LocalDate.of(2025,1,31)
+
+            val response1 = ScheduleCalenderResponse(
+                scheduleId = 1L,
+                title = "test-schedule-1",
+                startDate = LocalDate.of(2025,1,1),
+                endDate = LocalDate.of(2025,1,10),
+                type = ScheduleType.MEETING
+            )
+
+            val response2 = ScheduleCalenderResponse(
+                scheduleId = 2L,
+                title = "test-schedule-2",
+                startDate = LocalDate.of(2025,1,12),
+                endDate = LocalDate.of(2025,1,25),
+                type = ScheduleType.WIRING
+            )
+
+            every { scheduleRepository.findByStartDateBetween(startDate, endDate) } returns listOf(response1, response2)
+            val result = service.findSchedulesByPeriod(startDate, endDate)
+
+            Then("ScheduleCalenderResponse 리스트를 응답한다.") {
+                result.size shouldBe 2
+                result[0].scheduleId shouldBe 1L
+                result[0].title shouldBe "test-schedule-1"
+                result[0].startDate shouldBe LocalDate.of(2025,1,1)
+                result[0].endDate shouldBe LocalDate.of(2025,1,10)
+                result[0].type shouldBe ScheduleType.MEETING
+                verify(exactly = 1) { scheduleRepository.findByStartDateBetween(startDate, endDate) }
             }
         }
     }

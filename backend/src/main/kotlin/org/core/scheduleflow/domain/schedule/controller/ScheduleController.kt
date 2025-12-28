@@ -1,10 +1,12 @@
 package org.core.scheduleflow.domain.schedule.controller
 
+import org.core.scheduleflow.domain.schedule.dto.ScheduleCalenderResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleCreateRequest
 import org.core.scheduleflow.domain.schedule.dto.ScheduleDetailResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleSummaryResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleUpdateRequest
 import org.core.scheduleflow.domain.schedule.service.ScheduleService
+import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
@@ -15,7 +17,9 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import java.time.LocalDate
 
 @RestController
 @RequestMapping("/schedules")
@@ -30,6 +34,18 @@ class ScheduleController(
     @GetMapping("/{scheduleId}")
     fun getSchedule(@PathVariable scheduleId: Long): ResponseEntity<ScheduleDetailResponse> {
         return ResponseEntity.ok(service.findSchedule(scheduleId))
+    }
+
+    @GetMapping("/period")
+    fun getSchedulesByPeriod(
+        @RequestParam
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+        startDate: LocalDate,
+
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+        @RequestParam endDate: LocalDate
+    ): ResponseEntity<List<ScheduleCalenderResponse>> {
+        return ResponseEntity.ok(service.findSchedulesByPeriod(startDate, endDate))
     }
 
     @PreAuthorize("hasRole('ADMIN')")
