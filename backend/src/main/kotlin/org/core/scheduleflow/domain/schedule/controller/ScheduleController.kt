@@ -12,6 +12,7 @@ import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
@@ -52,16 +53,14 @@ class ScheduleController(
 
     @GetMapping("/my-tasks")
     fun getMyTasks(
-        @RequestParam
-        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-        startDate: LocalDate,
-
-        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+        @RequestParam startDate: LocalDate,
         @RequestParam endDate: LocalDate,
-
-        @RequestParam userId: Long
+        @AuthenticationPrincipal claims: io.jsonwebtoken.Claims
     ): ResponseEntity<List<MyTaskResponse>> {
-        return ResponseEntity.ok(service.findMyTask(userId, startDate, endDate))
+        val userId = (claims["userId"] as Number).toLong()
+        return ResponseEntity.ok(
+            service.findMyTask(userId, startDate, endDate)
+        )
     }
 
     @GetMapping("/team-tasks")
