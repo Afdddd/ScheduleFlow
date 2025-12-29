@@ -2,6 +2,7 @@ package org.core.scheduleflow.domain.partner.controller
 
 import org.core.scheduleflow.domain.partner.dto.PartnerContactRequestDto
 import org.core.scheduleflow.domain.partner.dto.PartnerContactResponseDto
+import org.core.scheduleflow.domain.partner.dto.PartnerContactUpdateRequestDto
 import org.core.scheduleflow.domain.partner.dto.PartnerRequestDto
 import org.core.scheduleflow.domain.partner.dto.PartnerResponseDto
 import org.core.scheduleflow.domain.partner.dto.PartnerUpdateRequestDto
@@ -71,8 +72,8 @@ class PartnerController(
     /*======================================================PartnerContact UPDATE=================================================================*/
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{partnerId}/contacts")
-    fun updatePartnerContact(@RequestBody partnerContactRequestDto: PartnerContactRequestDto, @PathVariable partnerId : Long): PartnerContactResponseDto? {
-        return partnerContactService.updatePartnerContact(partnerContactRequestDto, partnerId)
+    fun updatePartnerContact(@RequestBody partnerContactUpdateRequestDto: PartnerContactUpdateRequestDto, @PathVariable partnerId : Long): PartnerContactResponseDto? {
+        return partnerContactService.updatePartnerContact(partnerContactUpdateRequestDto, partnerId)
     }
 
     /*======================================================PartnerContact DELETE=================================================================*/

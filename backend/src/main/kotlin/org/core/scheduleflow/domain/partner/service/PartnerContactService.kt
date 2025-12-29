@@ -3,6 +3,7 @@ package org.core.scheduleflow.domain.partner.service
 import org.core.scheduleflow.domain.partner.dto.PartnerContactRequestDto
 import org.core.scheduleflow.domain.partner.dto.PartnerContactResponseDto
 import org.core.scheduleflow.domain.partner.dto.PartnerContactResponseDto.Companion.fromEntity
+import org.core.scheduleflow.domain.partner.dto.PartnerContactUpdateRequestDto
 
 import org.core.scheduleflow.domain.partner.entity.Partner
 import org.core.scheduleflow.domain.partner.entity.PartnerContact
@@ -51,19 +52,21 @@ class PartnerContactService (
         return fromEntity(savedPartnerContact)
     }
 
-    fun updatePartnerContact(partnerContactRequestDto: PartnerContactRequestDto, partnerId : Long): PartnerContactResponseDto {
+    fun updatePartnerContact(partnerContactUpdateRequestDto: PartnerContactUpdateRequestDto, partnerId : Long): PartnerContactResponseDto {
         /* 유효성 검증 시작 */
-        val contactId = partnerContactRequestDto.id ?: throw IllegalArgumentException("수정 시 ID는 필수입니다.")
+        val contactId = partnerContactUpdateRequestDto.id ?: throw IllegalArgumentException("수정 시 ID는 필수입니다.")
 
-        partnerContactRepository.findByIdOrNull(contactId) ?: throw CustomException(ErrorCode.NOT_FOUND_PARTNER_CONTACT)
+        val partnerContact =  partnerContactRepository.findByIdOrNull(contactId) ?: throw CustomException(ErrorCode.NOT_FOUND_PARTNER_CONTACT)
 
-        val partner = partnerRepository.findByIdOrNull(partnerId) ?:throw CustomException(ErrorCode.NOT_FOUND_PARTNER)
+        partnerRepository.findByIdOrNull(partnerId) ?:throw CustomException(ErrorCode.NOT_FOUND_PARTNER)
 
         /* 유효성 검증 끝 */
 
-
-        val partnerContact = partnerContactRequestDto.toEntity(partner)
-
+        partnerContactUpdateRequestDto.name?.let {partnerContact.name = it }
+        partnerContactUpdateRequestDto.position?.let {partnerContact.position = it }
+        partnerContactUpdateRequestDto.department?.let {partnerContact.department = it }
+        partnerContactUpdateRequestDto.phone?.let {partnerContact.phone = it }
+        partnerContactUpdateRequestDto.email?.let {partnerContact.email = it }
 
         val savedPartnerContact = partnerContactRepository.save(partnerContact)
 
