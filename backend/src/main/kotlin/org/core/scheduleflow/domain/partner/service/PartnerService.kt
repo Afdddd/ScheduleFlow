@@ -64,10 +64,10 @@ class PartnerService(private val partnerRepository: PartnerRepository) {
 
         /* 유효성 검증 끝 */
 
-        partnerUpdateRequestDto.companyName.let       { partner.companyName = it }
-        partnerUpdateRequestDto.mainPhone?.let         { partner.mainPhone = it }
-        partnerUpdateRequestDto.address?.let           { partner.address = it }
-        partnerUpdateRequestDto.description?.let       { partner.description = it }
+        partner.companyName = partnerUpdateRequestDto.companyName
+        partnerUpdateRequestDto.mainPhone?.let { partner.mainPhone = it }
+        partnerUpdateRequestDto.address?.let { partner.address = it }
+        partnerUpdateRequestDto.description?.let { partner.description = it }
 
 
         val savedPartner = partnerRepository.save(partner)

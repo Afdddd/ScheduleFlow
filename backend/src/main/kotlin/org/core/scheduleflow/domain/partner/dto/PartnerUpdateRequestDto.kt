@@ -3,10 +3,10 @@ package org.core.scheduleflow.domain.partner.dto
 
 data class PartnerUpdateRequestDto(
     val id : Long,
-    var companyName: String,
-    var mainPhone: String?,
-    var address: String?,
-    var description: String?
+    val companyName: String,
+    val mainPhone: String?,
+    val address: String?,
+    val description: String?
 ) {
 
 
