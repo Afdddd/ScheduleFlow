@@ -4,9 +4,11 @@ import org.core.scheduleflow.domain.partner.dto.PartnerContactRequestDto
 import org.core.scheduleflow.domain.partner.dto.PartnerContactResponseDto
 import org.core.scheduleflow.domain.partner.dto.PartnerRequestDto
 import org.core.scheduleflow.domain.partner.dto.PartnerResponseDto
+import org.core.scheduleflow.domain.partner.dto.PartnerUpdateRequestDto
 
 import org.core.scheduleflow.domain.partner.service.PartnerContactService
 import org.core.scheduleflow.domain.partner.service.PartnerService
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
 
 
@@ -33,18 +35,21 @@ class PartnerController(
     }
 
     /*===========================================================Partner CREATE================================================================*/
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     fun createPartner(@RequestBody partnerRequestDto : PartnerRequestDto): PartnerResponseDto? {
         return partnerService.createPartner(partnerRequestDto)
     }
 
     /*===========================================================Partner UPDATE================================================================*/
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping
-    fun updatePartner(@RequestBody partnerRequestDto : PartnerRequestDto): PartnerResponseDto? {
-        return partnerService.updatePartner(partnerRequestDto)
+    fun updatePartner(@RequestBody partnerUpdateRequestDto : PartnerUpdateRequestDto): PartnerResponseDto? {
+        return partnerService.updatePartner(partnerUpdateRequestDto)
     }
 
     /*==========================================================Partner DELETE=================================================================*/
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     fun deletePartnerById(@PathVariable id: Long) {
         partnerService.deletePartnerById(id)
@@ -57,18 +62,21 @@ class PartnerController(
     }
 
     /*======================================================PartnerContact CREATE=================================================================*/
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{partnerId}/contacts")
     fun createPartnerContact(@RequestBody partnerContactRequestDto: PartnerContactRequestDto, @PathVariable partnerId : Long): PartnerContactResponseDto? {
         return partnerContactService.createPartnerContact(partnerContactRequestDto, partnerId)
     }
 
     /*======================================================PartnerContact UPDATE=================================================================*/
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{partnerId}/contacts")
     fun updatePartnerContact(@RequestBody partnerContactRequestDto: PartnerContactRequestDto, @PathVariable partnerId : Long): PartnerContactResponseDto? {
         return partnerContactService.updatePartnerContact(partnerContactRequestDto, partnerId)
     }
 
     /*======================================================PartnerContact DELETE=================================================================*/
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{partnerId}/contacts/{id}")
     fun deletePartnerContactById(@PathVariable partnerId: Long, @PathVariable id: Long) {
         partnerContactService.deletePartnerContactById(partnerId,id)

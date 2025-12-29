@@ -8,6 +8,9 @@ import org.core.scheduleflow.domain.partner.entity.Partner
 import org.core.scheduleflow.domain.partner.entity.PartnerContact
 import org.core.scheduleflow.domain.partner.repository.PartnerContactRepository
 import org.core.scheduleflow.domain.partner.repository.PartnerRepository
+import org.core.scheduleflow.global.exception.CustomException
+import org.core.scheduleflow.global.exception.ErrorCode
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -36,7 +39,7 @@ class PartnerContactService (
     fun createPartnerContact(partnerContactRequestDto: PartnerContactRequestDto, partnerId : Long): PartnerContactResponseDto {
         /* 유효성 검증 시작 */
 
-        val partner: Partner = partnerRepository.findById(partnerId).orElseThrow() { IllegalArgumentException("존재하지 않는 고객사 ID입니다: $partnerId") }
+        val partner: Partner = partnerRepository.findByIdOrNull(partnerId) ?:throw CustomException(ErrorCode.NOT_FOUND_PARTNER)
 
         /* 유효성 검증 끝 */
 
@@ -52,9 +55,9 @@ class PartnerContactService (
         /* 유효성 검증 시작 */
         val contactId = partnerContactRequestDto.id ?: throw IllegalArgumentException("수정 시 ID는 필수입니다.")
 
-        partnerContactRepository.findById(contactId).orElseThrow() {IllegalArgumentException("수정할 직원이 존재하지 않습니다.")}
+        partnerContactRepository.findByIdOrNull(contactId) ?: throw CustomException(ErrorCode.NOT_FOUND_PARTNER_CONTACT)
 
-        val partner: Partner = partnerRepository.findById(partnerId).orElseThrow() { IllegalArgumentException("존재하지 않는 고객사 ID입니다: $partnerId") }
+        val partner = partnerRepository.findByIdOrNull(partnerId) ?:throw CustomException(ErrorCode.NOT_FOUND_PARTNER)
 
         /* 유효성 검증 끝 */
 
@@ -69,9 +72,9 @@ class PartnerContactService (
 
     fun deletePartnerContactById(partnerId : Long, id: Long) {
 
-        partnerRepository.findById(partnerId).orElseThrow() { IllegalArgumentException("존재하지 않는 고객사 ID입니다: $partnerId") }
+        partnerRepository.findByIdOrNull(partnerId) ?: throw CustomException(ErrorCode.NOT_FOUND_PARTNER)
 
-        val contact = partnerContactRepository.findById(id).orElseThrow() {IllegalArgumentException("삭제할 직원이 존재하지 않습니다.")}
+        val contact = partnerContactRepository.findByIdOrNull(id) ?: throw CustomException(ErrorCode.NOT_FOUND_PARTNER_CONTACT)
 
         if (contact.partner.id != partnerId) {
             throw IllegalArgumentException("해당 고객사에 소속된 직원이 아닙니다.")

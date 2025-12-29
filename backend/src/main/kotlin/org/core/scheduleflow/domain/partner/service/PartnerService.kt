@@ -2,8 +2,12 @@ package org.core.scheduleflow.domain.partner.service
 
 import org.core.scheduleflow.domain.partner.dto.PartnerRequestDto
 import org.core.scheduleflow.domain.partner.dto.PartnerResponseDto
+import org.core.scheduleflow.domain.partner.dto.PartnerUpdateRequestDto
 
 import org.core.scheduleflow.domain.partner.repository.PartnerRepository
+import org.core.scheduleflow.global.exception.CustomException
+import org.core.scheduleflow.global.exception.ErrorCode
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -51,16 +55,20 @@ class PartnerService(private val partnerRepository: PartnerRepository) {
 
     /*===========================================================Partner UPDATE================================================================*/
     @Transactional
-    fun updatePartner(partnerRequestDto: PartnerRequestDto): PartnerResponseDto {
+    fun updatePartner(partnerUpdateRequestDto: PartnerUpdateRequestDto): PartnerResponseDto {
         /* 유효성 검증 시작 */
 
-        val partnerId = partnerRequestDto.id ?: throw IllegalArgumentException("수정 시 ID는 필수입니다.")
 
-        partnerRepository.findById(partnerId).orElseThrow() {IllegalArgumentException("존재하지 않는 고객사 입니다")}
+        val partner = partnerRepository.findByIdOrNull(partnerUpdateRequestDto.id) ?: throw CustomException(ErrorCode.NOT_FOUND_PARTNER)
 
 
         /* 유효성 검증 끝 */
-        val partner = partnerRequestDto.toEntity()
+
+        partnerUpdateRequestDto.companyName.let       { partner.companyName = it }
+        partnerUpdateRequestDto.mainPhone?.let         { partner.mainPhone = it }
+        partnerUpdateRequestDto.address?.let           { partner.address = it }
+        partnerUpdateRequestDto.description?.let       { partner.description = it }
+
 
         val savedPartner = partnerRepository.save(partner)
 
@@ -70,8 +78,9 @@ class PartnerService(private val partnerRepository: PartnerRepository) {
     /*==========================================================Partner DELETE=================================================================*/
     @Transactional
     fun deletePartnerById(id: Long) {
+
         if (!partnerRepository.existsById(id)) {
-            throw IllegalArgumentException("존재하지 않는 고객사 ID입니다: $id")
+            throw CustomException(ErrorCode.NOT_FOUND_PARTNER)
         }
 
         partnerRepository.deleteById(id)
