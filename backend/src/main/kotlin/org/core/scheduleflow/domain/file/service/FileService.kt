@@ -10,17 +10,23 @@ import org.core.scheduleflow.domain.user.repository.UserRepository
 import org.core.scheduleflow.global.exception.CustomException
 import org.core.scheduleflow.global.exception.ErrorCode
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.core.io.UrlResource
 import org.springframework.data.repository.findByIdOrNull
+import org.springframework.http.HttpHeaders
+import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
+import org.springframework.web.util.UriUtils
 import java.io.IOException
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
 import java.util.UUID
 import kotlin.String
+
 
 @Service
 class FileService(
@@ -94,7 +100,53 @@ class FileService(
         return FileResponse.fromEntity(uploadFile)
     }
 
+    @Transactional
+    fun downloadFile(fileId: Long): ResponseEntity<UrlResource> {
+        val downloadFile = fileRepository.findByIdOrNull(fileId) ?: throw CustomException(ErrorCode.NOT_FOUND_FILE)
 
+        val filePath = Paths.get(downloadFile.filePath)
+        val resource = UrlResource(filePath.toUri())
+
+        if(!resource.exists() || !resource.isReadable) throw CustomException(ErrorCode.NOT_FOUND_FILE)
+
+        val encodedFileName = UriUtils.encode(downloadFile.originalFileName, StandardCharsets.UTF_8)
+
+        val contentDisposition = "attachment; filename=\"$encodedFileName\""
+
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_TYPE, downloadFile.contentType)
+            .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition)
+            .contentLength(downloadFile.fileSize)
+            .body(resource)
+
+    }
+
+    @Transactional
+    fun deleteFile(fileId: Long) {
+        val deleteFile = fileRepository.findByIdOrNull(fileId) ?: throw CustomException(ErrorCode.NOT_FOUND_FILE)
+
+        val filePath = Paths.get(deleteFile.filePath)
+
+        try {
+            val isDeleted = Files.deleteIfExists(filePath)
+
+            if(isDeleted) {
+                // 로그용
+                println("파일 삭제 완료 : ${deleteFile.filePath}")
+            } else {
+                // 로그용
+                println("파일 삭제 실패 : ${deleteFile.filePath}")
+            }
+
+        } catch (e: IOException) {
+
+            println(e.message)
+            throw CustomException(ErrorCode.FAIL_DELETE_FILE)
+
+        }
+
+        fileRepository.delete(deleteFile)
+    }
 
 
 }

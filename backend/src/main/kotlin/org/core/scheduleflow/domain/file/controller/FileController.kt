@@ -3,8 +3,10 @@ package org.core.scheduleflow.domain.file.controller
 import org.core.scheduleflow.domain.file.constant.FileCategory
 import org.core.scheduleflow.domain.file.dto.FileResponse
 import org.core.scheduleflow.domain.file.service.FileService
+import org.springframework.core.io.UrlResource
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -39,6 +41,16 @@ class FileController(
         return ResponseEntity.ok(response)
     }
 
+    @GetMapping("/download/{fileId}")
+    fun downloadFile(@PathVariable fileId: Long): ResponseEntity<UrlResource>{
+        return fileService.downloadFile(fileId)
+    }
 
+    @DeleteMapping("/delete/{fileId}")
+    fun deleteFile(@PathVariable fileId: Long): ResponseEntity<Unit>{
+        fileService.deleteFile(fileId)
+
+        return ResponseEntity.noContent().build()
+    }
 
 }
