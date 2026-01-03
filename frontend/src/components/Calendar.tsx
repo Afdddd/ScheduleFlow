@@ -14,7 +14,7 @@ import {
   isEqual,
 } from 'date-fns';
 import { 
-  getProjectsByPeriod, 
+  getProjectsByPeriod,  
   getProjectsByPeriodWithSchedules, 
   getSchedulesByPeriod,
   ProjectCalendarResponse,
@@ -29,7 +29,7 @@ export type CalendarMode = 'PROJECT' | 'PROJECT_WITH_TASK' | 'BASE_TODO';
 
 /**
  * Calendar 컴포넌트
- * 
+ *
  * 기능:
  * 1. 월간 캘린더 보기 (Month View)
  * 2. 이전/다음 월 네비게이션

@@ -2,6 +2,7 @@ package org.core.scheduleflow.domain.schedule.service
 
 import org.core.scheduleflow.domain.project.repository.ProjectRepository
 import org.core.scheduleflow.domain.schedule.constant.ScheduleType
+import org.core.scheduleflow.domain.schedule.dto.MyTaskResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleCalenderResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleCreateRequest
 import org.core.scheduleflow.domain.schedule.dto.ScheduleDetailResponse
@@ -76,8 +77,15 @@ class ScheduleService(
 
     @Transactional(readOnly = true)
     fun findSchedulesByPeriod(startDate: LocalDate, endDate: LocalDate): List<ScheduleCalenderResponse> {
-        if(startDate.isAfter(endDate)) throw CustomException(ErrorCode.INVALID_PERIOD)
+        validatePeriod(startDate, endDate)
         return scheduleRepository.findByStartDateBetween(startDate, endDate)
+    }
+
+    @Transactional(readOnly = true)
+    fun findMyTask(userId: Long, startDate: LocalDate, endDate: LocalDate): List<MyTaskResponse> {
+        validatePeriod(startDate, endDate)
+        userRepository.findByIdOrNull(userId) ?: throw CustomException(ErrorCode.NOT_FOUND_USER)
+        return scheduleRepository.findMyTasksByUserIdAndPeriod(userId, startDate, endDate)
     }
 
     fun updateSchedule(id: Long, request: ScheduleUpdateRequest): ScheduleDetailResponse {
@@ -110,5 +118,9 @@ class ScheduleService(
 
     fun deleteSchedule(id: Long) {
         scheduleRepository.deleteById(id)
+    }
+
+    private fun validatePeriod(startDate: LocalDate, endDate: LocalDate) {
+        if (startDate.isAfter(endDate)) throw CustomException(ErrorCode.INVALID_PERIOD)
     }
 }

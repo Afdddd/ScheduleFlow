@@ -108,3 +108,68 @@ export const getSchedulesByPeriod = async (
   return response.data;
 };
 
+/**
+ * My Tasks 응답 타입
+ */
+export interface MyTaskResponse {
+  scheduleId: number;
+  scheduleTitle: string;
+  projectTitle: string;
+  scheduleStartDate: string; // ISO date string
+  scheduleEndDate: string; // ISO date string
+  colorCode: string | null;
+  scheduleType: string; // ScheduleType enum 값
+}
+
+/**
+ * 이번달 내 할 일 조회
+ * @param startDate 시작일
+ * @param endDate 종료일
+ * @returns 내 할 일 목록
+ */
+export const getMyTasks = async (
+  startDate: Date,
+  endDate: Date
+): Promise<MyTaskResponse[]> => {
+  const startDateStr = format(startDate, 'yyyy-MM-dd');
+  const endDateStr = format(endDate, 'yyyy-MM-dd');
+  
+  const response = await apiClient.get<MyTaskResponse[]>('/schedules/my-tasks', {
+    params: {
+      startDate: startDateStr,
+      endDate: endDateStr,
+    },
+  });
+  
+  return response.data;
+};
+
+/**
+ * 팀원 오늘 일정 응답 타입
+ */
+export interface TodayTeamTaskResponse {
+  memberName: string;
+  scheduleTitle: string;
+  projectTitle: string;
+  projectColorCode: string | null;
+}
+
+/**
+ * 팀원 오늘 일정 조회
+ * @param date 조회할 날짜
+ * @returns 팀원 오늘 일정 목록
+ */
+export const getTodayTeamTasks = async (
+  date: Date
+): Promise<TodayTeamTaskResponse[]> => {
+  const dateStr = format(date, 'yyyy-MM-dd');
+  
+  const response = await apiClient.get<TodayTeamTaskResponse[]>('/users/team-tasks', {
+    params: {
+      date: dateStr,
+    },
+  });
+  
+  return response.data;
+};
+

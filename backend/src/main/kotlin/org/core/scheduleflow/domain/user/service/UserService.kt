@@ -1,5 +1,6 @@
 package org.core.scheduleflow.domain.user.service
 
+import org.core.scheduleflow.domain.user.dto.TodayTeamTaskResponse
 import org.core.scheduleflow.domain.user.dto.UserResponse
 import org.core.scheduleflow.domain.user.dto.UserUpdateRequest
 import org.core.scheduleflow.domain.user.entity.User
@@ -9,6 +10,7 @@ import org.core.scheduleflow.global.exception.ErrorCode
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDate
 
 @Service
 class UserService(
@@ -41,6 +43,12 @@ class UserService(
             position = user.position
         )
     }
+
+    @Transactional(readOnly = true)
+    fun findTodayTeamTasks(date: LocalDate): List<TodayTeamTaskResponse> {
+        return userRepository.findTeamTasksByDate(date)
+    }
+
 
     @Transactional
     fun updateUser(userId: Long, request: UserUpdateRequest): UserResponse {

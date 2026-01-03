@@ -11,6 +11,7 @@ import org.core.scheduleflow.domain.partner.entity.Partner
 import org.core.scheduleflow.domain.project.entity.Project
 import org.core.scheduleflow.domain.project.repository.ProjectRepository
 import org.core.scheduleflow.domain.schedule.constant.ScheduleType
+import org.core.scheduleflow.domain.schedule.dto.MyTaskResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleCalenderResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleCreateRequest
 import org.core.scheduleflow.domain.schedule.dto.ScheduleUpdateRequest
@@ -276,6 +277,61 @@ class ScheduleServiceTest : BehaviorSpec({
                 result[0].endDate shouldBe LocalDate.of(2025,1,10)
                 result[0].type shouldBe ScheduleType.MEETING
                 verify(exactly = 1) { scheduleRepository.findByStartDateBetween(startDate, endDate) }
+            }
+        }
+    }
+
+    Given("MyTasks 조회 요청이 주어지고"){
+        When("유효하지 않은 사용자 id일 경우") {
+            val startDate = LocalDate.of(2025,1,1)
+            val endDate = LocalDate.of(2025,1,31)
+            val invalidUserId = -1L
+
+            every { userRepository.findByIdOrNull(invalidUserId) } returns null
+
+            val exception = shouldThrow<CustomException> {
+                service.findMyTask(invalidUserId, startDate, endDate)
+            }
+            Then("NOT_FOUND_USER 예외가 발생한다.") {
+                exception.errorCode shouldBe ErrorCode.NOT_FOUND_USER
+            }
+        }
+        When("startDate가 endDate보다 크다면") {
+            val startDate = LocalDate.of(2025, 1, 31)
+            val endDate = LocalDate.of(2025, 1, 1)
+            val userId = 1L
+
+            val exception = shouldThrow<CustomException> {
+                service.findMyTask(userId, startDate, endDate)
+            }
+            Then("INVALID_PERIOD 예외를 발생시킨다.") {
+                exception.errorCode shouldBe ErrorCode.INVALID_PERIOD
+            }
+        }
+        When("요청이 정상적이라면") {
+            val startDate = LocalDate.of(2025,1,1)
+            val endDate = LocalDate.of(2025,1,31)
+            val userId = 1L
+
+            val response = MyTaskResponse(
+                scheduleId = 1L,
+                scheduleTitle = "test-schedule",
+                projectTitle =  "test-project",
+                scheduleStartDate = LocalDate.of(2025,1,1),
+                scheduleEndDate = LocalDate.of(2025,1,10),
+                colorCode = "#000000",
+                scheduleType = ScheduleType.MEETING
+            )
+
+            every { userRepository.findByIdOrNull(userId) } returns mockUser
+            every { scheduleRepository.findMyTasksByUserIdAndPeriod(userId, startDate, endDate) } returns listOf(response)
+
+            val result = service.findMyTask(userId, startDate, endDate)
+            Then("MyTaskResponse 리스트를 반환한다.") {
+                result.size shouldBe 1
+                result[0].scheduleId shouldBe 1L
+                result[0].scheduleTitle shouldBe "test-schedule"
+                result[0].projectTitle shouldBe "test-project"
             }
         }
     }
