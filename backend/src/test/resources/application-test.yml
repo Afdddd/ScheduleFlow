@@ -4,14 +4,20 @@ spring:
     driver-class-name: org.h2.Driver
     username: sa
     password:
+  config:
+    import: optional:file:.env[.properties]
 
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: update
     properties:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.H2Dialect
+
+
+storage:
+  path: ${FILE_UPLOAD_PATH:C:\ScheduleFlow}
 
 jwt:
   secret-key: dGVzdC1zZWNyZXQta2V5LXRlc3Qtc2VjcmV0LWtleS10ZXN0LXNlY3JldC1rZXk=
