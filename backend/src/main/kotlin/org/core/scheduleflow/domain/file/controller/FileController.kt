@@ -5,6 +5,7 @@ import org.core.scheduleflow.domain.file.dto.FileResponse
 import org.core.scheduleflow.domain.file.service.FileService
 import org.springframework.core.io.UrlResource
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -27,6 +28,7 @@ class FileController(
         return fileService.findByProjectId(partnerId)
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{projectId}/upload")
     fun uploadFile(
         @PathVariable projectId: Long,
@@ -46,6 +48,7 @@ class FileController(
         return fileService.downloadFile(fileId)
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/delete/{fileId}")
     fun deleteFile(@PathVariable fileId: Long): ResponseEntity<Unit>{
         fileService.deleteFile(fileId)
