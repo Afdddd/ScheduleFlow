@@ -1,6 +1,7 @@
 import React from 'react';
 import Calendar from '../components/Calendar';
 import MyTasks from '../components/MyTasks';
+import TeamTasks from '../components/TeamTasks';
 
 /**
  * 대시보드 페이지
@@ -29,8 +30,7 @@ const DashboardPage: React.FC = () => {
 
           {/* 팀원 오늘 일정 영역 - 하단 50% */}
           <div className="flex-1 bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-bold mb-4">👥 팀원 오늘 일정</h2>
-            <p className="text-gray-500">팀원 일정이 여기에 표시됩니다.</p>
+            <TeamTasks />
           </div>
         </div>
       </div>
