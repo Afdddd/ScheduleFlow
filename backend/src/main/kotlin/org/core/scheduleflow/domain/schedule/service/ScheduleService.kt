@@ -8,7 +8,6 @@ import org.core.scheduleflow.domain.schedule.dto.ScheduleCreateRequest
 import org.core.scheduleflow.domain.schedule.dto.ScheduleDetailResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleSummaryResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleUpdateRequest
-import org.core.scheduleflow.domain.user.dto.TodayTeamTaskResponse
 import org.core.scheduleflow.domain.schedule.entity.Schedule
 import org.core.scheduleflow.domain.schedule.entity.ScheduleMember
 import org.core.scheduleflow.domain.schedule.repository.ScheduleRepository

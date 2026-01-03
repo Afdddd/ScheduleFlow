@@ -6,7 +6,6 @@ import org.core.scheduleflow.domain.schedule.dto.ScheduleCreateRequest
 import org.core.scheduleflow.domain.schedule.dto.ScheduleDetailResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleSummaryResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleUpdateRequest
-import org.core.scheduleflow.domain.user.dto.TodayTeamTaskResponse
 import org.core.scheduleflow.domain.schedule.service.ScheduleService
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
