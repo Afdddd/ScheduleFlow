@@ -6,7 +6,7 @@ import org.core.scheduleflow.domain.schedule.dto.ScheduleCreateRequest
 import org.core.scheduleflow.domain.schedule.dto.ScheduleDetailResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleSummaryResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleUpdateRequest
-import org.core.scheduleflow.domain.schedule.dto.TodayTeamTaskResponse
+import org.core.scheduleflow.domain.user.dto.TodayTeamTaskResponse
 import org.core.scheduleflow.domain.schedule.service.ScheduleService
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
@@ -61,12 +61,6 @@ class ScheduleController(
         return ResponseEntity.ok(
             service.findMyTask(userId, startDate, endDate)
         )
-    }
-
-    @GetMapping("/team-tasks")
-    fun getTodayTeamTasks(@RequestParam @DateTimeFormat date: LocalDate)
-    : ResponseEntity<List<TodayTeamTaskResponse>> {
-        return ResponseEntity.ok(service.findTodayTeamTasks(date))
     }
 
     @PreAuthorize("hasRole('ADMIN')")
