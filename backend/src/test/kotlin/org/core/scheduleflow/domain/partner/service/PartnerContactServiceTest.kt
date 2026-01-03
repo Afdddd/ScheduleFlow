@@ -2,6 +2,7 @@ package org.core.scheduleflow.domain.partner.service
 
 import org.assertj.core.api.Assertions.assertThat
 import org.core.scheduleflow.domain.partner.dto.PartnerContactRequestDto
+import org.core.scheduleflow.domain.partner.dto.PartnerContactUpdateRequestDto
 import org.core.scheduleflow.domain.partner.dto.PartnerRequestDto
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -83,13 +84,13 @@ class PartnerContactServiceTest @Autowired constructor(
         )
 
         // 2. When: 수정 요청 DTO 생성 (기존 ID 필수 포함)
-        val updateRequest = PartnerContactRequestDto(
+        val updateRequest = PartnerContactUpdateRequestDto(
             id = savedContact.id, // 저장된 식별자 사용
-            partnerId = partnerId,
             name = "수정된 이름",
             position = "대리",
             email = "new@test.com",
-            phone = "010-0000-0000"
+            phone = "010-0000-0000",
+            department = "ansjdkfjs"
         )
 
         val updated = partnerContactService.updatePartnerContact(updateRequest, partnerId)

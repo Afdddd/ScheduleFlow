@@ -2,6 +2,7 @@ package org.core.scheduleflow.domain.partner.service
 
 import org.assertj.core.api.Assertions.assertThat
 import org.core.scheduleflow.domain.partner.dto.PartnerRequestDto
+import org.core.scheduleflow.domain.partner.dto.PartnerUpdateRequestDto
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -46,8 +47,8 @@ class PartnerServiceTest @Autowired constructor(
         )
 
         // when (ID를 포함하여 요청)
-        val updateRequest = PartnerRequestDto(
-            id = initial.id,
+        val updateRequest = PartnerUpdateRequestDto(
+            id = initial.id!!,
             companyName = "수정된이름",
             mainPhone = "02-111-2222",
             address = initial.address,
