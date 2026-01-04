@@ -9,6 +9,7 @@ import org.core.scheduleflow.domain.project.repository.ProjectRepository
 import org.core.scheduleflow.domain.user.repository.UserRepository
 import org.core.scheduleflow.global.exception.CustomException
 import org.core.scheduleflow.global.exception.ErrorCode
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.io.UrlResource
 import org.springframework.data.repository.findByIdOrNull
@@ -34,7 +35,9 @@ class FileService(
     @Value("\${storage.path}") private val uploadPath: String,
     private val projectRepository: ProjectRepository,
     private val userRepository: UserRepository,
+
 ) {
+    private val logger = LoggerFactory.getLogger(this.javaClass)
 
     private val rootLocation = Paths.get(uploadPath).toAbsolutePath().normalize()
 
@@ -48,9 +51,9 @@ class FileService(
     }
 
     @Transactional(readOnly = true)
-    fun findByProjectId(partnerId: Long): List<FileResponse> {
+    fun findByProjectId(projectId: Long): List<FileResponse> {
 
-        val files = fileRepository.findByProjectId(partnerId)
+        val files = fileRepository.findByProjectId(projectId)
 
         if (files.isEmpty()) {
             return emptyList()
@@ -94,7 +97,7 @@ class FileService(
             originalFileName = originalFileName,
             filePath = destinationFile.toString(),
             fileSize = file.size,
-            contentType = file.contentType.toString(),
+            contentType = file.contentType.toString() ?: "application/octet-stream",
         ))
         
         return FileResponse.fromEntity(uploadFile)
@@ -132,15 +135,15 @@ class FileService(
 
             if(isDeleted) {
                 // 로그용
-                println("파일 삭제 완료 : ${deleteFile.filePath}")
+                logger.info("파일 삭제 완료 : {}", deleteFile.filePath)
             } else {
                 // 로그용
-                println("파일 삭제 실패 : ${deleteFile.filePath}")
+                logger.warn("파일이 존재하지 않아 삭제되지 않았습니다 : {}", deleteFile.filePath)
             }
 
         } catch (e: IOException) {
 
-            println(e.message)
+            logger.error("파일 삭제 중 I/O 오류 발생: {}", deleteFile.filePath, e)
             throw CustomException(ErrorCode.FAIL_DELETE_FILE)
 
         }

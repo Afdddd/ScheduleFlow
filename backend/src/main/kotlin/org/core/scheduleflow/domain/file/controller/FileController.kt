@@ -3,6 +3,8 @@ package org.core.scheduleflow.domain.file.controller
 import org.core.scheduleflow.domain.file.constant.FileCategory
 import org.core.scheduleflow.domain.file.dto.FileResponse
 import org.core.scheduleflow.domain.file.service.FileService
+import org.core.scheduleflow.global.exception.CustomException
+import org.core.scheduleflow.global.exception.ErrorCode
 import org.springframework.core.io.UrlResource
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
@@ -23,9 +25,9 @@ class FileController(
     private val fileService: FileService
 ) {
 
-    @GetMapping("/{partnerId}")
-    fun findByProjectId(@PathVariable partnerId: Long): List<FileResponse>{
-        return fileService.findByProjectId(partnerId)
+    @GetMapping("/{projectId}")
+    fun findByProjectId(@PathVariable projectId: Long): List<FileResponse>{
+        return fileService.findByProjectId(projectId)
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -36,7 +38,7 @@ class FileController(
         @RequestPart("file") file: MultipartFile,
         @AuthenticationPrincipal claims: io.jsonwebtoken.Claims
     ): ResponseEntity<FileResponse> {
-        val userId = (claims["userId"] as Number).toLong()
+        val userId = (claims["userId"] as? Number)?.toLong() ?: throw CustomException(ErrorCode.NOT_FOUND_USER)
 
         val response : FileResponse = fileService.uploadFile(projectId, file, category, userId)
 

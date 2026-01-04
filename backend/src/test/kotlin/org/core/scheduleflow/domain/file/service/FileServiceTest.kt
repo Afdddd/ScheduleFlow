@@ -119,12 +119,12 @@ class FileServiceTest(
             testUser = user
         }
 
-   /* @AfterEach
+    @AfterEach
     fun tearDown() {
         // 테스트 종료 후 생성된 물리 파일 및 폴더 삭제
         val targetDir = File(testUploadPath)
         targetDir.deleteRecursively()
-    }*/
+    }
 
     @Test
     @DisplayName("파일 업로드 테스트: DB에 저장되고 물리 파일이 생성되어야 한다")
@@ -147,18 +147,7 @@ class FileServiceTest(
         // Then
         // 1. DB 저장 확인
         val savedFile = fileRepository.findById(response.id!!).orElseThrow()
-        println("*******************************************************************")
-        println("savedFile:")
-        println("savedFile.id : " + savedFile.id)
-        println("savedFile.originalFileName : " + savedFile.originalFileName)
-        println("savedFile.storedFileName : " + savedFile.storedFileName)
-        println("savedFile.filePath : " + savedFile.filePath)
-        println("savedFile.category : " + savedFile.category)
-        println("savedFile.project.id : " + savedFile.project.id)
-        println("savedFile.contentType : " + savedFile.contentType)
-        println("savedFile.fileSize : " + savedFile.fileSize)
-        println("savedFile.user.id : " + savedFile.user.id)
-        println("*******************************************************************")
+
         assertEquals("test_document.txt", savedFile.originalFileName)
         assertEquals(FileCategory.QUOTATION, savedFile.category)
 
