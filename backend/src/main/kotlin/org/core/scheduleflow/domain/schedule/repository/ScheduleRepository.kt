@@ -27,7 +27,7 @@ interface ScheduleRepository: JpaRepository<Schedule, Long>, ScheduleRepositoryC
         join m.user u 
         join s.project p 
         where u.id = :userId
-        and s.startDate <= :startDate and s.endDate >= :endDate
+        and s.startDate <= :endDate and s.endDate >= :startDate
     """
     )
     fun findMyTasksByUserIdAndPeriod(userId: Long, startDate: LocalDate, endDate: LocalDate): List<MyTaskResponse>
