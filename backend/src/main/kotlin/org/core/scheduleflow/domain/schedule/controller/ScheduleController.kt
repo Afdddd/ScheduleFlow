@@ -7,6 +7,8 @@ import org.core.scheduleflow.domain.schedule.dto.ScheduleDetailResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleSummaryResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleUpdateRequest
 import org.core.scheduleflow.domain.schedule.service.ScheduleService
+import org.core.scheduleflow.global.exception.CustomException
+import org.core.scheduleflow.global.exception.ErrorCode
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -56,7 +58,7 @@ class ScheduleController(
         @RequestParam endDate: LocalDate,
         @AuthenticationPrincipal claims: io.jsonwebtoken.Claims
     ): ResponseEntity<List<MyTaskResponse>> {
-        val userId = (claims["userId"] as Number).toLong()
+        val userId = (claims["userId"] as? Number)?.toLong() ?: throw CustomException(ErrorCode.INVALID_ACCESS_TOKEN)
         return ResponseEntity.ok(
             service.findMyTask(userId, startDate, endDate)
         )

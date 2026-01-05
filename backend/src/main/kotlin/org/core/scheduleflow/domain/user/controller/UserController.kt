@@ -52,8 +52,8 @@ class UserController(
     }
 
     @GetMapping("/team-tasks")
-    fun getTodayTeamTasks(@RequestParam @DateTimeFormat date: LocalDate)
-            : ResponseEntity<List<TodayTeamTaskResponse>> {
+    fun getTodayTeamTasks(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) date: LocalDate):
+            ResponseEntity<List<TodayTeamTaskResponse>> {
         return ResponseEntity.ok(service.findTodayTeamTasks(date))
     }
 }
