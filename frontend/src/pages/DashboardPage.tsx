@@ -1,5 +1,7 @@
 import React from 'react';
 import Calendar from '../components/Calendar';
+import MyTasks from '../components/MyTasks';
+import TeamTasks from '../components/TeamTasks';
 
 /**
  * 대시보드 페이지
@@ -23,14 +25,12 @@ const DashboardPage: React.FC = () => {
         <div className="flex-1 flex flex-col gap-6" style={{ flexBasis: '35%' }}>
           {/* My Tasks 영역 - 상단 50% */}
           <div className="flex-1 bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-bold mb-4">✅ 이번달 내 할 일</h2>
-            <p className="text-gray-500">My Tasks가 여기에 표시됩니다.</p>
+            <MyTasks />
           </div>
 
           {/* 팀원 오늘 일정 영역 - 하단 50% */}
           <div className="flex-1 bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-bold mb-4">👥 팀원 오늘 일정</h2>
-            <p className="text-gray-500">팀원 일정이 여기에 표시됩니다.</p>
+            <TeamTasks />
           </div>
         </div>
       </div>

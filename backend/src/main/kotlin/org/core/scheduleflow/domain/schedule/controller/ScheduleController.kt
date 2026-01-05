@@ -1,15 +1,19 @@
 package org.core.scheduleflow.domain.schedule.controller
 
+import org.core.scheduleflow.domain.schedule.dto.MyTaskResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleCalenderResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleCreateRequest
 import org.core.scheduleflow.domain.schedule.dto.ScheduleDetailResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleSummaryResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleUpdateRequest
 import org.core.scheduleflow.domain.schedule.service.ScheduleService
+import org.core.scheduleflow.global.exception.CustomException
+import org.core.scheduleflow.global.exception.ErrorCode
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
@@ -46,6 +50,18 @@ class ScheduleController(
         @RequestParam endDate: LocalDate
     ): ResponseEntity<List<ScheduleCalenderResponse>> {
         return ResponseEntity.ok(service.findSchedulesByPeriod(startDate, endDate))
+    }
+
+    @GetMapping("/my-tasks")
+    fun getMyTasks(
+        @RequestParam startDate: LocalDate,
+        @RequestParam endDate: LocalDate,
+        @AuthenticationPrincipal claims: io.jsonwebtoken.Claims
+    ): ResponseEntity<List<MyTaskResponse>> {
+        val userId = (claims["userId"] as? Number)?.toLong() ?: throw CustomException(ErrorCode.INVALID_ACCESS_TOKEN)
+        return ResponseEntity.ok(
+            service.findMyTask(userId, startDate, endDate)
+        )
     }
 
     @PreAuthorize("hasRole('ADMIN')")
