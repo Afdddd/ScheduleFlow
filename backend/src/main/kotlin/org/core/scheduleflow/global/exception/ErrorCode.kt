@@ -18,6 +18,9 @@ enum class ErrorCode(
     NOT_FOUND_PARTNER_CONTACT(HttpStatus.NOT_FOUND, "해당 거래처 직원을 찾을 수 없습니다."),
     NOT_FOUND_PROJECT(HttpStatus.NOT_FOUND, "해당 프로젝트를 찾을 수 없습니다."),
     NOT_FOUND_SCHEDULE(HttpStatus.NOT_FOUND, "해당 일정을 찾을 수 없습니다."),
+    NOT_FOUND_FILE(HttpStatus.NOT_FOUND, "해당 파일을 찾을 수 없습니다."),
+
+    FAIL_DELETE_FILE(HttpStatus.INTERNAL_SERVER_ERROR, "해당 파일을 삭제 실패했습니다."),
 
     INVALID_PERIOD(HttpStatus.BAD_REQUEST, "시작일은 종료일보다 늦을 수 없습니다.")
 
