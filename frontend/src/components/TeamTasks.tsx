@@ -30,7 +30,7 @@ const TeamTasks: React.FC = () => {
     };
 
     loadTasks();
-  }, [format(today, 'yyyy-MM-dd')]);
+  }, []);
 
   /**
    * 프로젝트 색상 코드 가져오기 (기본값: 파란색)

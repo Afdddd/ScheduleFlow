@@ -32,7 +32,7 @@ const MyTasks: React.FC = () => {
     };
 
     loadTasks();
-  }, [format(currentDate, 'yyyy-MM')]);
+  }, []);
 
   /**
    * 색상 코드를 연하게 변환 (투명도 추가)
