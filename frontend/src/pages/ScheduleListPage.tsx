@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import SearchBar from '../components/SearchBar';
 import Pagination from '../components/Pagination';
-import { getUserList, UserListResponse, PageResponse } from '../api/list';
+import { getScheduleList, ScheduleListResponse, PageResponse } from '../api/list';
 
 /**
- * 사원 관리 페이지 (ADMIN 권한 필요)
+ * 일정 목록 페이지
  * 
  * 기능:
- * 1. 사원 목록 조회 (검색, 페이징)
- * 2. 사원 상세 보기/수정 (추후 구현)
+ * 1. 일정 목록 조회 (검색, 페이징)
+ * 2. 일정 상세 보기 (추후 구현)
  */
-const UserManagementPage: React.FC = () => {
-  const [data, setData] = useState<PageResponse<UserListResponse> | null>(null);
+const ScheduleListPage: React.FC = () => {
+  const [data, setData] = useState<PageResponse<ScheduleListResponse> | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [currentPage, setCurrentPage] = useState<number>(0);
@@ -21,10 +21,10 @@ const UserManagementPage: React.FC = () => {
     const loadData = async () => {
       setLoading(true);
       try {
-        const result = await getUserList(searchQuery, currentPage, pageSize);
+        const result = await getScheduleList(searchQuery, currentPage, pageSize);
         setData(result);
       } catch (error) {
-        console.error('사원 목록 로딩 실패:', error);
+        console.error('일정 목록 로딩 실패:', error);
       } finally {
         setLoading(false);
       }
@@ -42,34 +42,29 @@ const UserManagementPage: React.FC = () => {
     setCurrentPage(page);
   };
 
-  const getRoleLabel = (role: string): string => {
-    switch (role) {
-      case 'ADMIN':
-        return '관리자';
-      case 'STAFF':
-        return '일반';
+  const getTypeLabel = (type: string): string => {
+    switch (type) {
+      case 'PROJECT':
+        return '프로젝트 일정';
+      case 'TEST_RUN':
+        return '시운전';
+      case 'WIRING':
+        return '전기 배선';
+      case 'DESIGN':
+        return '설계';
+      case 'MEETING':
+        return '미팅';
       default:
-        return role;
-    }
-  };
-
-  const getRoleColor = (role: string): string => {
-    switch (role) {
-      case 'ADMIN':
-        return 'bg-red-100 text-red-800';
-      case 'STAFF':
-        return 'bg-blue-100 text-blue-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+        return type;
     }
   };
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">사원 관리</h1>
+      <h1 className="text-2xl font-bold mb-6">일정 목록</h1>
 
       <SearchBar
-        placeholder="사원 이름으로 검색"
+        placeholder="일정 제목으로 검색"
         onSearch={handleSearch}
       />
 
@@ -84,60 +79,50 @@ const UserManagementPage: React.FC = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    이름
+                    일정 제목
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    사용자명
+                    프로젝트
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    이메일
+                    타입
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    전화번호
+                    기간
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    직책
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    권한
+                    참여자
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {data.content.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
-                      사원이 없습니다.
+                    <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
+                      일정이 없습니다.
                     </td>
                   </tr>
                 ) : (
-                  data.content.map((user) => (
-                    <tr key={user.id} className="hover:bg-gray-50 transition-colors">
+                  data.content.map((schedule) => (
+                    <tr key={schedule.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="text-sm font-medium text-gray-900">
-                          {user.name}
+                          {schedule.title}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {user.username}
+                        {schedule.projectName || '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {user.email || '-'}
+                        {getTypeLabel(schedule.type)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {user.phone}
+                        {schedule.startDate} ~ {schedule.endDate}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {user.position || '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(
-                            user.role
-                          )}`}
-                        >
-                          {getRoleLabel(user.role)}
-                        </span>
+                        {schedule.memberNames.length > 0
+                          ? schedule.memberNames.join(', ')
+                          : '-'}
                       </td>
                     </tr>
                   ))
@@ -161,4 +146,5 @@ const UserManagementPage: React.FC = () => {
   );
 };
 
-export default UserManagementPage;
+export default ScheduleListPage;
+
