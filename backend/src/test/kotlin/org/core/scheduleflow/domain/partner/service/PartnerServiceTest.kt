@@ -7,6 +7,7 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.data.domain.Pageable
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.transaction.annotation.Transactional
 
@@ -59,5 +60,52 @@ class PartnerServiceTest @Autowired constructor(
         // then
         assertThat(updated.companyName).isEqualTo("수정된이름")
         assertThat(updated.mainPhone).isEqualTo("02-111-2222")
+    }
+
+    @Test
+    @DisplayName("고객사 조회")
+    fun findPartners() {
+        // given
+        val request1 = PartnerRequestDto(
+            id = null,
+            companyName = "테스트 컴퍼니",
+            mainPhone = "010-1234-5678",
+            address = "서울시 강남구",
+            description = "테스트용 업체"
+        )
+
+        val request2 = PartnerRequestDto(
+            id = null,
+            companyName = "김앵도",
+            mainPhone = "010-8689-5678",
+            address = "서울시 강서구",
+            description = "억만장자"
+        )
+
+        val request3 = PartnerRequestDto(
+            id = null,
+            companyName = "테스트 김앵도",
+            mainPhone = "010-8689-5678",
+            address = "서울시 구로구",
+            description = "억만장자"
+        )
+
+        // when
+        val saved1 = partnerService.createPartner(request1)
+        val saved2 = partnerService.createPartner(request2)
+        val saved3 = partnerService.createPartner(request3)
+
+        // keyword = null
+        val pageable: Pageable = Pageable.ofSize(5)
+        var keyword: String? = null
+        val found1 = partnerService.findPartners(pageable, keyword)
+
+        keyword = "테스트"
+        val found2 = partnerService.findPartners(pageable, keyword)
+
+        assertThat(found1.content.size).isEqualTo(3)
+        assertThat(found2.content.size).isEqualTo(2)
+
+
     }
 }
