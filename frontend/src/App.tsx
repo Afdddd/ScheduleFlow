@@ -9,6 +9,8 @@ import SignUpPage from './pages/SignUpPage';
 import DashboardPage from './pages/DashboardPage';
 import ProjectListPage from './pages/ProjectListPage';
 import ProjectDetailPage from './pages/ProjectDetailPage';
+import FileListPage from './pages/FileListPage';
+import ScheduleListPage from './pages/ScheduleListPage';
 import PartnerListPage from './pages/PartnerListPage';
 import UserManagementPage from './pages/UserManagementPage';
 import NotFoundPage from './pages/NotFoundPage';
@@ -50,6 +52,22 @@ function App() {
           element={
             <ProtectedRoute>
               <ProjectDetailPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/files"
+          element={
+            <ProtectedRoute>
+              <FileListPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/schedules"
+          element={
+            <ProtectedRoute>
+              <ScheduleListPage />
             </ProtectedRoute>
           }
         />
