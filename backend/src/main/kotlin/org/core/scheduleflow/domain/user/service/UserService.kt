@@ -1,12 +1,15 @@
 package org.core.scheduleflow.domain.user.service
 
 import org.core.scheduleflow.domain.user.dto.TodayTeamTaskResponse
+import org.core.scheduleflow.domain.user.dto.UserListResponse
 import org.core.scheduleflow.domain.user.dto.UserResponse
 import org.core.scheduleflow.domain.user.dto.UserUpdateRequest
 import org.core.scheduleflow.domain.user.entity.User
 import org.core.scheduleflow.domain.user.repository.UserRepository
 import org.core.scheduleflow.global.exception.CustomException
 import org.core.scheduleflow.global.exception.ErrorCode
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -18,12 +21,14 @@ class UserService(
 ) {
 
     @Transactional(readOnly = true)
-    fun findUsers(): List<UserResponse> {
-       val userList = userRepository.findAll()
-
-        return userList.map { user ->
-            user.toResponse()
+    fun findUsers(
+        keyword: String?,
+        pageable: Pageable
+    ): Page<UserListResponse> {
+        if(keyword.isNullOrBlank()) {
+            return userRepository.findUserList(pageable)
         }
+        return userRepository.searchUserList(keyword, pageable)
     }
 
     @Transactional(readOnly = true)

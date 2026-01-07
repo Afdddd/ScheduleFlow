@@ -6,7 +6,7 @@ import org.core.scheduleflow.domain.schedule.dto.MyTaskResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleCalenderResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleCreateRequest
 import org.core.scheduleflow.domain.schedule.dto.ScheduleDetailResponse
-import org.core.scheduleflow.domain.schedule.dto.ScheduleSummaryResponse
+import org.core.scheduleflow.domain.schedule.dto.ScheduleListResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleUpdateRequest
 import org.core.scheduleflow.domain.schedule.entity.Schedule
 import org.core.scheduleflow.domain.schedule.entity.ScheduleMember
@@ -14,6 +14,8 @@ import org.core.scheduleflow.domain.schedule.repository.ScheduleRepository
 import org.core.scheduleflow.domain.user.repository.UserRepository
 import org.core.scheduleflow.global.exception.CustomException
 import org.core.scheduleflow.global.exception.ErrorCode
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -70,9 +72,14 @@ class ScheduleService(
     }
 
     @Transactional(readOnly = true)
-    fun findSchedules(): List<ScheduleSummaryResponse> {
-        val schedules = scheduleRepository.findAllWithProject()
-        return schedules.map { ScheduleSummaryResponse.from(it) }
+    fun findSchedules(
+        keyword: String?,
+        pageable: Pageable
+    ): Page<ScheduleListResponse> {
+        if(keyword.isNullOrBlank()){
+            return scheduleRepository.findScheduleList(pageable)
+        }
+        return scheduleRepository.searchScheduleList(keyword, pageable)
     }
 
     @Transactional(readOnly = true)

@@ -14,10 +14,10 @@ import org.core.scheduleflow.domain.partner.repository.PartnerRepository
 import org.core.scheduleflow.domain.project.constant.ProjectStatus
 import org.core.scheduleflow.domain.project.dto.ProjectCalendarResponse
 import org.core.scheduleflow.domain.project.dto.ProjectCreateRequest
+import org.core.scheduleflow.domain.project.dto.ProjectListResponse
 import org.core.scheduleflow.domain.project.dto.ProjectUpdateRequest
 import org.core.scheduleflow.domain.project.entity.Project
 import org.core.scheduleflow.domain.project.entity.ProjectMember
-import org.core.scheduleflow.domain.project.repository.ProjectMemberRepository
 import org.core.scheduleflow.domain.project.repository.ProjectRepository
 import org.core.scheduleflow.domain.schedule.repository.ScheduleMemberRepository
 import org.core.scheduleflow.domain.schedule.repository.ScheduleRepository
@@ -25,6 +25,8 @@ import org.core.scheduleflow.domain.user.entity.User
 import org.core.scheduleflow.domain.user.repository.UserRepository
 import org.core.scheduleflow.global.exception.CustomException
 import org.core.scheduleflow.global.exception.ErrorCode
+import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.PageRequest
 import org.springframework.data.repository.findByIdOrNull
 import java.time.LocalDate
 
@@ -36,7 +38,6 @@ class ProjectServiceKoTest() : BehaviorSpec({
     val partnerRepository = mockk<PartnerRepository>()
     val partnerContactRepository = mockk<PartnerContactRepository>()
     val userRepository = mockk<UserRepository>()
-    val projectMemberRepository = mockk<ProjectMemberRepository>()
     val scheduleRepository = mockk<ScheduleRepository>()
     val scheduleMemberRepository = mockk<ScheduleMemberRepository>()
 
@@ -45,7 +46,6 @@ class ProjectServiceKoTest() : BehaviorSpec({
         partnerRepository,
         partnerContactRepository,
         userRepository,
-        projectMemberRepository,
         scheduleRepository,
         scheduleMemberRepository
     )
@@ -275,36 +275,58 @@ class ProjectServiceKoTest() : BehaviorSpec({
         }
     }
 
-    Given("프로젝트 목록 조회 요청이 주어지고") {
+    Given("프로젝트 목록 조회를 위한 환경이 세팅되었을 때") {
+        val pageable = PageRequest.of(0, 10)
         val client = createPartner()
-        val user1 = createUser(1L, "user1", "홍길동")
-        val user2 = createUser(2L, "user2", "김철수")
-
-        val project1 = createProjectWithSavedMembers(
+        val project1 = ProjectListResponse(
             id = 1L,
             name = "프로젝트 1",
-            client = client,
-            users = listOf(user1)
+            clientName = client.companyName,
+            status = ProjectStatus.IN_PROGRESS,
+            startDate = LocalDate.now(),
+            endDate = LocalDate.now().plusDays(30),
+            colorCode = "#FF0000"
         )
-
-        val project2 = createProjectWithSavedMembers(
+        val project2 = ProjectListResponse(
             id = 2L,
             name = "프로젝트 2",
-            client = client,
-            users = listOf(user2),
-            endDate = LocalDate.now().plusDays(60)
-        )
+            clientName = client.companyName,
+            status = ProjectStatus.IN_PROGRESS,
+            startDate = LocalDate.now(),
+            endDate = LocalDate.now().plusDays(30),
+            colorCode = "#FF0000")
 
-        every { projectRepository.findAllWithClient() } returns listOf(project1, project2)
-        every { projectMemberRepository.findByProjectInWithUser(listOf(project1, project2)) } returns project1.members
+        When("키워드가 null 이거나 빈 공백이면") {
+            val emptyKeyword = ""
+            val expectedPage = PageImpl(listOf(project1, project2), pageable, 2)
 
-        When("조회 요청을 하면") {
-            val projects = projectService.findProjects()
+            every { projectRepository.findProjectList(pageable) } returns expectedPage
 
-            Then("모든 프로젝트 목록이 반환된다") {
-                projects.size shouldBe 2
-                projects.map { it.name } shouldContainAll listOf("프로젝트 1", "프로젝트 2")
-                verify(exactly = 1) { projectRepository.findAllWithClient() }
+            val result = projectService.findProjects(emptyKeyword, pageable)
+
+            Then("전체 목록을 조회하는 findProjectList가 호출된다") {
+                result.content.size shouldBe 2
+                result.content shouldContainAll listOf(project1, project2)
+
+                verify(exactly = 1) { projectRepository.findProjectList(any()) }
+                verify(exactly = 0) { projectRepository.searchProjectList(any(), any()) }
+            }
+        }
+
+        When("유효한 검색 키워드(keyword)가 주어지면") {
+            val keyword = "프로젝트 1"
+            val expectedPage = PageImpl(listOf(project1), pageable, 1)
+
+            every { projectRepository.searchProjectList(keyword, pageable) } returns expectedPage
+
+            val result = projectService.findProjects(keyword, pageable)
+
+            Then("검색 전용 메서드인 searchProjectList가 호출된다") {
+                result.content.size shouldBe 1
+                result.content[0].name shouldBe "프로젝트 1"
+
+                verify(exactly = 1) { projectRepository.searchProjectList(eq(keyword), any()) }
+                verify(exactly = 0) { projectRepository.findProjectList(any()) }
             }
         }
     }
