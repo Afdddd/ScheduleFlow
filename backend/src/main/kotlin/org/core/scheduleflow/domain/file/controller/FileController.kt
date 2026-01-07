@@ -34,7 +34,7 @@ class FileController(
     }
 
     @GetMapping
-    fun findByFileName(
+    fun findFiles(
         @RequestParam(required = false) keyword: String?,
         @RequestParam page: Int,
         @RequestParam size: Int
@@ -42,7 +42,7 @@ class FileController(
 
         val pageable: Pageable = Pageable.ofSize(size).withPage(page)
 
-        val files = fileService.findByFileName(pageable, keyword)
+        val files = fileService.findFiles(pageable, keyword)
 
 
         return PageResponse.from(files)

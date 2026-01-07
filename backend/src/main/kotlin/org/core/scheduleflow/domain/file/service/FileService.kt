@@ -54,7 +54,7 @@ class FileService(
     }
 
     @Transactional(readOnly = true)
-    fun findByFileName(pageable: Pageable, keyword: String?): Page<FileListResponse> {
+    fun findFiles(pageable: Pageable, keyword: String?): Page<FileListResponse> {
 
         if(!keyword.isNullOrBlank()) {
             return fileRepository.findByFileName(pageable, keyword)

@@ -225,13 +225,13 @@ class FileServiceTest(
 
         // When
         val pageable = Pageable.ofSize(5)
-        val found1 = fileService.findByFileName(pageable, null)
-        val found2 = fileService.findByFileName(pageable, "download")
+        val found1 = fileService.findFiles(pageable, null)
+        val found2 = fileService.findFiles(pageable, "download")
 
         // Then
-        val logger = org.slf4j.LoggerFactory.getLogger(this::class.java)
-        logger.info("found1: ${found1.content}")
-        logger.info("found2: ${found2.content}")
+        //val logger = org.slf4j.LoggerFactory.getLogger(this::class.java)
+       // logger.info("found1: ${found1.content}")
+       // logger.info("found2: ${found2.content}")
 
         assertThat(found1.content.size).isEqualTo(3)
         assertThat(found2.content.size).isEqualTo(2)
