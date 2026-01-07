@@ -10,7 +10,7 @@ import org.core.scheduleflow.domain.partner.dto.PartnerUpdateRequestDto
 
 import org.core.scheduleflow.domain.partner.service.PartnerContactService
 import org.core.scheduleflow.domain.partner.service.PartnerService
-import org.springframework.data.domain.Page
+import org.core.scheduleflow.global.dto.PageResponse
 import org.springframework.data.domain.Pageable
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
@@ -28,11 +28,14 @@ class PartnerController(
         @RequestParam(required = false) keyword: String?,
         @RequestParam page: Int,
         @RequestParam size: Int,
-    ) : Page<PartnerListResponse> {
+    ) : PageResponse<PartnerListResponse> {
 
         val pageable: Pageable = Pageable.ofSize(size).withPage(page)
 
-        return partnerService.findPartners(pageable,keyword)
+        val partners = partnerService.findPartners(pageable, keyword)
+
+        return PageResponse.from(partners)
+
     }
 
     @GetMapping("/{id}")

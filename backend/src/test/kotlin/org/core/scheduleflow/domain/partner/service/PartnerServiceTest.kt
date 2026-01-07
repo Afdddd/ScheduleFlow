@@ -103,6 +103,8 @@ class PartnerServiceTest @Autowired constructor(
         keyword = "테스트"
         val found2 = partnerService.findPartners(pageable, keyword)
 
+
+
         assertThat(found1.content.size).isEqualTo(3)
         assertThat(found2.content.size).isEqualTo(2)
 
