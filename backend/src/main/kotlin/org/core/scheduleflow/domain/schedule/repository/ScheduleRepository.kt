@@ -45,7 +45,7 @@ interface ScheduleRepository: JpaRepository<Schedule, Long>, ScheduleRepositoryC
             s.endDate
         )
          from Schedule s
-         join s.project p
+         left join s.project p
          order by s.startDate
     """)
     fun findScheduleList(pageable: Pageable): Page<ScheduleListResponse>
@@ -61,7 +61,7 @@ interface ScheduleRepository: JpaRepository<Schedule, Long>, ScheduleRepositoryC
             s.endDate
         )
          from Schedule s
-         join s.project p
+         left join s.project p
          where s.title like %:keyword%
          order by s.startDate
     """)
