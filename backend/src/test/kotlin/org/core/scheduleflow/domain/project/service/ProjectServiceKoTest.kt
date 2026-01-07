@@ -18,7 +18,6 @@ import org.core.scheduleflow.domain.project.dto.ProjectListResponse
 import org.core.scheduleflow.domain.project.dto.ProjectUpdateRequest
 import org.core.scheduleflow.domain.project.entity.Project
 import org.core.scheduleflow.domain.project.entity.ProjectMember
-import org.core.scheduleflow.domain.project.repository.ProjectMemberRepository
 import org.core.scheduleflow.domain.project.repository.ProjectRepository
 import org.core.scheduleflow.domain.schedule.repository.ScheduleMemberRepository
 import org.core.scheduleflow.domain.schedule.repository.ScheduleRepository
@@ -39,7 +38,6 @@ class ProjectServiceKoTest() : BehaviorSpec({
     val partnerRepository = mockk<PartnerRepository>()
     val partnerContactRepository = mockk<PartnerContactRepository>()
     val userRepository = mockk<UserRepository>()
-    val projectMemberRepository = mockk<ProjectMemberRepository>()
     val scheduleRepository = mockk<ScheduleRepository>()
     val scheduleMemberRepository = mockk<ScheduleMemberRepository>()
 
@@ -48,7 +46,6 @@ class ProjectServiceKoTest() : BehaviorSpec({
         partnerRepository,
         partnerContactRepository,
         userRepository,
-        projectMemberRepository,
         scheduleRepository,
         scheduleMemberRepository
     )

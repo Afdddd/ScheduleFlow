@@ -7,7 +7,6 @@ import org.core.scheduleflow.domain.user.dto.UserUpdateRequest
 import org.core.scheduleflow.domain.user.service.UserService
 import org.core.scheduleflow.global.dto.PageResponse
 import org.springframework.data.domain.PageRequest
-import org.springframework.data.domain.Pageable
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize

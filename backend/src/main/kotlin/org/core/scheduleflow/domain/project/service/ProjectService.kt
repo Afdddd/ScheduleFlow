@@ -11,7 +11,6 @@ import org.core.scheduleflow.domain.project.dto.ProjectDetailResponse
 import org.core.scheduleflow.domain.project.dto.ProjectListResponse
 import org.core.scheduleflow.domain.project.dto.ProjectUpdateRequest
 import org.core.scheduleflow.domain.project.entity.Project
-import org.core.scheduleflow.domain.project.repository.ProjectMemberRepository
 import org.core.scheduleflow.domain.project.repository.ProjectRepository
 import org.core.scheduleflow.domain.schedule.dto.ProjectScheduleDto
 import org.core.scheduleflow.domain.schedule.repository.ScheduleMemberRepository
@@ -34,7 +33,6 @@ class ProjectService(
     private val partnerRepository: PartnerRepository,
     private val partnerContactRepository: PartnerContactRepository,
     private val userRepository: UserRepository,
-    private val projectMemberRepository: ProjectMemberRepository,
     private val scheduleRepository: ScheduleRepository,
     private val scheduleMemberRepository: ScheduleMemberRepository
 ) {

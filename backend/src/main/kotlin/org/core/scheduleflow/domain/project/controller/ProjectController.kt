@@ -36,7 +36,7 @@ class ProjectController(
         @RequestParam size: Int
     ): ResponseEntity<PageResponse<ProjectListResponse>> {
         val pageable = PageRequest.of(page, size)
-        var result = service.findProjects(keyword, pageable)
+        val result = service.findProjects(keyword, pageable)
         return ResponseEntity.ok(PageResponse.from(result))
     }
 
