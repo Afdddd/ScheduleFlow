@@ -156,7 +156,7 @@ export const getUserList = async (
   page: number = 0,
   size: number = 5
 ): Promise<PageResponse<UserListResponse>> => {
-  const response = await apiClient.get<PageResponse<UserListResponse>>('/admin/users', {
+  const response = await apiClient.get<PageResponse<UserListResponse>>('/users', {
     params: {
       query: query || undefined,
       page,

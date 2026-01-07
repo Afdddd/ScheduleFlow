@@ -1,5 +1,8 @@
 package org.core.scheduleflow.domain.user.service
 
+import io.kotest.matchers.collections.haveSize
+import io.kotest.matchers.should
+import io.kotest.matchers.shouldBe
 import org.core.scheduleflow.domain.user.dto.UserUpdateRequest
 import org.core.scheduleflow.domain.user.entity.User
 import org.core.scheduleflow.domain.user.repository.UserRepository
@@ -11,6 +14,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.data.domain.PageRequest
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.transaction.annotation.Transactional
 
@@ -40,10 +44,14 @@ class UserServiceIntegrationTest @Autowired constructor(
     fun findUsers_success() {
         val user = userRepository.save(testUser)
 
-        val result = userService.findUsers()
+        val pageable = PageRequest.of(0, 10)
+        val keyword = ""
+        val result = userService.findUsers(keyword,pageable)
 
-        assertTrue(result.size == 1)
-        assertTrue(result.any { it.id == user.id && it.name == "test-user" })
+        result.content should haveSize(1)
+        result.content[0].id shouldBe user.id
+        result.content[0].name shouldBe user.name
+        result.totalElements shouldBe 1L
     }
 
     @Test

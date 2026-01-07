@@ -1,9 +1,13 @@
 package org.core.scheduleflow.domain.user.controller
 
 import org.core.scheduleflow.domain.user.dto.TodayTeamTaskResponse
+import org.core.scheduleflow.domain.user.dto.UserListResponse
 import org.core.scheduleflow.domain.user.dto.UserResponse
 import org.core.scheduleflow.domain.user.dto.UserUpdateRequest
 import org.core.scheduleflow.domain.user.service.UserService
+import org.core.scheduleflow.global.dto.PageResponse
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Pageable
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
@@ -23,10 +27,16 @@ class UserController(
     private val service: UserService
 ) {
 
-    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
-    fun getUsers(): ResponseEntity<List<UserResponse>> {
-        return ResponseEntity.ok(service.findUsers())
+    fun getUsers(
+        @RequestParam keyword: String?,
+        @RequestParam page: Int,
+        @RequestParam size: Int, pageable: Pageable
+    ): ResponseEntity<PageResponse<UserListResponse>> {
+        val pageable = PageRequest.of(page, size)
+        val result = service.findUsers(keyword, pageable)
+
+        return ResponseEntity.ok(PageResponse.from(result))
     }
 
     @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.['userId']")
