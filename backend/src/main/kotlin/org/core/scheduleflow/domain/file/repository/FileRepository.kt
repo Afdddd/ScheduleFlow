@@ -23,7 +23,7 @@ interface FileRepository: JpaRepository<FileEntity, Long> {
         f.createdAt
     ) 
     FROM FileEntity f
-    LEFT JOIN f.user u 
+    JOIN f.user u 
     LEFT JOIN f.project p """)
     fun findFiles(pageable: Pageable): Page<FileListResponse>
 
@@ -38,11 +38,11 @@ interface FileRepository: JpaRepository<FileEntity, Long> {
         f.contentType, 
         f.createdAt) 
     FROM FileEntity f
-    LEFT JOIN f.user u 
+    JOIN f.user u 
     LEFT JOIN f.project p
     WHERE f.originalFileName LIKE CONCAT('%', :keyword, '%')
     """)
-    fun findByFileName(pageable: Pageable, keyword: String?): Page<FileListResponse>
+    fun findByFileName(pageable: Pageable, keyword: String): Page<FileListResponse>
 
     fun findByProjectId(projectId: Long): List<FileEntity>
 }
