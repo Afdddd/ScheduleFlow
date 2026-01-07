@@ -4,9 +4,11 @@ import org.core.scheduleflow.domain.project.dto.ProjectCalendarResponse
 import org.core.scheduleflow.domain.project.dto.ProjectCalendarWithSchedulesResponse
 import org.core.scheduleflow.domain.project.dto.ProjectCreateRequest
 import org.core.scheduleflow.domain.project.dto.ProjectDetailResponse
-import org.core.scheduleflow.domain.project.dto.ProjectSummaryResponse
+import org.core.scheduleflow.domain.project.dto.ProjectListResponse
 import org.core.scheduleflow.domain.project.dto.ProjectUpdateRequest
 import org.core.scheduleflow.domain.project.service.ProjectService
+import org.core.scheduleflow.global.dto.PageResponse
+import org.springframework.data.domain.PageRequest
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -28,8 +30,14 @@ class ProjectController(
     private val service: ProjectService
 ) {
     @GetMapping
-    fun getProjects(): ResponseEntity<List<ProjectSummaryResponse>> {
-        return ResponseEntity.ok(service.findProjects())
+    fun getProjects(
+        @RequestParam keyword: String?,
+        @RequestParam page: Int,
+        @RequestParam size: Int
+    ): ResponseEntity<PageResponse<ProjectListResponse>> {
+        val pageable = PageRequest.of(page, size)
+        var result = service.findProjects(keyword, pageable)
+        return ResponseEntity.ok(PageResponse.from(result))
     }
 
     @GetMapping("/{projectId}")

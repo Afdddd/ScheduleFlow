@@ -8,7 +8,7 @@ import org.core.scheduleflow.domain.project.dto.ProjectCalendarResponse
 import org.core.scheduleflow.domain.project.dto.ProjectCalendarWithSchedulesResponse
 import org.core.scheduleflow.domain.project.dto.ProjectCreateRequest
 import org.core.scheduleflow.domain.project.dto.ProjectDetailResponse
-import org.core.scheduleflow.domain.project.dto.ProjectSummaryResponse
+import org.core.scheduleflow.domain.project.dto.ProjectListResponse
 import org.core.scheduleflow.domain.project.dto.ProjectUpdateRequest
 import org.core.scheduleflow.domain.project.entity.Project
 import org.core.scheduleflow.domain.project.repository.ProjectMemberRepository
@@ -20,6 +20,8 @@ import org.core.scheduleflow.domain.user.dto.ProjectMemberDto
 import org.core.scheduleflow.domain.user.repository.UserRepository
 import org.core.scheduleflow.global.exception.CustomException
 import org.core.scheduleflow.global.exception.ErrorCode
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -79,20 +81,14 @@ class ProjectService(
     }
 
     @Transactional(readOnly = true)
-    fun findProjects(): List<ProjectSummaryResponse> {
-        val projects = projectRepository.findAllWithClient()
-        if (projects.isEmpty()) {
-            return emptyList()
+    fun findProjects(
+        keyword: String?,
+        pageable: Pageable
+    ): Page<ProjectListResponse> {
+        if(keyword.isNullOrBlank()) {
+            return projectRepository.findProjectList(pageable)
         }
-
-        val members = projectMemberRepository.findByProjectInWithUser(projects)
-        val membersByProjectId = members.groupBy { it.project.id!! }
-
-        return projects.map { project ->
-            val projectMembers = membersByProjectId[project.id!!] ?: emptyList()
-            val memberNames = projectMembers.map { it.user.name }
-            ProjectSummaryResponse.from(project, memberNames)
-        }
+        return projectRepository.searchProjectList(keyword, pageable)
     }
 
     @Transactional(readOnly = true)

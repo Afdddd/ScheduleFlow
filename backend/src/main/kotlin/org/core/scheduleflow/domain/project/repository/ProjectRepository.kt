@@ -1,7 +1,10 @@
 package org.core.scheduleflow.domain.project.repository
 
 import org.core.scheduleflow.domain.project.dto.ProjectCalendarResponse
+import org.core.scheduleflow.domain.project.dto.ProjectListResponse
 import org.core.scheduleflow.domain.project.entity.Project
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import java.time.LocalDate
@@ -19,11 +22,35 @@ interface ProjectRepository: JpaRepository<Project, Long>, ProjectRepositoryCust
     fun findByIdWithClient(projectId: Long): Project?
 
     @Query("""
-        select p
+        select new org.core.scheduleflow.domain.project.dto.ProjectListResponse(
+            p.id, 
+            p.name, 
+            c.companyName,
+            p.status,
+            p.startDate, 
+            p.endDate, 
+            p.colorCode
+        )
         from Project p
-        left join fetch p.client
+        join p.client c
     """)
-    fun findAllWithClient(): List<Project>
+    fun findProjectList(pageable: Pageable): Page<ProjectListResponse>
+
+    @Query("""
+        select new org.core.scheduleflow.domain.project.dto.ProjectListResponse(
+            p.id, 
+            p.name, 
+            c.companyName,
+            p.status,
+            p.startDate, 
+            p.endDate, 
+            p.colorCode
+        )
+        from Project p
+        join p.client c
+        where p.name like %:keyword%
+    """)
+    fun searchProjectList(keyword: String, pageable: Pageable): Page<ProjectListResponse>
 
     @Query("""
         select new org.core.scheduleflow.domain.project.dto.ProjectCalendarResponse(
