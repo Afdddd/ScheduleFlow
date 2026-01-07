@@ -80,13 +80,13 @@ export interface UserListResponse {
  * 프로젝트 목록 조회
  */
 export const getProjectList = async (
-  query: string = '',
+  keyword: string = '',
   page: number = 0,
   size: number = 5
 ): Promise<PageResponse<ProjectListResponse>> => {
   const response = await apiClient.get<PageResponse<ProjectListResponse>>('/projects', {
     params: {
-      query: query || undefined,
+      keyword: keyword || undefined,
       page,
       size,
     },
@@ -98,13 +98,13 @@ export const getProjectList = async (
  * 파일 목록 조회
  */
 export const getFileList = async (
-  query: string = '',
+  keyword: string = '',
   page: number = 0,
   size: number = 5
 ): Promise<PageResponse<FileListResponse>> => {
   const response = await apiClient.get<PageResponse<FileListResponse>>('/files', {
     params: {
-      query: query || undefined,
+      keyword: keyword || undefined,
       page,
       size,
     },
@@ -116,13 +116,13 @@ export const getFileList = async (
  * 일정 목록 조회
  */
 export const getScheduleList = async (
-  query: string = '',
+  keyword: string = '',
   page: number = 0,
   size: number = 5
 ): Promise<PageResponse<ScheduleListResponse>> => {
   const response = await apiClient.get<PageResponse<ScheduleListResponse>>('/schedules', {
     params: {
-      query: query || undefined,
+      keyword: keyword || undefined,
       page,
       size,
     },
@@ -134,13 +134,13 @@ export const getScheduleList = async (
  * 거래처 목록 조회
  */
 export const getPartnerList = async (
-  query: string = '',
+  keyword: string = '',
   page: number = 0,
   size: number = 5
 ): Promise<PageResponse<PartnerListResponse>> => {
   const response = await apiClient.get<PageResponse<PartnerListResponse>>('/partners', {
     params: {
-      query: query || undefined,
+      keyword: keyword || undefined,
       page,
       size,
     },
@@ -152,13 +152,13 @@ export const getPartnerList = async (
  * 사원 목록 조회 (ADMIN 전용)
  */
 export const getUserList = async (
-  query: string = '',
+  keyword: string = '',
   page: number = 0,
   size: number = 5
 ): Promise<PageResponse<UserListResponse>> => {
   const response = await apiClient.get<PageResponse<UserListResponse>>('/users', {
     params: {
-      query: query || undefined,
+      keyword: keyword || undefined,
       page,
       size,
     },
