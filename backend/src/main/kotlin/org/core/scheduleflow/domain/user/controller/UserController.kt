@@ -31,7 +31,7 @@ class UserController(
     fun getUsers(
         @RequestParam keyword: String?,
         @RequestParam page: Int,
-        @RequestParam size: Int, pageable: Pageable
+        @RequestParam size: Int
     ): ResponseEntity<PageResponse<UserListResponse>> {
         val pageable = PageRequest.of(page, size)
         val result = service.findUsers(keyword, pageable)
