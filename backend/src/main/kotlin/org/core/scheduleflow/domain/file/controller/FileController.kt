@@ -1,11 +1,14 @@
 package org.core.scheduleflow.domain.file.controller
 
 import org.core.scheduleflow.domain.file.constant.FileCategory
+import org.core.scheduleflow.domain.file.dto.FileListResponse
 import org.core.scheduleflow.domain.file.dto.FileResponse
 import org.core.scheduleflow.domain.file.service.FileService
+import org.core.scheduleflow.global.dto.PageResponse
 import org.core.scheduleflow.global.exception.CustomException
 import org.core.scheduleflow.global.exception.ErrorCode
 import org.springframework.core.io.UrlResource
+import org.springframework.data.domain.Pageable
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -28,6 +31,21 @@ class FileController(
     @GetMapping("/{projectId}")
     fun findByProjectId(@PathVariable projectId: Long): List<FileResponse>{
         return fileService.findByProjectId(projectId)
+    }
+
+    @GetMapping
+    fun findByFileName(
+        @RequestParam(required = false) keyword: String?,
+        @RequestParam page: Int,
+        @RequestParam size: Int
+    ): PageResponse<FileListResponse> {
+
+        val pageable: Pageable = Pageable.ofSize(size).withPage(page)
+
+        val files = fileService.findByFileName(pageable, keyword)
+
+
+        return PageResponse.from(files)
     }
 
     @PreAuthorize("hasRole('ADMIN')")

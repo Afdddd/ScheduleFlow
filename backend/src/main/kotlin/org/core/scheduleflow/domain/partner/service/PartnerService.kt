@@ -22,7 +22,7 @@ class PartnerService(private val partnerRepository: PartnerRepository) {
     @Transactional(readOnly = true)
     fun findPartners(pageable: Pageable, keyword: String?): Page<PartnerListResponse> {
 
-        if(keyword.isNullOrBlank()) {
+        if(!keyword.isNullOrBlank()) {
             return partnerRepository.findByCompanyNameContains(pageable,keyword)
         }
 

@@ -103,6 +103,11 @@ class PartnerServiceTest @Autowired constructor(
         keyword = "테스트"
         val found2 = partnerService.findPartners(pageable, keyword)
 
+        val logger = org.slf4j.LoggerFactory.getLogger(this::class.java)
+
+        logger.info("found1: ${found1.content}")
+        logger.info("found2: ${found2.content}")
+
         assertThat(found1.content.size).isEqualTo(3)
         assertThat(found2.content.size).isEqualTo(2)
 

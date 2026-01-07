@@ -1,6 +1,7 @@
 package org.core.scheduleflow.domain.file.service
 
 import jakarta.transaction.Transactional
+import org.assertj.core.api.Assertions.assertThat
 import org.core.scheduleflow.domain.file.constant.FileCategory
 import org.core.scheduleflow.domain.file.repository.FileRepository
 import org.core.scheduleflow.domain.partner.entity.Partner
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.data.domain.Pageable
 import org.springframework.http.HttpStatus
 import org.springframework.mock.web.MockMultipartFile
 import org.springframework.test.context.ActiveProfiles
@@ -207,5 +209,31 @@ class FileServiceTest(
 
         // 3. 파일 이름 확인: assertEquals(기대값, 실제값)
         assertEquals("download.txt", responseEntity.headers.contentDisposition.filename)
+    }
+
+    @Test
+    @DisplayName("페이징 처리 조회")
+    fun pagingTest(){
+        // Given
+        val content = "Download Content".toByteArray()
+        val file1 = MockMultipartFile("file1", "download.txt", "text/plain", content)
+        val file2 = MockMultipartFile("file2", "test_download.txt", "text/plain", content)
+        val file3 = MockMultipartFile("file3", "test.txt", "text/plain", content)
+        val uploaded1 = fileService.uploadFile(testProject.id!!, file1, FileCategory.BOM, testUser.id!!)
+        val uploaded2 = fileService.uploadFile(testProject.id!!, file2, FileCategory.BOM, testUser.id!!)
+        val uploaded3 = fileService.uploadFile(testProject.id!!, file3, FileCategory.BOM, testUser.id!!)
+
+        // When
+        val pageable = Pageable.ofSize(5)
+        val found1 = fileService.findByFileName(pageable, null)
+        val found2 = fileService.findByFileName(pageable, "download")
+
+        // Then
+        val logger = org.slf4j.LoggerFactory.getLogger(this::class.java)
+        logger.info("found1: ${found1.content}")
+        logger.info("found2: ${found2.content}")
+
+        assertThat(found1.content.size).isEqualTo(3)
+        assertThat(found2.content.size).isEqualTo(2)
     }
 }

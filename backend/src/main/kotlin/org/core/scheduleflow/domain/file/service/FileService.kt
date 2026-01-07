@@ -2,6 +2,7 @@ package org.core.scheduleflow.domain.file.service
 
 import jakarta.annotation.PostConstruct
 import org.core.scheduleflow.domain.file.constant.FileCategory
+import org.core.scheduleflow.domain.file.dto.FileListResponse
 import org.core.scheduleflow.domain.file.dto.FileResponse
 import org.core.scheduleflow.domain.file.entity.FileEntity
 import org.core.scheduleflow.domain.file.repository.FileRepository
@@ -12,6 +13,8 @@ import org.core.scheduleflow.global.exception.ErrorCode
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.io.UrlResource
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.HttpHeaders
 import org.springframework.http.ResponseEntity
@@ -48,6 +51,16 @@ class FileService(
         } catch (e: IOException) {
             throw RuntimeException("루트 폴더를 생성할 수 없습니다.", e)
         }
+    }
+
+    @Transactional(readOnly = true)
+    fun findByFileName(pageable: Pageable, keyword: String?): Page<FileListResponse> {
+
+        if(!keyword.isNullOrBlank()) {
+            return fileRepository.findByFileName(pageable, keyword)
+        }
+
+        return fileRepository.findFiles(pageable)
     }
 
     @Transactional(readOnly = true)
