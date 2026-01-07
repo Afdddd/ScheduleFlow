@@ -3,12 +3,15 @@ package org.core.scheduleflow.domain.partner.controller
 import org.core.scheduleflow.domain.partner.dto.PartnerContactRequestDto
 import org.core.scheduleflow.domain.partner.dto.PartnerContactResponseDto
 import org.core.scheduleflow.domain.partner.dto.PartnerContactUpdateRequestDto
+import org.core.scheduleflow.domain.partner.dto.PartnerListResponse
 import org.core.scheduleflow.domain.partner.dto.PartnerRequestDto
 import org.core.scheduleflow.domain.partner.dto.PartnerResponseDto
 import org.core.scheduleflow.domain.partner.dto.PartnerUpdateRequestDto
 
 import org.core.scheduleflow.domain.partner.service.PartnerContactService
 import org.core.scheduleflow.domain.partner.service.PartnerService
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
 
@@ -21,8 +24,15 @@ class PartnerController(
 ) {
     /*==========================================================Partner READ====================================================================*/
     @GetMapping
-    fun allPartners() : List<PartnerResponseDto> {
-         return partnerService.findAll()
+    fun findPartners(
+        @RequestParam(required = false) keyword: String?,
+        @RequestParam page: Int,
+        @RequestParam size: Int,
+    ) : Page<PartnerListResponse> {
+
+        val pageable: Pageable = Pageable.ofSize(size).withPage(page)
+
+        return partnerService.findPartners(pageable,keyword)
     }
 
     @GetMapping("/{id}")
@@ -30,10 +40,6 @@ class PartnerController(
         return partnerService.findPartnerById(id)
     }
 
-    @GetMapping("/search")
-    fun findPartnerByName(@RequestParam name: String?): List<PartnerResponseDto> {
-        return partnerService.findPartnerByNameContains(name)
-    }
 
     /*===========================================================Partner CREATE================================================================*/
     @PreAuthorize("hasRole('ADMIN')")

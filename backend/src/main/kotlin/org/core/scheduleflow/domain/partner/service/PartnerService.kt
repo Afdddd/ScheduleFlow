@@ -1,5 +1,6 @@
 package org.core.scheduleflow.domain.partner.service
 
+import org.core.scheduleflow.domain.partner.dto.PartnerListResponse
 import org.core.scheduleflow.domain.partner.dto.PartnerRequestDto
 import org.core.scheduleflow.domain.partner.dto.PartnerResponseDto
 import org.core.scheduleflow.domain.partner.dto.PartnerUpdateRequestDto
@@ -7,6 +8,8 @@ import org.core.scheduleflow.domain.partner.dto.PartnerUpdateRequestDto
 import org.core.scheduleflow.domain.partner.repository.PartnerRepository
 import org.core.scheduleflow.global.exception.CustomException
 import org.core.scheduleflow.global.exception.ErrorCode
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -16,12 +19,14 @@ import org.springframework.transaction.annotation.Transactional
 @Transactional
 class PartnerService(private val partnerRepository: PartnerRepository) {
     /*==========================================================Partner READ====================================================================*/
-    fun findAll(): List<PartnerResponseDto> {
-        val partners = partnerRepository.findAll()
+    @Transactional(readOnly = true)
+    fun findPartners(pageable: Pageable, keyword: String?): Page<PartnerListResponse> {
 
-        return partners.mapNotNull { partner ->
-            partner?.let { PartnerResponseDto.fromEntity(it) }
+        if(keyword.isNullOrBlank()) {
+            return partnerRepository.findByCompanyNameContains(pageable,keyword)
         }
+
+        return partnerRepository.findPartners(pageable)
     }
 
     fun findPartnerById(id: Long): PartnerResponseDto? {
@@ -31,12 +36,6 @@ class PartnerService(private val partnerRepository: PartnerRepository) {
         return PartnerResponseDto.fromEntity(partner)
     }
 
-    fun findPartnerByNameContains(companyName: String?): List<PartnerResponseDto> {
-        val partners = partnerRepository.findByCompanyNameContains(companyName)
-
-        return partners.mapNotNull { it?.let { partner -> PartnerResponseDto.fromEntity(partner) } }
-
-    }
 
     /*===========================================================Partner CREATE================================================================*/
 
