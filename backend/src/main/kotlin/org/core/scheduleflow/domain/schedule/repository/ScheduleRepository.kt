@@ -3,7 +3,10 @@ package org.core.scheduleflow.domain.schedule.repository
 import org.core.scheduleflow.domain.project.entity.Project
 import org.core.scheduleflow.domain.schedule.dto.MyTaskResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleCalenderResponse
+import org.core.scheduleflow.domain.schedule.dto.ScheduleListResponse
 import org.core.scheduleflow.domain.schedule.entity.Schedule
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import java.time.LocalDate
@@ -31,6 +34,38 @@ interface ScheduleRepository: JpaRepository<Schedule, Long>, ScheduleRepositoryC
     """
     )
     fun findMyTasksByUserIdAndPeriod(userId: Long, startDate: LocalDate, endDate: LocalDate): List<MyTaskResponse>
+
+    @Query("""
+        select new org.core.scheduleflow.domain.schedule.dto.ScheduleListResponse(
+            s.id,
+            s.title,
+            p.name,
+            s.type,
+            s.startDate,
+            s.endDate
+        )
+         from Schedule s
+         join s.project p
+         order by s.startDate
+    """)
+    fun findScheduleList(pageable: Pageable): Page<ScheduleListResponse>
+
+
+    @Query("""
+        select new org.core.scheduleflow.domain.schedule.dto.ScheduleListResponse(
+            s.id,
+            s.title,
+            p.name,
+            s.type,
+            s.startDate,
+            s.endDate
+        )
+         from Schedule s
+         join s.project p
+         where s.title like %:keyword%
+         order by s.startDate
+    """)
+    fun searchScheduleList(keyword: String, pageable: Pageable): Page<ScheduleListResponse>
 }
 
 interface ScheduleRepositoryCustom {

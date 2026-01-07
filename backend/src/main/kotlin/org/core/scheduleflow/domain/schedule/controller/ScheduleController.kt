@@ -4,11 +4,13 @@ import org.core.scheduleflow.domain.schedule.dto.MyTaskResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleCalenderResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleCreateRequest
 import org.core.scheduleflow.domain.schedule.dto.ScheduleDetailResponse
-import org.core.scheduleflow.domain.schedule.dto.ScheduleSummaryResponse
+import org.core.scheduleflow.domain.schedule.dto.ScheduleListResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleUpdateRequest
 import org.core.scheduleflow.domain.schedule.service.ScheduleService
+import org.core.scheduleflow.global.dto.PageResponse
 import org.core.scheduleflow.global.exception.CustomException
 import org.core.scheduleflow.global.exception.ErrorCode
+import org.springframework.data.domain.PageRequest
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -31,8 +33,15 @@ class ScheduleController(
     private val service: ScheduleService
 ) {
     @GetMapping
-    fun getSchedules(): ResponseEntity<List<ScheduleSummaryResponse>> {
-        return ResponseEntity.ok(service.findSchedules())
+    fun getSchedules(
+        @RequestParam keyword: String?,
+        @RequestParam page: Int,
+        @RequestParam size: Int
+    ): ResponseEntity<PageResponse<ScheduleListResponse>> {
+        val pageable = PageRequest.of(page, size)
+        val result = service.findSchedules(keyword, pageable)
+
+        return ResponseEntity.ok(PageResponse.from(result))
     }
 
     @GetMapping("/{scheduleId}")

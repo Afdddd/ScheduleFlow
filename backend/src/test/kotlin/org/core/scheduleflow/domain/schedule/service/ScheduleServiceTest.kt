@@ -3,6 +3,7 @@ package org.core.scheduleflow.domain.schedule.service
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.BehaviorSpec
+import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
@@ -14,6 +15,7 @@ import org.core.scheduleflow.domain.schedule.constant.ScheduleType
 import org.core.scheduleflow.domain.schedule.dto.MyTaskResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleCalenderResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleCreateRequest
+import org.core.scheduleflow.domain.schedule.dto.ScheduleListResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleUpdateRequest
 import org.core.scheduleflow.domain.schedule.entity.Schedule
 import org.core.scheduleflow.domain.schedule.repository.ScheduleRepository
@@ -21,6 +23,8 @@ import org.core.scheduleflow.domain.user.entity.User
 import org.core.scheduleflow.domain.user.repository.UserRepository
 import org.core.scheduleflow.global.exception.CustomException
 import org.core.scheduleflow.global.exception.ErrorCode
+import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.PageRequest
 import org.springframework.data.repository.findByIdOrNull
 import java.time.LocalDate
 
@@ -132,48 +136,55 @@ class ScheduleServiceTest : BehaviorSpec({
     }
 
     Given("일정 목록 조회 요청이 주어질 때") {
-
-        val mockSchedules = listOf(
-            Schedule(
-                id = 1L,
-                title = "일정 1",
-                startDate = LocalDate.now(),
-                endDate = LocalDate.now().plusDays(1),
-                type = ScheduleType.PROJECT
-            ),
-            Schedule(
-                id = 2L,
-                title = "일정 2",
-                startDate = LocalDate.now(),
-                endDate = LocalDate.now().plusDays(2),
-                type = ScheduleType.TEST_RUN
-            )
+        val pageable = PageRequest.of(0, 10)
+        val schedule1 = ScheduleListResponse(
+            id = 1L,
+            title = "test-schedule-1",
+            projectName = mockProject.name,
+            type = ScheduleType.MEETING,
+            startDate = LocalDate.now(),
+            endDate = LocalDate.now().plusDays(10)
+        )
+        val schedule2 = ScheduleListResponse(
+            id = 2L,
+            title = "test-schedule-2",
+            projectName = mockProject.name,
+            type = ScheduleType.TEST_RUN,
+            startDate = LocalDate.now(),
+            endDate = LocalDate.now().plusDays(10)
         )
 
-        When("저장된 일정들이 존재하면") {
-            every { scheduleRepository.findAllWithProject() } returns mockSchedules
+        When("키워드가 null 이거나 빈 공백이면") {
+            val emptyKeyword = ""
+            val expectedPage = PageImpl(listOf(schedule1, schedule2), pageable, 2)
 
-            val result = service.findSchedules()
+            every { scheduleRepository.findScheduleList(pageable) } returns expectedPage
 
-            Then("모든 일정의 요약 정보 목록을 반환한다.") {
-                result.size shouldBe 2
-                result[0].id shouldBe 1L
-                result[0].title shouldBe "일정 1"
-                result[1].id shouldBe 2L
-                result[1].title shouldBe "일정 2"
+            val result = service.findSchedules(emptyKeyword, pageable)
 
-                verify(exactly = 1) { scheduleRepository.findAllWithProject() }
+            Then("전체 목록을 조회하는 findScheduleList가 호출된다") {
+                result.content.size shouldBe 2
+                result.content shouldContainAll listOf(schedule1, schedule2)
+
+                verify(exactly = 1) { scheduleRepository.findScheduleList(any()) }
+                verify(exactly = 0) { scheduleRepository.searchScheduleList(any(), any()) }
             }
         }
 
-        When("저장된 일정이 하나도 없을 경우") {
-            every { scheduleRepository.findAllWithProject() } returns emptyList()
+        When("유효한 검색 키워드(keyword)가 주어지면") {
+            val keyword = "test-schedule-1"
+            val expectedPage = PageImpl(listOf(schedule1), pageable, 1)
 
-            val result = service.findSchedules()
+            every { scheduleRepository.searchScheduleList(keyword, pageable) } returns expectedPage
 
-            Then("빈 리스트를 반환한다.") {
-                result.size shouldBe 0
-                result shouldBe emptyList()
+            val result = service.findSchedules(keyword, pageable)
+
+            Then("검색 전용 메서드인 searchScheduleList 호출된다") {
+                result.content.size shouldBe 1
+                result.content[0].title shouldBe "test-schedule-1"
+
+                verify(exactly = 1) { scheduleRepository.searchScheduleList(eq(keyword), any()) }
+                verify(exactly = 0) { scheduleRepository.findScheduleList(any()) }
             }
         }
     }
