@@ -19,9 +19,10 @@ import org.springframework.transaction.annotation.Transactional
 @Transactional
 class PartnerService(private val partnerRepository: PartnerRepository) {
     /*==========================================================Partner READ====================================================================*/
+    @Transactional(readOnly = true)
     fun findPartners(pageable: Pageable, keyword: String?): Page<PartnerListResponse> {
 
-        if(keyword != null) {
+        if(keyword.isNullOrBlank()) {
             return partnerRepository.findByCompanyNameContains(pageable,keyword)
         }
 

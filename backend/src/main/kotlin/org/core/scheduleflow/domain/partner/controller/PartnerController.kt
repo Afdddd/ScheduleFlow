@@ -24,8 +24,8 @@ class PartnerController(
 ) {
     /*==========================================================Partner READ====================================================================*/
     @GetMapping
-    fun allPartners(
-        @RequestParam keyword: String?,
+    fun findPartners(
+        @RequestParam(required = false) keyword: String?,
         @RequestParam page: Int,
         @RequestParam size: Int,
     ) : Page<PartnerListResponse> {
