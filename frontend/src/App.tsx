@@ -9,6 +9,7 @@ import SignUpPage from './pages/SignUpPage';
 import DashboardPage from './pages/DashboardPage';
 import ProjectListPage from './pages/ProjectListPage';
 import ProjectDetailPage from './pages/ProjectDetailPage';
+import ProjectCreatePage from './pages/ProjectCreatePage';
 import FileListPage from './pages/FileListPage';
 import ScheduleListPage from './pages/ScheduleListPage';
 import PartnerListPage from './pages/PartnerListPage';
@@ -44,6 +45,14 @@ function App() {
           element={
             <ProtectedRoute>
               <ProjectListPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/projects/new"
+          element={
+            <ProtectedRoute requireAdmin>
+              <ProjectCreatePage />
             </ProtectedRoute>
           }
         />
