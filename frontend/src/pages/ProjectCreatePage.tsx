@@ -342,19 +342,6 @@ const ProjectCreatePage: React.FC = () => {
     }
   };
 
-  const getStatusLabel = (status: string): string => {
-    switch (status) {
-      case 'IN_PROGRESS':
-        return '진행 중';
-      case 'ON_HOLD':
-        return '보류';
-      case 'COMPLETE':
-        return '완료';
-      default:
-        return status;
-    }
-  };
-
   const getScheduleTypeLabel = (type: string): string => {
     switch (type) {
       case 'PROJECT':
