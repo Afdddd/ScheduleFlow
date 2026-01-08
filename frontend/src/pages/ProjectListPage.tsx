@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SearchBar from '../components/SearchBar';
 import Pagination from '../components/Pagination';
+import { useAuthStore } from '../stores/authStore';
 import { getProjectList, ProjectListResponse, PageResponse } from '../api/list';
 
 /**
@@ -74,9 +75,22 @@ const ProjectListPage: React.FC = () => {
     }
   };
 
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === 'ADMIN';
+
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">프로젝트 목록</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">프로젝트 목록</h1>
+        {isAdmin && (
+          <button
+            onClick={() => navigate('/projects/new')}
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            등록
+          </button>
+        )}
+      </div>
 
       <SearchBar
         placeholder="프로젝트 이름으로 검색"
