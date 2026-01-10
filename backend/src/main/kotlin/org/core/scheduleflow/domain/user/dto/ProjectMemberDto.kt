@@ -10,7 +10,7 @@ data class ProjectMemberDto(
     companion object {
         fun from(projectMember: ProjectMember): ProjectMemberDto {
             return ProjectMemberDto(
-                id = projectMember.id!!,
+                id = projectMember.user.id!!,
                 name = projectMember.user.name,
                 position = projectMember.user.position ?: ""
             )
