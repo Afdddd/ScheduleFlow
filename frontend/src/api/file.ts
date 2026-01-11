@@ -23,10 +23,10 @@ export interface FileUploadResponse {
  * 파일 조회 응답 타입
  */
 export interface FileResponse {
-  id: number | null;
-  projectId: number | null;
-  userId: number | null;
-  category: string | null;
+  id: number;
+  projectId: number;
+  userId: number;
+  category: string;
   storedFileName: string;
   originalFileName: string;
   filePath: string;
