@@ -106,8 +106,10 @@ class ScheduleService(
         request.scheduleType?.let { schedule.updateScheduleType(it) }
 
         // 프로젝트 업데이트
-        request.projectId?.let {
-            val project = projectRepository.findByIdOrNull(it) ?: throw CustomException(ErrorCode.NOT_FOUND_PROJECT)
+        if(request.projectId == null){
+            schedule.project = null
+        } else {
+            val project = projectRepository.findByIdOrNull(request.projectId) ?: throw CustomException(ErrorCode.NOT_FOUND_PROJECT)
             schedule.updateProject(project)
         }
 
