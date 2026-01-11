@@ -100,35 +100,30 @@ const ProjectDetailPage: React.FC = () => {
   }, [id]);
 
   // 편집 모드 진입 시 추가 데이터 로딩
-  useEffect(() => {
-    if (!isEditing) return;
+    useEffect(() => {
+        if (!isEditing) return;
 
-    const loadEditData = async () => {
-      // 거래처 목록 로딩
-      setLoadingPartners(true);
-      try {
-        const partnersData = await getAllPartners();
-        setPartners(partnersData);
-      } catch (error) {
-        console.error('거래처 목록 로딩 실패:', error);
-      } finally {
-        setLoadingPartners(false);
-      }
+        const loadEditData = async () => {
+            setLoadingPartners(true);
+            setLoadingUsers(true);
+            try {
+                const [partnersData, usersData] = await Promise.all([
+                    getAllPartners(),
+                    getAllUsers(),
+                ]);
+                setPartners(partnersData);
+                setUsers(usersData);
+            } catch (error) {
+                console.error('거래처 및 사원 목록 로딩 실패:', error);
+                setError('편집에 필요한 정보를 불러오는데 실패했습니다.');
+            } finally {
+                setLoadingPartners(false);
+                setLoadingUsers(false);
+            }
+        };
 
-      // 사원 목록 로딩
-      setLoadingUsers(true);
-      try {
-        const usersData = await getAllUsers();
-        setUsers(usersData);
-      } catch (error) {
-        console.error('사원 목록 로딩 실패:', error);
-      } finally {
-        setLoadingUsers(false);
-      }
-    };
-
-    loadEditData();
-  }, [isEditing]);
+        loadEditData();
+    }, [isEditing]);
 
   // 거래처 선택 시 연락처 로딩
   useEffect(() => {
