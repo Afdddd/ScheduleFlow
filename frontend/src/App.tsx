@@ -12,6 +12,8 @@ import ProjectDetailPage from './pages/ProjectDetailPage';
 import ProjectCreatePage from './pages/ProjectCreatePage';
 import FileListPage from './pages/FileListPage';
 import ScheduleListPage from './pages/ScheduleListPage';
+import ScheduleCreatePage from './pages/ScheduleCreatePage';
+import ScheduleDetailPage from './pages/ScheduleDetailPage';
 import PartnerListPage from './pages/PartnerListPage';
 import UserManagementPage from './pages/UserManagementPage';
 import NotFoundPage from './pages/NotFoundPage';
@@ -77,6 +79,22 @@ function App() {
           element={
             <ProtectedRoute>
               <ScheduleListPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/schedules/new"
+          element={
+            <ProtectedRoute requireAdmin>
+              <ScheduleCreatePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/schedules/:id"
+          element={
+            <ProtectedRoute>
+              <ScheduleDetailPage />
             </ProtectedRoute>
           }
         />

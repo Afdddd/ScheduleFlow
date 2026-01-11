@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import SearchBar from '../components/SearchBar';
 import Pagination from '../components/Pagination';
+import { useAuthStore } from '../stores/authStore';
 import { getScheduleList, ScheduleListResponse, PageResponse } from '../api/list';
 
 /**
@@ -11,6 +13,7 @@ import { getScheduleList, ScheduleListResponse, PageResponse } from '../api/list
  * 2. 일정 상세 보기 (추후 구현)
  */
 const ScheduleListPage: React.FC = () => {
+  const navigate = useNavigate();
   const [data, setData] = useState<PageResponse<ScheduleListResponse> | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -59,9 +62,22 @@ const ScheduleListPage: React.FC = () => {
     }
   };
 
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === 'ADMIN';
+
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">일정 목록</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">일정 목록</h1>
+        {isAdmin && (
+          <button
+            onClick={() => navigate('/schedules/new')}
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            등록
+          </button>
+        )}
+      </div>
 
       <SearchBar
         placeholder="일정 제목으로 검색"
@@ -104,7 +120,11 @@ const ScheduleListPage: React.FC = () => {
                   </tr>
                 ) : (
                   data.content.map((schedule) => (
-                    <tr key={schedule.id} className="hover:bg-gray-50 transition-colors">
+                    <tr
+                      key={schedule.id}
+                      className="hover:bg-gray-50 transition-colors cursor-pointer"
+                      onClick={() => navigate(`/schedules/${schedule.id}`)}
+                    >
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="text-sm font-medium text-gray-900">
                           {schedule.title}
