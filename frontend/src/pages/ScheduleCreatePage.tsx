@@ -129,23 +129,6 @@ const ScheduleCreatePage: React.FC = () => {
     }
   };
 
-  // 타입 라벨 변환
-  const getTypeLabel = (type: string): string => {
-    switch (type) {
-      case 'PROJECT':
-        return '프로젝트 일정';
-      case 'TEST_RUN':
-        return '시운전';
-      case 'WIRING':
-        return '전기 배선';
-      case 'DESIGN':
-        return '설계';
-      case 'MEETING':
-        return '미팅';
-      default:
-        return type;
-    }
-  };
 
   return (
     <div className="p-6">
