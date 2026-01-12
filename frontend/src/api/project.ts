@@ -1,4 +1,5 @@
 import apiClient from './client';
+import { PageResponse, ProjectListResponse } from './list';
 
 /**
  * 프로젝트 생성 요청 타입
@@ -108,5 +109,19 @@ export const updateProject = async (
  */
 export const deleteProject = async (projectId: number): Promise<void> => {
   await apiClient.delete(`/projects/${projectId}`);
+};
+
+/**
+ * 프로젝트 전체 목록 조회 (페이징 없이, 최대 1000개)
+ * @returns 프로젝트 목록
+ */
+export const getAllProjects = async (): Promise<ProjectListResponse[]> => {
+  const response = await apiClient.get<PageResponse<ProjectListResponse>>('/projects', {
+    params: {
+      page: 0,
+      size: 1000,
+    },
+  });
+  return response.data.content;
 };
 

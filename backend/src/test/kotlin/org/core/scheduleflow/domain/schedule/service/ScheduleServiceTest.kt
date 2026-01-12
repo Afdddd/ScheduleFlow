@@ -221,7 +221,7 @@ class ScheduleServiceTest : BehaviorSpec({
                 result.startDate shouldBe existingSchedule.startDate
 
                 val memberDto = result.members[0]
-                memberDto.id shouldBe 0L
+                memberDto.id shouldBe 10L
                 memberDto.name shouldBe "test-user"
 
                 verify { scheduleRepository.findByIdOrNull(scheduleId) }
