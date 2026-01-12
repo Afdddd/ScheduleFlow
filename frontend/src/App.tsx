@@ -15,6 +15,8 @@ import ScheduleListPage from './pages/ScheduleListPage';
 import ScheduleCreatePage from './pages/ScheduleCreatePage';
 import ScheduleDetailPage from './pages/ScheduleDetailPage';
 import PartnerListPage from './pages/PartnerListPage';
+import PartnerCreatePage from './pages/PartnerCreatePage';
+import PartnerDetailPage from './pages/PartnerDetailPage';
 import UserManagementPage from './pages/UserManagementPage';
 import NotFoundPage from './pages/NotFoundPage';
 
@@ -103,6 +105,22 @@ function App() {
           element={
             <ProtectedRoute>
               <PartnerListPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/partners/new"
+          element={
+            <ProtectedRoute requireAdmin>
+              <PartnerCreatePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/partners/:id"
+          element={
+            <ProtectedRoute>
+              <PartnerDetailPage />
             </ProtectedRoute>
           }
         />

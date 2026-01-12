@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import SearchBar from '../components/SearchBar';
 import Pagination from '../components/Pagination';
+import { useAuthStore } from '../stores/authStore';
 import { getPartnerList, PartnerListResponse, PageResponse } from '../api/list';
 
 /**
@@ -11,6 +13,7 @@ import { getPartnerList, PartnerListResponse, PageResponse } from '../api/list';
  * 2. 거래처 상세 보기 (추후 구현)
  */
 const PartnerListPage: React.FC = () => {
+  const navigate = useNavigate();
   const [data, setData] = useState<PageResponse<PartnerListResponse> | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -42,9 +45,22 @@ const PartnerListPage: React.FC = () => {
     setCurrentPage(page);
   };
 
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === 'ADMIN';
+
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">거래처 목록</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">거래처 목록</h1>
+        {isAdmin && (
+          <button
+            onClick={() => navigate('/partners/new')}
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            등록
+          </button>
+        )}
+      </div>
 
       <SearchBar
         placeholder="회사명으로 검색"
@@ -81,7 +97,11 @@ const PartnerListPage: React.FC = () => {
                   </tr>
                 ) : (
                   data.content.map((partner) => (
-                    <tr key={partner.id} className="hover:bg-gray-50 transition-colors">
+                    <tr
+                      key={partner.id}
+                      className="hover:bg-gray-50 transition-colors cursor-pointer"
+                      onClick={() => navigate(`/partners/${partner.id}`)}
+                    >
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="text-sm font-medium text-gray-900">
                           {partner.companyName}
