@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   startOfMonth, 
   endOfMonth, 
@@ -28,6 +29,23 @@ import {
 export type CalendarMode = 'PROJECT' | 'PROJECT_WITH_TASK' | 'BASE_TODO';
 
 /**
+ * 색상을 어둡게 만드는 유틸리티 함수
+ * @param color hex 색상 코드 (예: '#3b82f6')
+ * @param percent 어둡게 만들 비율 (0~1, 예: 0.2는 20% 어둡게)
+ * @returns 어두워진 hex 색상 코드
+ */
+const darkenColor = (color: string, percent: number): string => {
+  if (color.startsWith('#')) {
+    const num = parseInt(color.slice(1), 16);
+    const r = Math.max(0, Math.floor((num >> 16) * (1 - percent)));
+    const g = Math.max(0, Math.floor(((num >> 8) & 0x00FF) * (1 - percent)));
+    const b = Math.max(0, Math.floor((num & 0x0000FF) * (1 - percent)));
+    return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
+  }
+  return color;
+};
+
+/**
  * Calendar 컴포넌트
  *
  * 기능:
@@ -38,9 +56,11 @@ export type CalendarMode = 'PROJECT' | 'PROJECT_WITH_TASK' | 'BASE_TODO';
  * 5. 프로젝트 바 및 일정 렌더링
  */
 const Calendar: React.FC = () => {
+  const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [mode, setMode] = useState<CalendarMode>('PROJECT');
   const [loading, setLoading] = useState<boolean>(false);
+  const [hoveredProjectId, setHoveredProjectId] = useState<number | null>(null);
   
   // 데이터 상태
   const [projects, setProjects] = useState<ProjectCalendarResponse[]>([]);
@@ -271,15 +291,22 @@ const Calendar: React.FC = () => {
                             roundedClass = 'rounded-r'; // 종료일: 오른쪽만
                           }
                           
+                          const isHovered = hoveredProjectId === project.id;
+                          const baseColor = project.colorCode || '#3b82f6';
+                          
                           return (
                             <div
                               key={project.id}
-                              className={`h-5 ${roundedClass} text-xs px-2 flex items-center truncate`}
+                              className={`h-5 ${roundedClass} text-xs px-2 flex items-center truncate cursor-pointer transition-colors`}
                               style={{
-                                backgroundColor: project.colorCode || '#3b82f6',
+                                backgroundColor: isHovered ? darkenColor(baseColor, 0.2) : baseColor,
                                 color: 'white',
+                                border: 'none',
                               }}
                               title={project.name}
+                              onClick={() => navigate(`/projects/${project.id}`)}
+                              onMouseEnter={() => setHoveredProjectId(project.id)}
+                              onMouseLeave={() => setHoveredProjectId(null)}
                             >
                               {(isStart || isEnd) && project.name}
                             </div>
@@ -310,15 +337,22 @@ const Calendar: React.FC = () => {
                               roundedClass = 'rounded-r'; // 종료일: 오른쪽만
                             }
                             
+                            const isHovered = hoveredProjectId === project.id;
+                            const baseColor = project.colorCode || '#3b82f6';
+                            
                             return (
                               <div
                                 key={`project-${project.id}`}
-                                className={`h-4 ${roundedClass} text-xs px-2 flex items-center truncate`}
+                                className={`h-4 ${roundedClass} text-xs px-2 flex items-center truncate cursor-pointer transition-colors`}
                                 style={{
-                                  backgroundColor: project.colorCode || '#3b82f6',
+                                  backgroundColor: isHovered ? darkenColor(baseColor, 0.2) : baseColor,
                                   color: 'white',
+                                  border: 'none',
                                 }}
                                 title={project.name}
+                                onClick={() => navigate(`/projects/${project.id}`)}
+                                onMouseEnter={() => setHoveredProjectId(project.id)}
+                                onMouseLeave={() => setHoveredProjectId(null)}
                               >
                                 {isStart && `█ ${project.name}`}
                               </div>
