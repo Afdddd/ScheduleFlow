@@ -6,6 +6,7 @@ import java.time.LocalDate
 data class MyTaskResponse(
     val scheduleId: Long,
     val scheduleTitle: String,
+    val projectId: Long,
     val projectTitle: String,
     val scheduleStartDate: LocalDate,
     val scheduleEndDate: LocalDate,

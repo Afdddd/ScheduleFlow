@@ -1,6 +1,6 @@
 package org.core.scheduleflow.domain.schedule.controller
 
-import org.core.scheduleflow.domain.schedule.dto.MyTaskResponse
+import org.core.scheduleflow.domain.schedule.dto.ProjectTaskGroup
 import org.core.scheduleflow.domain.schedule.dto.ScheduleCalenderResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleCreateRequest
 import org.core.scheduleflow.domain.schedule.dto.ScheduleDetailResponse
@@ -66,7 +66,7 @@ class ScheduleController(
         @RequestParam startDate: LocalDate,
         @RequestParam endDate: LocalDate,
         @AuthenticationPrincipal claims: io.jsonwebtoken.Claims
-    ): ResponseEntity<List<MyTaskResponse>> {
+    ): ResponseEntity<List<ProjectTaskGroup>> {
         val userId = (claims["userId"] as? Number)?.toLong() ?: throw CustomException(ErrorCode.INVALID_ACCESS_TOKEN)
         return ResponseEntity.ok(
             service.findMyTask(userId, startDate, endDate)

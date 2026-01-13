@@ -324,10 +324,22 @@ class ScheduleServiceTest : BehaviorSpec({
             val endDate = LocalDate.of(2025,1,31)
             val userId = 1L
 
-            val response = MyTaskResponse(
+            val response1 = MyTaskResponse(
+                projectId = 1L,
                 scheduleId = 1L,
-                scheduleTitle = "test-schedule",
-                projectTitle =  "test-project",
+                scheduleTitle = "test-schedule-1",
+                projectTitle =  "test-project-1",
+                scheduleStartDate = LocalDate.of(2025,1,1),
+                scheduleEndDate = LocalDate.of(2025,1,10),
+                colorCode = "#000000",
+                scheduleType = ScheduleType.TEST_RUN
+            )
+
+            val response2 = MyTaskResponse(
+                projectId = 1L,
+                scheduleId = 2L,
+                scheduleTitle = "test-schedule-2",
+                projectTitle =  "test-project-2",
                 scheduleStartDate = LocalDate.of(2025,1,1),
                 scheduleEndDate = LocalDate.of(2025,1,10),
                 colorCode = "#000000",
@@ -335,14 +347,14 @@ class ScheduleServiceTest : BehaviorSpec({
             )
 
             every { userRepository.findByIdOrNull(userId) } returns mockUser
-            every { scheduleRepository.findMyTasksByUserIdAndPeriod(userId, startDate, endDate) } returns listOf(response)
+            every { scheduleRepository.findMyTasksByUserIdAndPeriod(userId, startDate, endDate) } returns listOf(response1, response2)
 
             val result = service.findMyTask(userId, startDate, endDate)
-            Then("MyTaskResponse 리스트를 반환한다.") {
+            Then("ProjectTaskGroup 리스트를 반환한다.") {
                 result.size shouldBe 1
-                result[0].scheduleId shouldBe 1L
-                result[0].scheduleTitle shouldBe "test-schedule"
-                result[0].projectTitle shouldBe "test-project"
+                result.first().tasks.size shouldBe 2
+                result.first().tasks[0].scheduleId shouldBe 1L
+                result.first().tasks[1].scheduleId shouldBe 2L
             }
         }
     }
