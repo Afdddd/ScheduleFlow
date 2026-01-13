@@ -4,6 +4,8 @@ import org.assertj.core.api.Assertions.assertThat
 import org.core.scheduleflow.domain.partner.dto.PartnerContactRequestDto
 import org.core.scheduleflow.domain.partner.dto.PartnerContactUpdateRequestDto
 import org.core.scheduleflow.domain.partner.dto.PartnerRequestDto
+import org.core.scheduleflow.domain.partner.repository.PartnerContactRepository
+import org.core.scheduleflow.global.exception.CustomException
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -11,13 +13,15 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.transaction.annotation.Transactional
+import org.assertj.core.api.Assertions.*
 
 @SpringBootTest
 @ActiveProfiles("test")
 @Transactional
 class PartnerContactServiceTest @Autowired constructor(
     private val partnerContactService: PartnerContactService,
-    private val partnerService: PartnerService
+    private val partnerService: PartnerService,
+    @Autowired private val partnerContactRepository: PartnerContactRepository
 ) {
 
     private var partnerId: Long = 0L
@@ -106,5 +110,61 @@ class PartnerContactServiceTest @Autowired constructor(
 
         assertThat(found?.name).isEqualTo("수정된 이름")
         assertThat(found?.position).isEqualTo("대리")
+    }
+
+    @Test
+    @DisplayName("고객사 직원을 삭제하면 관련 프로젝트 접점 데이터와 함께 삭제된다")
+    fun deletePartnerContactSuccess() {
+        // 1. Given: 고객사와 직원 생성
+        val partner = partnerService.createPartner(PartnerRequestDto(null, "테스트사", null, null, null))
+        val contact = partnerContactService.createPartnerContact(
+            PartnerContactRequestDto(null, partner.id!!, "삭제직원"), partner.id!!
+        )
+
+
+
+        // 2. When: 삭제 실행
+        partnerContactService.deletePartnerContactById(partner.id!!, contact.id!!)
+
+        // 3. Then: 데이터 삭제 확인
+        val foundContact = partnerContactRepository.findById(contact.id!!).orElse(null)
+        assertThat(foundContact).isNull()
+
+        // 연관된 매핑 테이블(projectPartnerContactRepository)도 삭제되었는지 검증 가능
+    }
+
+    @Test
+    @DisplayName("직원의 소속 고객사 ID가 입력된 ID와 다르면 예외가 발생한다")
+    fun deletePartnerContactBelongingError() {
+        // 1. Given: 두 개의 서로 다른 고객사 생성
+        val partnerA = partnerService.createPartner(PartnerRequestDto(null, "A사", null, null, null))
+        val partnerB = partnerService.createPartner(PartnerRequestDto(null, "B사", null, null, null))
+
+        // A사 소속 직원 생성
+        val contactA = partnerContactService.createPartnerContact(
+            PartnerContactRequestDto(null, partnerA.id!!, "A사 직원"), partnerA.id!!
+        )
+
+        // 2. When & 3. Then: B사의 ID를 주면서 A사 직원을 삭제하라고 요청 시 에러 발생
+        assertThatThrownBy {
+            partnerContactService.deletePartnerContactById(partnerB.id!!, contactA.id!!)
+        }
+            .isInstanceOf(CustomException::class.java)
+            .hasMessage("해당 고객사에 소속된 직원이 아닙니다.")
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 직원 ID를 삭제하려고 하면 에러가 발생한다")
+    fun deletePartnerContactNotFound() {
+        // given
+        val partner = partnerService.createPartner(PartnerRequestDto(null, "테스트사", null, null, null))
+        val invalidContactId = 9999L
+
+        // when & then
+        assertThatThrownBy {
+            partnerContactService.deletePartnerContactById(partner.id!!, invalidContactId)
+        }
+            .isInstanceOf(CustomException::class.java)
+        // .extracting("errorCode").isEqualTo(ErrorCode.NOT_FOUND_PARTNER_CONTACT) // 에러코드 검증 시 사용
     }
 }

@@ -9,6 +9,7 @@ import org.core.scheduleflow.domain.partner.entity.Partner
 import org.core.scheduleflow.domain.partner.entity.PartnerContact
 import org.core.scheduleflow.domain.partner.repository.PartnerContactRepository
 import org.core.scheduleflow.domain.partner.repository.PartnerRepository
+import org.core.scheduleflow.domain.project.repository.ProjectPartnerContactRepository
 import org.core.scheduleflow.global.exception.CustomException
 import org.core.scheduleflow.global.exception.ErrorCode
 import org.springframework.data.repository.findByIdOrNull
@@ -20,7 +21,8 @@ import org.springframework.transaction.annotation.Transactional
 @Transactional
 class PartnerContactService (
     private val partnerContactRepository: PartnerContactRepository,
-    private val partnerRepository: PartnerRepository
+    private val partnerRepository: PartnerRepository,
+    private val projectPartnerContactRepository: ProjectPartnerContactRepository
 ){
 
 
@@ -73,17 +75,19 @@ class PartnerContactService (
         return fromEntity(savedPartnerContact)
     }
 
-    fun deletePartnerContactById(partnerId : Long, id: Long) {
+    @Transactional
+    fun deletePartnerContactById(partnerId : Long, partnerContactId: Long) {
 
         partnerRepository.findByIdOrNull(partnerId) ?: throw CustomException(ErrorCode.NOT_FOUND_PARTNER)
 
-        val contact = partnerContactRepository.findByIdOrNull(id) ?: throw CustomException(ErrorCode.NOT_FOUND_PARTNER_CONTACT)
+        val contact = partnerContactRepository.findByIdOrNull(partnerContactId) ?: throw CustomException(ErrorCode.NOT_FOUND_PARTNER_CONTACT)
 
         if (contact.partner.id != partnerId) {
-            throw IllegalArgumentException("해당 고객사에 소속된 직원이 아닙니다.")
+            throw CustomException(ErrorCode.PARTNER_CONTACT_MISMATCH)
         }
 
+        projectPartnerContactRepository.deleteByPartnerContactId(partnerContactId)
 
-        partnerContactRepository.deleteById(id)
+        partnerContactRepository.deleteById(partnerContactId)
     }
 }
