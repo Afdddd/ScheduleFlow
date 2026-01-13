@@ -234,7 +234,7 @@ const Calendar: React.FC = () => {
                     className={`
                       bg-white min-h-[100px] p-2 relative border-r border-b border-gray-200
                       ${!isCurrentMonth ? 'text-gray-400' : 'text-gray-900'}
-                      ${isTodayDate ? 'bg-blue-50' : ''}
+                      ${isTodayDate ? 'bg-blue-200' : ''}
                     `}
                   >
                     {/* 날짜 표시 */}
