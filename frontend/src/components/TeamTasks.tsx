@@ -56,7 +56,7 @@ const TeamTasks: React.FC = () => {
       )}
 
       {!loading && tasks.length > 0 && (
-        <div className="flex-1 overflow-y-auto space-y-3">
+        <div className="flex-1 overflow-y-auto space-y-3 min-h-0">
           {tasks.map((task, index) => (
             <div
               key={`${task.memberName}-${task.scheduleTitle}-${index}`}

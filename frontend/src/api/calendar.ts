@@ -122,19 +122,29 @@ export interface MyTaskResponse {
 }
 
 /**
+ * 프로젝트별 그룹화된 할 일 응답 타입
+ */
+export interface ProjectTaskGroup {
+  projectId: number;
+  projectTitle: string;
+  colorCode: string | null;
+  tasks: MyTaskResponse[];
+}
+
+/**
  * 이번달 내 할 일 조회
  * @param startDate 시작일
  * @param endDate 종료일
- * @returns 내 할 일 목록
+ * @returns 프로젝트별로 그룹화된 할 일 목록
  */
 export const getMyTasks = async (
   startDate: Date,
   endDate: Date
-): Promise<MyTaskResponse[]> => {
+): Promise<ProjectTaskGroup[]> => {
   const startDateStr = format(startDate, 'yyyy-MM-dd');
   const endDateStr = format(endDate, 'yyyy-MM-dd');
   
-  const response = await apiClient.get<MyTaskResponse[]>('/schedules/my-tasks', {
+  const response = await apiClient.get<ProjectTaskGroup[]>('/schedules/my-tasks', {
     params: {
       startDate: startDateStr,
       endDate: endDateStr,
