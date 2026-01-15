@@ -60,9 +60,9 @@ class PartnerController(
 
     /*==========================================================Partner DELETE=================================================================*/
     @PreAuthorize("hasRole('ADMIN')")
-    @DeleteMapping("/{id}")
-    fun deletePartnerById(@PathVariable id: Long) {
-        partnerService.deletePartnerById(id)
+    @DeleteMapping("/{partnerId}")
+    fun deletePartnerById(@PathVariable partnerId: Long) {
+        partnerService.deletePartnerById(partnerId)
     }
 
     /*======================================================PartnerContact READ=================================================================*/
@@ -87,8 +87,8 @@ class PartnerController(
 
     /*======================================================PartnerContact DELETE=================================================================*/
     @PreAuthorize("hasRole('ADMIN')")
-    @DeleteMapping("/{partnerId}/contacts/{id}")
-    fun deletePartnerContactById(@PathVariable partnerId: Long, @PathVariable id: Long) {
-        partnerContactService.deletePartnerContactById(partnerId,id)
+    @DeleteMapping("/{partnerId}/contacts/{partnerContactId}")
+    fun deletePartnerContactById(@PathVariable partnerId: Long, @PathVariable partnerContactId: Long) {
+        partnerContactService.deletePartnerContactById(partnerId,partnerContactId)
     }
 }

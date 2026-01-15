@@ -91,3 +91,56 @@ Content-Type: application/json
 DELETE http://localhost:8080/projects/{{project_id}}
 Authorization: Bearer {{auth_token}}
 Content-Type: application/json
+
+### 거래처 생성
+POST http://localhost:8080/partners
+Authorization: Bearer {{auth_token}}
+Content-Type: application/json
+
+{
+  "companyName": "테스트 김앵도",
+  "mainPhone": "010-8689-5678",
+  "address": "서울시 구로구",
+  "description": "억만장자"
+}
+
+### 거래처 직원 생성
+POST http://localhost:8080/partners/1/contacts
+Authorization: Bearer {{auth_token}}
+Content-Type: application/json
+
+{
+  "partnerId": 1,
+  "name": "김영도쿤",
+  "position": "대리",
+  "department": "몰라",
+  "phone": "몰라",
+  "email": "몰라"
+}
+
+### 파일 업로드 API 테스트
+POST http://localhost:8080/files/1/upload
+Authorization: Bearer {{auth_token}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="category"
+
+HMI_DESIGN
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="test-file.txt"
+Content-Type: application/txt
+
+< ./2026-01-07T222034.200.txt
+--WebAppBoundary--
+
+### 파일 다운로드 API 테스트
+GET http://localhost:8080/files/download/2
+Authorization: Bearer {{auth_token}}
+
+> {%
+    // 파일 다운로드 시 응답이 성공(200)인지 확인하는 간단한 스크립트
+    client.test("Request executed successfully", function() {
+        client.assert(response.status === 200, "Response status is not 200");
+    });
+%}

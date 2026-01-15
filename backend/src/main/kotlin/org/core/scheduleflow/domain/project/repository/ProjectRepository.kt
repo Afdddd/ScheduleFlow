@@ -73,6 +73,9 @@ interface ProjectRepository: JpaRepository<Project, Long>, ProjectRepositoryCust
         startDate: LocalDate,
         endDate: LocalDate
     ): List<Project>
+
+    @Query("SELECT p FROM Project p WHERE p.client.id = :partnerId")
+    fun findByPartnerId(partnerId: Long): List<Project>
 }
 
 interface ProjectRepositoryCustom

@@ -4,8 +4,10 @@ import org.core.scheduleflow.domain.partner.dto.PartnerListResponse
 import org.core.scheduleflow.domain.partner.dto.PartnerRequestDto
 import org.core.scheduleflow.domain.partner.dto.PartnerResponseDto
 import org.core.scheduleflow.domain.partner.dto.PartnerUpdateRequestDto
+import org.core.scheduleflow.domain.partner.repository.PartnerContactRepository
 
 import org.core.scheduleflow.domain.partner.repository.PartnerRepository
+import org.core.scheduleflow.domain.project.repository.ProjectRepository
 import org.core.scheduleflow.global.exception.CustomException
 import org.core.scheduleflow.global.exception.ErrorCode
 import org.springframework.data.domain.Page
@@ -16,8 +18,11 @@ import org.springframework.transaction.annotation.Transactional
 
 
 @Service
-@Transactional
-class PartnerService(private val partnerRepository: PartnerRepository) {
+class PartnerService(
+    private val partnerRepository: PartnerRepository,
+    private val projectRepository: ProjectRepository,
+    private val partnerContactRepository: PartnerContactRepository
+    ) {
     /*==========================================================Partner READ====================================================================*/
     @Transactional(readOnly = true)
     fun findPartners(pageable: Pageable, keyword: String?): Page<PartnerListResponse> {
@@ -29,6 +34,7 @@ class PartnerService(private val partnerRepository: PartnerRepository) {
         return partnerRepository.findPartners(pageable)
     }
 
+    @Transactional(readOnly = true)
     fun findPartnerById(id: Long): PartnerResponseDto? {
 
         val partner = partnerRepository.findById(id).orElse(null) ?: return null
@@ -38,7 +44,7 @@ class PartnerService(private val partnerRepository: PartnerRepository) {
 
 
     /*===========================================================Partner CREATE================================================================*/
-
+    @Transactional
     fun createPartner(partnerRequestDto: PartnerRequestDto): PartnerResponseDto {
         /* 유효성 검증 시작 */
 
@@ -76,12 +82,19 @@ class PartnerService(private val partnerRepository: PartnerRepository) {
 
     /*==========================================================Partner DELETE=================================================================*/
     @Transactional
-    fun deletePartnerById(id: Long) {
+    fun deletePartnerById(partnerId: Long) {
 
-        if (!partnerRepository.existsById(id)) {
-            throw CustomException(ErrorCode.NOT_FOUND_PARTNER)
+        val partner = partnerRepository.findByIdOrNull(partnerId) ?: throw CustomException(ErrorCode.NOT_FOUND_PARTNER)
+
+        val projects = projectRepository.findByPartnerId(partnerId)
+
+        if(projects.isNotEmpty()) {
+            throw CustomException(ErrorCode.PARTNER_HAS_RELATED_PROJECT)
+        } else {
+            partnerContactRepository.deleteByPartnerId(partner.id)
+            partnerRepository.deleteById(partnerId)
         }
 
-        partnerRepository.deleteById(id)
+
     }
 }
