@@ -95,6 +95,8 @@ class ScheduleService(
 
         val tasks = scheduleRepository.findMyTasksByUserIdAndPeriod(userId, startDate, endDate)
 
+        print("tasks: $tasks")
+
         return tasks
             .groupBy { it.projectId }
             .map { (projectId, projectTasks) ->

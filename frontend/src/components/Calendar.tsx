@@ -126,6 +126,14 @@ const Calendar: React.FC = () => {
     );
   };
 
+  // 날짜가 해당 달의 첫 주 첫 날인지 확인
+  const isFirstDayOfFirstWeek = (date: Date): boolean => {
+    const firstWeekStart = startOfWeek(startOfMonth(date), { weekStartsOn: 0 });
+    const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const firstWeekStartOnly = new Date(firstWeekStart.getFullYear(), firstWeekStart.getMonth(), firstWeekStart.getDate());
+    return isEqual(dateOnly, firstWeekStartOnly);
+  };
+
   // 특정 날짜에 해당하는 프로젝트/일정 가져오기
   const getItemsForDate = (date: Date) => {
     if (mode === 'PROJECT') {
@@ -280,6 +288,7 @@ const Calendar: React.FC = () => {
                           const isStart = dayStr === startDateStr;
                           const isEnd = dayStr === endDateStr;
                           const isOnlyOneDay = isStart && isEnd;
+                          const isFirstWeekFirstDay = isFirstDayOfFirstWeek(day);
                           
                           // 둥근 모서리 결정
                           let roundedClass = 'rounded-none'; // 기본: 직사각형
@@ -308,7 +317,7 @@ const Calendar: React.FC = () => {
                               onMouseEnter={() => setHoveredProjectId(project.id)}
                               onMouseLeave={() => setHoveredProjectId(null)}
                             >
-                              {(isStart || isEnd) && project.name}
+                              {(isStart || isEnd || isFirstWeekFirstDay) && project.name}
                             </div>
                           );
                         })}
@@ -326,6 +335,7 @@ const Calendar: React.FC = () => {
                             const isStart = dayStr === startDateStr;
                             const isEnd = dayStr === endDateStr;
                             const isOnlyOneDay = isStart && isEnd;
+                            const isFirstWeekFirstDay = isFirstDayOfFirstWeek(day);
                             
                             // 둥근 모서리 결정
                             let roundedClass = 'rounded-none'; // 기본: 직사각형
@@ -354,7 +364,7 @@ const Calendar: React.FC = () => {
                                 onMouseEnter={() => setHoveredProjectId(project.id)}
                                 onMouseLeave={() => setHoveredProjectId(null)}
                               >
-                                {isStart && `█ ${project.name}`}
+                                {(isStart || isFirstWeekFirstDay) && `█ ${project.name}`}
                               </div>
                             );
                           } else {

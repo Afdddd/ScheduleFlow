@@ -165,16 +165,25 @@ export interface TodayTeamTaskResponse {
 }
 
 /**
+ * 팀원별 그룹화된 오늘 일정 응답 타입
+ */
+export interface TodayTeamTaskGroup {
+  userId: number;
+  memberName: string;
+  tasks: TodayTeamTaskResponse[];
+}
+
+/**
  * 팀원 오늘 일정 조회
  * @param date 조회할 날짜
- * @returns 팀원 오늘 일정 목록
+ * @returns 팀원별로 그룹화된 오늘 일정 목록
  */
 export const getTodayTeamTasks = async (
   date: Date
-): Promise<TodayTeamTaskResponse[]> => {
+): Promise<TodayTeamTaskGroup[]> => {
   const dateStr = format(date, 'yyyy-MM-dd');
   
-  const response = await apiClient.get<TodayTeamTaskResponse[]>('/users/team-tasks', {
+  const response = await apiClient.get<TodayTeamTaskGroup[]>('/users/team-tasks', {
     params: {
       date: dateStr,
     },
