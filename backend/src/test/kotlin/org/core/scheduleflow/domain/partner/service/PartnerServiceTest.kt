@@ -8,14 +8,12 @@ import org.core.scheduleflow.domain.partner.repository.PartnerContactRepository
 import org.core.scheduleflow.domain.partner.repository.PartnerRepository
 import org.core.scheduleflow.domain.project.constant.ProjectStatus
 import org.core.scheduleflow.domain.project.dto.ProjectCreateRequest
-import org.core.scheduleflow.domain.project.entity.Project
 import org.core.scheduleflow.domain.project.service.ProjectService
 import org.core.scheduleflow.domain.user.entity.User
 import org.core.scheduleflow.domain.user.repository.UserRepository
 import org.core.scheduleflow.global.exception.CustomException
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.data.domain.Pageable
 import org.springframework.test.context.ActiveProfiles
@@ -26,13 +24,13 @@ import org.assertj.core.api.Assertions.*
 @SpringBootTest
 @ActiveProfiles("test") // application-test.yml을 사용하도록 설정
 @Transactional          // 테스트 후 자동 롤백 (H2 데이터 초기화)
-class PartnerServiceTest @Autowired constructor(
+class PartnerServiceTest constructor(
     private val partnerService: PartnerService,
-    @Autowired private val partnerContactService: PartnerContactService,
-    @Autowired private val partnerRepository: PartnerRepository,
-    @Autowired private val partnerContactRepository: PartnerContactRepository,
-    @Autowired private val projectService: ProjectService,
-    @Autowired private val userRepository: UserRepository
+    private val partnerContactService: PartnerContactService,
+    private val partnerRepository: PartnerRepository,
+    private val partnerContactRepository: PartnerContactRepository,
+    private val projectService: ProjectService,
+    private val userRepository: UserRepository
 ) {
 
     @Test

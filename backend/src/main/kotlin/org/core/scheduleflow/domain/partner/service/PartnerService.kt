@@ -18,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional
 
 
 @Service
-@Transactional
 class PartnerService(
     private val partnerRepository: PartnerRepository,
     private val projectRepository: ProjectRepository,
@@ -35,6 +34,7 @@ class PartnerService(
         return partnerRepository.findPartners(pageable)
     }
 
+    @Transactional(readOnly = true)
     fun findPartnerById(id: Long): PartnerResponseDto? {
 
         val partner = partnerRepository.findById(id).orElse(null) ?: return null
@@ -44,7 +44,7 @@ class PartnerService(
 
 
     /*===========================================================Partner CREATE================================================================*/
-
+    @Transactional
     fun createPartner(partnerRequestDto: PartnerRequestDto): PartnerResponseDto {
         /* 유효성 검증 시작 */
 
@@ -86,12 +86,12 @@ class PartnerService(
 
         val partner = partnerRepository.findByIdOrNull(partnerId) ?: throw CustomException(ErrorCode.NOT_FOUND_PARTNER)
 
-        val project = projectRepository.findByPartnerId(partnerId)
+        val projects = projectRepository.findByPartnerId(partnerId)
 
-        if(project.isNotEmpty()) {
+        if(projects.isNotEmpty()) {
             throw CustomException(ErrorCode.PARTNER_HAS_RELATED_PROJECT)
         } else {
-            partnerContactRepository.findByPartnerId(partner.id).forEach { partnerContactRepository.deleteById(it.id!!) }
+            partnerContactRepository.deleteByPartnerId(partner.id)
             partnerRepository.deleteById(partnerId)
         }
 

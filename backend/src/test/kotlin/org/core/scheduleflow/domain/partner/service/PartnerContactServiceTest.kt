@@ -9,7 +9,6 @@ import org.core.scheduleflow.global.exception.CustomException
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.transaction.annotation.Transactional
@@ -18,10 +17,10 @@ import org.assertj.core.api.Assertions.*
 @SpringBootTest
 @ActiveProfiles("test")
 @Transactional
-class PartnerContactServiceTest @Autowired constructor(
+class PartnerContactServiceTest constructor(
     private val partnerContactService: PartnerContactService,
     private val partnerService: PartnerService,
-    @Autowired private val partnerContactRepository: PartnerContactRepository
+    private val partnerContactRepository: PartnerContactRepository
 ) {
 
     private var partnerId: Long = 0L
