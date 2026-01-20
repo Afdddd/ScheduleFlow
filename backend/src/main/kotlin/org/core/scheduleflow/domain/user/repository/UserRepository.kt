@@ -15,6 +15,7 @@ interface UserRepository: JpaRepository<User,Long> {
 
     @Query("""
     select new org.core.scheduleflow.domain.user.dto.TodayTeamTaskResponse(
+        u.id,        
         u.name,
         s.title,
         p.name,

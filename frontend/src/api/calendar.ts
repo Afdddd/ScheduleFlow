@@ -122,19 +122,29 @@ export interface MyTaskResponse {
 }
 
 /**
+ * 프로젝트별 그룹화된 할 일 응답 타입
+ */
+export interface ProjectTaskGroup {
+  projectId: number;
+  projectTitle: string;
+  colorCode: string | null;
+  tasks: MyTaskResponse[];
+}
+
+/**
  * 이번달 내 할 일 조회
  * @param startDate 시작일
  * @param endDate 종료일
- * @returns 내 할 일 목록
+ * @returns 프로젝트별로 그룹화된 할 일 목록
  */
 export const getMyTasks = async (
   startDate: Date,
   endDate: Date
-): Promise<MyTaskResponse[]> => {
+): Promise<ProjectTaskGroup[]> => {
   const startDateStr = format(startDate, 'yyyy-MM-dd');
   const endDateStr = format(endDate, 'yyyy-MM-dd');
   
-  const response = await apiClient.get<MyTaskResponse[]>('/schedules/my-tasks', {
+  const response = await apiClient.get<ProjectTaskGroup[]>('/schedules/my-tasks', {
     params: {
       startDate: startDateStr,
       endDate: endDateStr,
@@ -155,16 +165,25 @@ export interface TodayTeamTaskResponse {
 }
 
 /**
+ * 팀원별 그룹화된 오늘 일정 응답 타입
+ */
+export interface TodayTeamTaskGroup {
+  userId: number;
+  memberName: string;
+  tasks: TodayTeamTaskResponse[];
+}
+
+/**
  * 팀원 오늘 일정 조회
  * @param date 조회할 날짜
- * @returns 팀원 오늘 일정 목록
+ * @returns 팀원별로 그룹화된 오늘 일정 목록
  */
 export const getTodayTeamTasks = async (
   date: Date
-): Promise<TodayTeamTaskResponse[]> => {
+): Promise<TodayTeamTaskGroup[]> => {
   const dateStr = format(date, 'yyyy-MM-dd');
   
-  const response = await apiClient.get<TodayTeamTaskResponse[]>('/users/team-tasks', {
+  const response = await apiClient.get<TodayTeamTaskGroup[]>('/users/team-tasks', {
     params: {
       date: dateStr,
     },

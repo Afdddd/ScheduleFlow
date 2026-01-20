@@ -2,7 +2,7 @@ package org.core.scheduleflow.domain.schedule.service
 
 import org.core.scheduleflow.domain.project.repository.ProjectRepository
 import org.core.scheduleflow.domain.schedule.constant.ScheduleType
-import org.core.scheduleflow.domain.schedule.dto.MyTaskResponse
+import org.core.scheduleflow.domain.schedule.dto.ProjectTaskGroup
 import org.core.scheduleflow.domain.schedule.dto.ScheduleCalenderResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleCreateRequest
 import org.core.scheduleflow.domain.schedule.dto.ScheduleDetailResponse
@@ -89,10 +89,24 @@ class ScheduleService(
     }
 
     @Transactional(readOnly = true)
-    fun findMyTask(userId: Long, startDate: LocalDate, endDate: LocalDate): List<MyTaskResponse> {
+    fun findMyTask(userId: Long, startDate: LocalDate, endDate: LocalDate): List<ProjectTaskGroup> {
         validatePeriod(startDate, endDate)
         userRepository.findByIdOrNull(userId) ?: throw CustomException(ErrorCode.NOT_FOUND_USER)
-        return scheduleRepository.findMyTasksByUserIdAndPeriod(userId, startDate, endDate)
+
+        val tasks = scheduleRepository.findMyTasksByUserIdAndPeriod(userId, startDate, endDate)
+
+        print("tasks: $tasks")
+
+        return tasks
+            .groupBy { it.projectId }
+            .map { (projectId, projectTasks) ->
+                ProjectTaskGroup(
+                    projectId = projectId,
+                    projectTitle = projectTasks.first().projectTitle,
+                    colorCode = projectTasks.first().colorCode,
+                    tasks = projectTasks
+                )
+            }
     }
 
     fun updateSchedule(id: Long, request: ScheduleUpdateRequest): ScheduleDetailResponse {

@@ -1,6 +1,6 @@
 package org.core.scheduleflow.domain.user.service
 
-import org.core.scheduleflow.domain.user.dto.TodayTeamTaskResponse
+import org.core.scheduleflow.domain.user.dto.TodayTeamTaskGroup
 import org.core.scheduleflow.domain.user.dto.UserListResponse
 import org.core.scheduleflow.domain.user.dto.UserResponse
 import org.core.scheduleflow.domain.user.dto.UserUpdateRequest
@@ -50,8 +50,18 @@ class UserService(
     }
 
     @Transactional(readOnly = true)
-    fun findTodayTeamTasks(date: LocalDate): List<TodayTeamTaskResponse> {
-        return userRepository.findTeamTasksByDate(date)
+    fun findTodayTeamTasks(date: LocalDate): List<TodayTeamTaskGroup> {
+        val tasks =  userRepository.findTeamTasksByDate(date)
+
+        return tasks
+            .groupBy { it.userId }
+            .map { (userId, teamTasks) ->
+                TodayTeamTaskGroup(
+                    userId = userId,
+                    memberName = teamTasks.first().memberName,
+                    tasks = teamTasks
+                )
+            }
     }
 
 

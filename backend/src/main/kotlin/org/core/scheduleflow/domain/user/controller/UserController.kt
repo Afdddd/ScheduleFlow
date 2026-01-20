@@ -1,6 +1,6 @@
 package org.core.scheduleflow.domain.user.controller
 
-import org.core.scheduleflow.domain.user.dto.TodayTeamTaskResponse
+import org.core.scheduleflow.domain.user.dto.TodayTeamTaskGroup
 import org.core.scheduleflow.domain.user.dto.UserListResponse
 import org.core.scheduleflow.domain.user.dto.UserResponse
 import org.core.scheduleflow.domain.user.dto.UserUpdateRequest
@@ -62,7 +62,7 @@ class UserController(
 
     @GetMapping("/team-tasks")
     fun getTodayTeamTasks(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) date: LocalDate):
-            ResponseEntity<List<TodayTeamTaskResponse>> {
+            ResponseEntity<List<TodayTeamTaskGroup>> {
         return ResponseEntity.ok(service.findTodayTeamTasks(date))
     }
 }

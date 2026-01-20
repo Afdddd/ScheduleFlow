@@ -24,11 +24,11 @@ interface ScheduleRepository: JpaRepository<Schedule, Long>, ScheduleRepositoryC
     fun findByStartDateBetween(startDate: LocalDate, endDate: LocalDate): List<ScheduleCalenderResponse>
 
     @Query("""
-        select new org.core.scheduleflow.domain.schedule.dto.MyTaskResponse(s.id, s.title, p.name, s.startDate, s.endDate, p.colorCode, s.type) 
+        select new org.core.scheduleflow.domain.schedule.dto.MyTaskResponse(s.id, s.title, p.id, p.name, s.startDate, s.endDate, p.colorCode, s.type)
         from Schedule s
-        join s.members m 
-        join m.user u 
-        join s.project p 
+        join s.members m
+        join m.user u
+        join s.project p
         where u.id = :userId
         and s.startDate <= :endDate and s.endDate >= :startDate
     """
