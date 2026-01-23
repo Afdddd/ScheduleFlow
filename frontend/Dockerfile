@@ -12,6 +12,9 @@ RUN npm install --legacy-peer-deps
 # Copy source code
 COPY . .
 
+# Set API base URL to empty for nginx proxy
+ENV REACT_APP_API_BASE_URL=""
+
 # Build the application
 RUN npm run build
 

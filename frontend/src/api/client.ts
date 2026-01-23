@@ -40,7 +40,7 @@ export const removeAuthToken = (): void => {
  * axios 인스턴스 생성
  */
 const apiClient: AxiosInstance = axios.create({
-  baseURL: process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080',
+  baseURL: process.env.REACT_APP_API_BASE_URL || '/api',
   headers: {
     'Content-Type': 'application/json',
   },
