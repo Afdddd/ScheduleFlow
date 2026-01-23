@@ -15,7 +15,7 @@ const UserManagementPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [currentPage, setCurrentPage] = useState<number>(0);
-  const pageSize = 5;
+  const pageSize = 8;
 
   useEffect(() => {
     const loadData = async () => {
