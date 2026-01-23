@@ -58,31 +58,49 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Create .env file
+        shell: pwsh
         run: |
-          echo "DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}" > .env
-          echo "MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}" >> .env
-          echo "MYSQL_USER=${{ secrets.MYSQL_USER }}" >> .env
-          echo "MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}" >> .env
-          echo "MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}" >> .env
-          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
-          echo "JWT_EXPIRATION=${{ secrets.JWT_EXPIRATION }}" >> .env
+          @"
+          DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+          MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
+          MYSQL_USER=${{ secrets.MYSQL_USER }}
+          MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          JWT_EXPIRATION=${{ secrets.JWT_EXPIRATION }}
+          "@ | Out-File -FilePath .env -Encoding UTF8
 
       - name: Pull latest images
+        shell: pwsh
         run: |
           docker pull ${{ env.BACKEND_IMAGE }}:latest
           docker pull ${{ env.FRONTEND_IMAGE }}:latest
 
-      - name: Deploy with Docker Compose
+      - name: Stop existing containers
+        shell: pwsh
         run: |
-          docker compose down --remove-orphans || true
+          docker compose down --remove-orphans
+        continue-on-error: true
+
+      - name: Start containers
+        shell: pwsh
+        run: |
           docker compose up -d
 
       - name: Clean up old images
+        shell: pwsh
         run: |
-          docker image prune -af --filter "until=24h" || true
+          docker image prune -af --filter "until=24h"
+        continue-on-error: true
 
       - name: Health check
+        shell: pwsh
         run: |
-          echo "Waiting for services to start..."
-          sleep 30
-          curl -f http://localhost/health || echo "Health check failed, but continuing..."
+          Write-Host "Waiting for services to start..."
+          Start-Sleep -Seconds 30
+          try {
+            Invoke-WebRequest -Uri http://localhost/health -UseBasicParsing
+            Write-Host "Health check passed"
+          } catch {
+            Write-Host "Health check failed, but continuing..."
+          }
