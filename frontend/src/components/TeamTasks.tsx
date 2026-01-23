@@ -101,7 +101,7 @@ const TeamTasks: React.FC = () => {
                         {group.memberName}
                       </span>
                       <span className="text-sm text-gray-500">
-                        ({group.tasks.length}개)
+                        ({group.tasks?.length ?? 0}개)
                       </span>
                     </div>
                     <svg
@@ -123,7 +123,7 @@ const TeamTasks: React.FC = () => {
                 </div>
 
                 {/* 일정 목록 (아코디언 내용) */}
-                {isExpanded && (
+                {isExpanded && group.tasks && group.tasks.length > 0 && (
                   <div className="border-t border-gray-200">
                     {group.tasks.map((task, index) => (
                       <div

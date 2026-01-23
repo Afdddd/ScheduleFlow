@@ -117,7 +117,7 @@ const MyTasks: React.FC = () => {
                         {group.projectTitle}
                       </span>
                       <span className="text-sm text-gray-600">
-                        ({group.tasks.length}개)
+                        ({group.tasks?.length ?? 0}개)
                       </span>
                     </div>
                     <span className="text-gray-600">
@@ -127,7 +127,7 @@ const MyTasks: React.FC = () => {
                 </div>
 
                 {/* 일정 목록 (아코디언) */}
-                {isExpanded && (
+                {isExpanded && group.tasks && group.tasks.length > 0 && (
                   <div className="pl-4 pr-4 pb-4 space-y-2">
                     {group.tasks.map((task) => (
                       <div
