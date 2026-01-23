@@ -58,7 +58,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Create .env file
-        shell: pwsh
+        shell: powershell
         run: |
           @"
           DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
@@ -71,30 +71,30 @@ jobs:
           "@ | Out-File -FilePath .env -Encoding UTF8
 
       - name: Pull latest images
-        shell: pwsh
+        shell: powershell
         run: |
           docker pull ${{ env.BACKEND_IMAGE }}:latest
           docker pull ${{ env.FRONTEND_IMAGE }}:latest
 
       - name: Stop existing containers
-        shell: pwsh
+        shell: powershell
         run: |
           docker compose down --remove-orphans
         continue-on-error: true
 
       - name: Start containers
-        shell: pwsh
+        shell: powershell
         run: |
           docker compose up -d
 
       - name: Clean up old images
-        shell: pwsh
+        shell: powershell
         run: |
           docker image prune -af --filter "until=24h"
         continue-on-error: true
 
       - name: Health check
-        shell: pwsh
+        shell: powershell
         run: |
           Write-Host "Waiting for services to start..."
           Start-Sleep -Seconds 30
