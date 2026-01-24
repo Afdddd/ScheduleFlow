@@ -64,9 +64,8 @@ class SecurityConfig {
         configuration.allowedOriginPatterns = mutableListOf(
             "http://localhost",
             "http://localhost:*",
-            "https://localhost",
-            "https://localhost:*",
-            "https://*"
+            "http://192.168.0.49",
+            "http://192.168.0.49:*",
         )
         configuration.allowedHeaders = listOf("*")
         configuration.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
