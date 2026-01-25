@@ -51,7 +51,7 @@ class UserService(
 
     @Transactional(readOnly = true)
     fun findTodayTeamTasks(date: LocalDate): List<TodayTeamTaskGroup> {
-        val tasks =  userRepository.findTeamTasksByDate(date)
+        val tasks = userRepository.findTeamTasksByDate(date)
 
         return tasks
             .groupBy { it.userId }
@@ -59,7 +59,7 @@ class UserService(
                 TodayTeamTaskGroup(
                     userId = userId,
                     memberName = teamTasks.first().memberName,
-                    tasks = teamTasks
+                    tasks = teamTasks.filter { it.scheduleTitle != null }
                 )
             }
     }
