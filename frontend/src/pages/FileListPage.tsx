@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import SearchBar from '../components/SearchBar';
 import Pagination from '../components/Pagination';
 import { getFileList, FileListResponse, PageResponse } from '../api/list';
+import { downloadFile } from '../api/file';
 
 /**
  * 파일 목록 페이지
  * 
  * 기능:
  * 1. 파일 목록 조회 (검색, 페이징)
- * 2. 파일 다운로드 (추후 구현)
+ * 2. 파일 다운로드
  */
 const FileListPage: React.FC = () => {
   const [data, setData] = useState<PageResponse<FileListResponse> | null>(null);
@@ -40,6 +41,22 @@ const FileListPage: React.FC = () => {
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
+  };
+
+  const handleDownload = async (fileId: number, fileName: string) => {
+    try {
+      const blob = await downloadFile(fileId);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('파일 다운로드 실패:', error);
+    }
   };
 
   const formatFileSize = (bytes: number): string => {
@@ -85,12 +102,15 @@ const FileListPage: React.FC = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     업로드 일시
                   </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    작업
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {data.content.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
+                    <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
                       파일이 없습니다.
                     </td>
                   </tr>
@@ -116,6 +136,14 @@ const FileListPage: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {file.createdAt}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <button
+                          onClick={() => handleDownload(file.id, file.originalFileName)}
+                          className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                        >
+                          다운로드
+                        </button>
                       </td>
                     </tr>
                   ))

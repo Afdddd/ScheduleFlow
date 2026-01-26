@@ -14,7 +14,8 @@ import {
   ProjectDetailResponse,
   ProjectUpdateRequest,
 } from '../api/project';
-import { getProjectFiles, downloadFile, deleteFile, FileResponse } from '../api/file';
+import { getProjectFiles, downloadFile, deleteFile, uploadFile, FileResponse } from '../api/file';
+import { createSchedule, deleteSchedule, ScheduleCreateRequest } from '../api/schedule';
 import { getAllPartners, getPartnerContacts, PartnerContactResponse } from '../api/partner';
 import { getAllUsers, UserListResponse } from '../api/user';
 import { PartnerListResponse } from '../api/list';
@@ -65,6 +66,16 @@ const ProjectDetailPage: React.FC = () => {
   const [loadingPartners, setLoadingPartners] = useState<boolean>(false);
   const [loadingUsers, setLoadingUsers] = useState<boolean>(false);
   const [loadingContacts, setLoadingContacts] = useState<boolean>(false);
+
+  // 일정 추가 폼
+  const [showScheduleForm, setShowScheduleForm] = useState<boolean>(false);
+  const [newScheduleTitle, setNewScheduleTitle] = useState<string>('');
+  const [newScheduleType, setNewScheduleType] = useState<string>('PROJECT');
+  const [newScheduleDateRange, setNewScheduleDateRange] = useState<[Date | null, Date | null]>([null, null]);
+  const [newScheduleMemberIds, setNewScheduleMemberIds] = useState<number[]>([]);
+
+  // 파일 업로드
+  const [uploadingFile, setUploadingFile] = useState<boolean>(false);
 
   // 파일 카테고리 탭
   const [activeFileCategory, setActiveFileCategory] = useState<string>('QUOTATION');
@@ -200,6 +211,7 @@ const ProjectDetailPage: React.FC = () => {
   const handleCancel = () => {
     setIsEditing(false);
     setError(null);
+    resetScheduleForm();
     // 원본 데이터로 복원
     if (project) {
       setName(project.name);
@@ -255,6 +267,7 @@ const ProjectDetailPage: React.FC = () => {
       setProject(updatedProject);
       setIsEditing(false);
       setError(null);
+      resetScheduleForm();
     } catch (error: any) {
       console.error('프로젝트 수정 실패:', error);
       setError(error.response?.data?.message || '프로젝트 수정에 실패했습니다.');
@@ -315,6 +328,98 @@ const ProjectDetailPage: React.FC = () => {
       console.error('파일 삭제 실패:', error);
       setError(error.response?.data?.message || '파일 삭제에 실패했습니다.');
     }
+  };
+
+  // 프로젝트 데이터 새로고침
+  const reloadProject = async () => {
+    if (!id) return;
+    try {
+      const projectId = parseInt(id, 10);
+      const [projectData, filesData] = await Promise.all([
+        getProjectDetail(projectId),
+        getProjectFiles(projectId),
+      ]);
+      setProject(projectData);
+      setFiles(filesData);
+    } catch (error) {
+      console.error('프로젝트 새로고침 실패:', error);
+    }
+  };
+
+  // 일정 추가 폼 초기화
+  const resetScheduleForm = () => {
+    setShowScheduleForm(false);
+    setNewScheduleTitle('');
+    setNewScheduleType('PROJECT');
+    setNewScheduleDateRange([null, null]);
+    setNewScheduleMemberIds([]);
+  };
+
+  // 일정 추가
+  const handleScheduleAdd = async () => {
+    if (!id || !newScheduleTitle.trim() || !newScheduleDateRange[0] || !newScheduleDateRange[1]) {
+      setError('일정 제목과 기간을 입력해주세요.');
+      return;
+    }
+
+    try {
+      const request: ScheduleCreateRequest = {
+        title: newScheduleTitle.trim(),
+        scheduleType: newScheduleType,
+        startDate: format(newScheduleDateRange[0], 'yyyy-MM-dd'),
+        endDate: format(newScheduleDateRange[1], 'yyyy-MM-dd'),
+        projectId: parseInt(id, 10),
+        memberIds: newScheduleMemberIds.length > 0 ? newScheduleMemberIds : null,
+      };
+      await createSchedule(request);
+      resetScheduleForm();
+      await reloadProject();
+    } catch (error: any) {
+      console.error('일정 추가 실패:', error);
+      setError(error.response?.data?.message || '일정 추가에 실패했습니다.');
+    }
+  };
+
+  // 일정 삭제
+  const handleScheduleDelete = async (scheduleId: number) => {
+    const confirmed = window.confirm('정말로 이 일정을 삭제하시겠습니까?');
+    if (!confirmed) return;
+
+    try {
+      await deleteSchedule(scheduleId);
+      await reloadProject();
+    } catch (error: any) {
+      console.error('일정 삭제 실패:', error);
+      setError(error.response?.data?.message || '일정 삭제에 실패했습니다.');
+    }
+  };
+
+  // 파일 업로드
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!id || !e.target.files || e.target.files.length === 0) return;
+
+    const file = e.target.files[0];
+    setUploadingFile(true);
+
+    try {
+      const projectId = parseInt(id, 10);
+      await uploadFile(projectId, file, activeFileCategory);
+      const filesData = await getProjectFiles(projectId);
+      setFiles(filesData);
+    } catch (error: any) {
+      console.error('파일 업로드 실패:', error);
+      setError(error.response?.data?.message || '파일 업로드에 실패했습니다.');
+    } finally {
+      setUploadingFile(false);
+      e.target.value = '';
+    }
+  };
+
+  // 일정 추가 폼 멤버 토글
+  const handleNewScheduleMemberToggle = (userId: number) => {
+    setNewScheduleMemberIds((prev) =>
+      prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
+    );
   };
 
   // 상태 라벨 변환
@@ -778,12 +883,99 @@ const ProjectDetailPage: React.FC = () => {
 
         {/* 일정 목록 */}
         <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-2">일정</h3>
-          {project.schedules.length === 0 ? (
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-lg font-semibold">일정</h3>
+            {isEditing && (
+              <button
+                type="button"
+                onClick={() => setShowScheduleForm(!showScheduleForm)}
+                className="px-3 py-1 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                {showScheduleForm ? '취소' : '일정 추가'}
+              </button>
+            )}
+          </div>
+
+          {/* 일정 추가 폼 */}
+          {isEditing && showScheduleForm && (
+            <div className="border border-blue-200 bg-blue-50 rounded-lg p-4 mb-4 space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">제목</label>
+                  <input
+                    type="text"
+                    value={newScheduleTitle}
+                    onChange={(e) => setNewScheduleTitle(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    placeholder="일정 제목"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">타입</label>
+                  <select
+                    value={newScheduleType}
+                    onChange={(e) => setNewScheduleType(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  >
+                    <option value="PROJECT">프로젝트 일정</option>
+                    <option value="TEST_RUN">시운전</option>
+                    <option value="WIRING">전기 배선</option>
+                    <option value="DESIGN">설계</option>
+                    <option value="MEETING">미팅</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">기간</label>
+                <DatePicker
+                  selected={newScheduleDateRange[0]}
+                  onChange={(dates: [Date | null, Date | null]) => setNewScheduleDateRange(dates)}
+                  startDate={newScheduleDateRange[0]}
+                  endDate={newScheduleDateRange[1]}
+                  selectsRange
+                  locale={ko as any}
+                  dateFormat="yyyy-MM-dd"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholderText="시작일 ~ 종료일"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">참여자</label>
+                <div className="border border-gray-200 rounded-lg p-2 max-h-32 overflow-y-auto bg-white">
+                  {users.map((u) => (
+                    <label
+                      key={u.id}
+                      className="flex items-center space-x-2 py-1 px-1 hover:bg-gray-50 cursor-pointer text-sm"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={newScheduleMemberIds.includes(u.id)}
+                        onChange={() => handleNewScheduleMemberToggle(u.id)}
+                        className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <span>{u.name}</span>
+                      {u.position && <span className="text-xs text-gray-400">({u.position})</span>}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleScheduleAdd}
+                  className="px-4 py-2 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                >
+                  추가
+                </button>
+              </div>
+            </div>
+          )}
+
+          {project.schedules.length === 0 && !showScheduleForm ? (
             <div className="text-sm text-gray-500 p-4 border border-gray-200 rounded-lg">
               등록된 일정이 없습니다.
             </div>
-          ) : (
+          ) : project.schedules.length > 0 ? (
             <div className="border border-gray-200 rounded-lg overflow-hidden">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
@@ -800,6 +992,11 @@ const ProjectDetailPage: React.FC = () => {
                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                       참여자
                     </th>
+                    {isEditing && (
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                        작업
+                      </th>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -817,12 +1014,22 @@ const ProjectDetailPage: React.FC = () => {
                           ? schedule.memberNames.join(', ')
                           : '-'}
                       </td>
+                      {isEditing && (
+                        <td className="px-4 py-2">
+                          <button
+                            onClick={() => handleScheduleDelete(schedule.scheduleId)}
+                            className="text-red-600 hover:text-red-800 text-sm"
+                          >
+                            삭제
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          )}
+          ) : null}
         </div>
 
         {/* 파일 목록 */}
@@ -849,6 +1056,26 @@ const ProjectDetailPage: React.FC = () => {
               </button>
             ))}
           </div>
+
+          {/* 파일 업로드 (편집 모드) */}
+          {isEditing && (
+            <div className="mb-4">
+              <label className="inline-flex items-center gap-2 px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors">
+                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                <span className="text-sm text-gray-600">
+                  {uploadingFile ? '업로드 중...' : `${getFileCategoryLabel(activeFileCategory)} 파일 업로드`}
+                </span>
+                <input
+                  type="file"
+                  onChange={handleFileUpload}
+                  disabled={uploadingFile}
+                  className="hidden"
+                />
+              </label>
+            </div>
+          )}
 
           {/* 파일 목록 */}
           {files.filter((f) => f.category === activeFileCategory).length === 0 ? (
@@ -892,7 +1119,7 @@ const ProjectDetailPage: React.FC = () => {
                             >
                               다운로드
                             </button>
-                            {isAdmin && file.id && (
+                            {(isEditing || isAdmin) && file.id && (
                               <button
                                 onClick={() => handleFileDelete(file.id!)}
                                 className="text-red-600 hover:text-red-800 text-sm"
