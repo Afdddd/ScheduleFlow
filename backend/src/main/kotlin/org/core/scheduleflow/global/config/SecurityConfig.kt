@@ -66,6 +66,8 @@ class SecurityConfig {
             "http://localhost:*",
             "http://192.168.0.49",
             "http://192.168.0.49:*",
+            "http://100.83.84.21:*",
+            "http://100.83.84.21"
         )
         configuration.allowedHeaders = listOf("*")
         configuration.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
