@@ -57,12 +57,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
       - name: Create .env file
         shell: powershell
         run: |
@@ -82,31 +76,13 @@ jobs:
           docker pull ${{ env.BACKEND_IMAGE }}:latest
           docker pull ${{ env.FRONTEND_IMAGE }}:latest
 
-      - name: Stop existing containers
+      - name: Deploy
         shell: powershell
         run: |
           docker compose down --remove-orphans
-        continue-on-error: true
-
-      - name: Start containers
-        shell: powershell
-        run: |
           docker compose up -d
 
-      - name: Clean up old images
+      - name: Clean up
         shell: powershell
-        run: |
-          docker image prune -af --filter "until=24h"
+        run: docker image prune -af --filter "until=24h"
         continue-on-error: true
-
-      - name: Health check
-        shell: powershell
-        run: |
-          Write-Host "Waiting for services to start..."
-          Start-Sleep -Seconds 30
-          try {
-            Invoke-WebRequest -Uri http://localhost/health -UseBasicParsing
-            Write-Host "Health check passed"
-          } catch {
-            Write-Host "Health check failed, but continuing..."
-          }
