@@ -34,8 +34,8 @@ monitoring:
   # Slack Configuration
   slack:
     webhook-url: ${SLACK_WEBHOOK_URL:}
-    channel: "#scheduleflow"
-    enabled: ${SLACK_ENABLED:true}
+    channel: "error"
+    enabled: true
 
   # GitHub Configuration
   github:
@@ -44,8 +44,10 @@ monitoring:
     repo: ${GITHUB_REPO:}
 
   # Docker Configuration
+  # mac: unix:///var/run/docker.sock
+  # window: npipe:////./pipe/docker_engine
   docker:
-    host: auto  # auto-detect: Windows(npipe), Linux/macOS(unix socket)
+    host: unix:///var/run/docker.sock
     monitored-containers:
       - scheduleflow-backend
       - scheduleflow-frontend
