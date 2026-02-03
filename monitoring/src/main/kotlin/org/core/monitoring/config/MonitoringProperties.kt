@@ -36,8 +36,8 @@ data class SlackProperties(
 
 data class GitHubProperties(
     val token: String = "",
-    val owner: String = "",
-    val repo: String = ""
+    val owner: String = "Afdddd",
+    val repo: String = "ScheduleFlow"
 )
 
 data class DockerProperties(

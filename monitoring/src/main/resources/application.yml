@@ -34,15 +34,15 @@ monitoring:
 
   # Slack Configuration
   slack:
-    webhook-url: ${SLACK_WEBHOOK_URL:}
+    webhook-url: ""
     channel: "error"
     enabled: true
 
   # GitHub Configuration
   github:
-    token: ${GITHUB_PAT:}
-    owner: ${GITHUB_OWNER:}
-    repo: ${GITHUB_REPO:}
+    token: ""
+    owner: "Afdddd"
+    repo: "ScheduleFlow"
 
   # Docker Configuration
   # mac: unix:///var/run/docker.sock
