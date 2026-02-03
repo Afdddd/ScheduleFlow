@@ -10,6 +10,7 @@ monitoring:
   allowed-ips:
     - 127.0.0.1
     - 100.83.84.21
+    - 0:0:0:0:0:0:0:1
 
   # 서버 자원(퍼센트)
   thresholds:

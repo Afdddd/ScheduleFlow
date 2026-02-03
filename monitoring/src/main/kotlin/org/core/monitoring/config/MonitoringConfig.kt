@@ -9,7 +9,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.web.reactive.function.client.WebClient
-import java.net.URI
 import java.time.Duration
 
 private val logger = KotlinLogging.logger {}
@@ -30,14 +29,14 @@ class MonitoringConfig(
     fun dockerClient(): DockerClient {
         // Determine Docker host - check common socket locations
         val dockerHost = findDockerHost()
-        logger.info { "Using Docker host: $dockerHost" }
+        logger.info { "Final Docker Host String: '$dockerHost'" }
 
         val config = DefaultDockerClientConfig.createDefaultConfigBuilder()
             .withDockerHost(dockerHost)
             .build()
 
         val httpClient = ApacheDockerHttpClient.Builder()
-            .dockerHost(URI.create(dockerHost))
+            .dockerHost(config.dockerHost)
             .connectionTimeout(Duration.ofSeconds(5))
             .responseTimeout(Duration.ofSeconds(10))
             .build()
