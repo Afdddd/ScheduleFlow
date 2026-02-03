@@ -48,7 +48,7 @@ monitoring:
   # mac: unix:///var/run/docker.sock
   # window: npipe:////./pipe/docker_engine
   docker:
-    host: unix:///var/run/docker.sock
+    host: npipe:////./pipe/docker_engine
     monitored-containers:
       - scheduleflow-backend
       - scheduleflow-frontend
