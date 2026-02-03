@@ -278,9 +278,27 @@ const ProjectDetailPage: React.FC = () => {
 
   // 프로젝트 삭제
   const handleDelete = async () => {
-    if (!id) return;
+    if (!id || !project) return;
 
-    const confirmed = window.confirm('정말로 이 프로젝트를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.');
+    const scheduleCount = project.schedules.length;
+    const fileCount = files.length;
+
+    let confirmMessage = '정말로 이 프로젝트를 삭제하시겠습니까?\n\n';
+
+    if (scheduleCount > 0 || fileCount > 0) {
+      confirmMessage += '⚠️ 주의: 다음 연관 데이터가 함께 삭제됩니다:\n';
+      if (scheduleCount > 0) {
+        confirmMessage += `  - 일정 ${scheduleCount}개\n`;
+      }
+      if (fileCount > 0) {
+        confirmMessage += `  - 파일 ${fileCount}개\n`;
+      }
+      confirmMessage += '\n';
+    }
+
+    confirmMessage += '이 작업은 되돌릴 수 없습니다.';
+
+    const confirmed = window.confirm(confirmMessage);
     if (!confirmed) return;
 
     setLoading(true);

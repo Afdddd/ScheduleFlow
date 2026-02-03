@@ -1,5 +1,6 @@
 package org.core.scheduleflow.domain.project.service
 
+import org.core.scheduleflow.domain.file.repository.FileRepository
 import org.core.scheduleflow.domain.partner.dto.ProjectPartnerContactDto
 import org.core.scheduleflow.domain.partner.repository.PartnerContactRepository
 import org.core.scheduleflow.domain.partner.repository.PartnerRepository
@@ -19,11 +20,15 @@ import org.core.scheduleflow.domain.user.dto.ProjectMemberDto
 import org.core.scheduleflow.domain.user.repository.UserRepository
 import org.core.scheduleflow.global.exception.CustomException
 import org.core.scheduleflow.global.exception.ErrorCode
+import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.time.LocalDate
 
 @Service
@@ -34,8 +39,11 @@ class ProjectService(
     private val partnerContactRepository: PartnerContactRepository,
     private val userRepository: UserRepository,
     private val scheduleRepository: ScheduleRepository,
-    private val scheduleMemberRepository: ScheduleMemberRepository
+    private val scheduleMemberRepository: ScheduleMemberRepository,
+    private val fileRepository: FileRepository,
+    @Value("\${storage.path}") private val uploadPath: String
 ) {
+    private val logger = LoggerFactory.getLogger(this.javaClass)
 
     fun createProject(request: ProjectCreateRequest): Long {
         validateProjectName(request.name)
@@ -142,7 +150,27 @@ class ProjectService(
     }
 
     fun deleteProject(projectId: Long) {
-        projectRepository.deleteById(projectId)
+        val project = projectRepository.findByIdOrNull(projectId)
+            ?: throw CustomException(ErrorCode.NOT_FOUND_PROJECT)
+
+        // 연관된 파일들의 물리적 파일 삭제
+        val files = fileRepository.findByProjectId(projectId)
+        files.forEach { file ->
+            try {
+                val filePath = Paths.get(file.filePath)
+                val isDeleted = Files.deleteIfExists(filePath)
+                if (isDeleted) {
+                    logger.info("프로젝트 삭제 시 파일 삭제 완료: {}", file.filePath)
+                } else {
+                    logger.warn("프로젝트 삭제 시 파일이 존재하지 않음: {}", file.filePath)
+                }
+            } catch (e: Exception) {
+                logger.error("프로젝트 삭제 시 파일 삭제 실패: {}", file.filePath, e)
+            }
+        }
+
+        // 프로젝트 삭제 (cascade로 schedules, members, contacts, files 모두 삭제)
+        projectRepository.delete(project)
     }
 
     private fun toProjectDetailResponse(project: Project): ProjectDetailResponse {

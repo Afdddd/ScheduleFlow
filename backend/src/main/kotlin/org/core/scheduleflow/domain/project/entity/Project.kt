@@ -41,6 +41,9 @@ class Project(
     @OneToMany(mappedBy = "project", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
     var schedules: MutableList<Schedule> = mutableListOf(),
 
+    @OneToMany(mappedBy = "project", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+    var files: MutableList<org.core.scheduleflow.domain.file.entity.FileEntity> = mutableListOf(),
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
     var status: ProjectStatus = ProjectStatus.IN_PROGRESS,
