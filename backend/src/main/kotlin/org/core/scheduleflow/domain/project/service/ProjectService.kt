@@ -27,8 +27,6 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.nio.file.Files
-import java.nio.file.Paths
 import java.time.LocalDate
 
 @Service
@@ -152,22 +150,6 @@ class ProjectService(
     fun deleteProject(projectId: Long) {
         val project = projectRepository.findByIdOrNull(projectId)
             ?: throw CustomException(ErrorCode.NOT_FOUND_PROJECT)
-
-        // 연관된 파일들의 물리적 파일 삭제
-        val files = fileRepository.findByProjectId(projectId)
-        files.forEach { file ->
-            try {
-                val filePath = Paths.get(file.filePath)
-                val isDeleted = Files.deleteIfExists(filePath)
-                if (isDeleted) {
-                    logger.info("프로젝트 삭제 시 파일 삭제 완료: {}", file.filePath)
-                } else {
-                    logger.warn("프로젝트 삭제 시 파일이 존재하지 않음: {}", file.filePath)
-                }
-            } catch (e: Exception) {
-                logger.error("프로젝트 삭제 시 파일 삭제 실패: {}", file.filePath, e)
-            }
-        }
 
         // 프로젝트 삭제 (cascade로 schedules, members, contacts, files 모두 삭제)
         projectRepository.delete(project)
