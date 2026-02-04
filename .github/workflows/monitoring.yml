@@ -125,35 +125,19 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.MONITORING_SLACK_WEBHOOK_URL }}
           GITHUB_TOKEN_SECRET: ${{ secrets.MONITORING_GITHUB_TOKEN }}
+          JAVA_HOME: C:\Program Files\Eclipse Adoptium\jre-21.0.10.8-hotspot
         run: |
           $workingDir = "C:\ScheduleFlow\monitoring"
           $jarPath = "$workingDir\monitoring.jar"
-          $stdoutLog = "$workingDir\logs\stdout.log"
-          $stderrLog = "$workingDir\logs\stderr.log"
-
-          # Clear previous logs
-          if (Test-Path $stdoutLog) { Clear-Content $stdoutLog }
-          if (Test-Path $stderrLog) { Clear-Content $stderrLog }
-
-          $javaArgs = @(
-            "-Xms64m",
-            "-Xmx128m",
-            "-Dmonitoring.docker.host=npipe:////./pipe/docker_engine",
-            "-Dmonitoring.slack.webhook-url=$env:SLACK_WEBHOOK_URL",
-            "-Dmonitoring.github.token=$env:GITHUB_TOKEN_SECRET",
-            "-jar",
-            $jarPath
-          )
+          $javaPath = "$env:JAVA_HOME\bin\java.exe"
 
           Write-Host "Starting monitoring application..."
-          Write-Host "Working directory: $workingDir"
-          Write-Host "JAR path: $jarPath"
 
-          Start-Process -FilePath "java" `
-            -ArgumentList $javaArgs `
+          Start-Process -FilePath $javaPath `
+            -ArgumentList "-Xms64m", "-Xmx128m", "-Dmonitoring.docker.host=npipe:////./pipe/docker_engine", "-Dmonitoring.slack.webhook-url=$env:SLACK_WEBHOOK_URL", "-Dmonitoring.github.token=$env:GITHUB_TOKEN_SECRET", "-jar", $jarPath `
             -WorkingDirectory $workingDir `
-            -RedirectStandardOutput $stdoutLog `
-            -RedirectStandardError $stderrLog `
+            -RedirectStandardOutput "$workingDir\logs\stdout.log" `
+            -RedirectStandardError "$workingDir\logs\stderr.log" `
             -WindowStyle Hidden
 
           Write-Host "Monitoring application started"
