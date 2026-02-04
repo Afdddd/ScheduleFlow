@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - 'monitoring/**'
+      - '.github/workflows/monitoring.yml'
+      - 'docs/**'
+      - '*.md'
 
 env:
   DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
