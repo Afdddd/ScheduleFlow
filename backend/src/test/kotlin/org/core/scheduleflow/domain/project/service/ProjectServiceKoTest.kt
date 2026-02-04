@@ -421,13 +421,15 @@ class ProjectServiceKoTest() : BehaviorSpec({
     }
 
     Given("프로젝트 삭제 요청이 주어지고") {
-        every { projectRepository.deleteById(1L) } returns Unit
+        every { projectRepository.findByIdOrNull(1L) } returns null
 
         When("삭제 요청을 하면") {
-            projectService.deleteProject(1L)
+            val result = shouldThrow<CustomException> {
+                projectService.deleteProject(1L)
+            }
 
-            Then("프로젝트가 삭제된다") {
-                verify(exactly = 1) { projectRepository.deleteById(1L) }
+            Then("NOT_FOUND_PROJECT 예외가 발생한다.") {
+                result.errorCode shouldBe ErrorCode.NOT_FOUND_PROJECT
             }
         }
     }

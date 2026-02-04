@@ -34,7 +34,7 @@ class ProjectService(
     private val partnerContactRepository: PartnerContactRepository,
     private val userRepository: UserRepository,
     private val scheduleRepository: ScheduleRepository,
-    private val scheduleMemberRepository: ScheduleMemberRepository
+    private val scheduleMemberRepository: ScheduleMemberRepository,
 ) {
 
     fun createProject(request: ProjectCreateRequest): Long {
@@ -142,7 +142,11 @@ class ProjectService(
     }
 
     fun deleteProject(projectId: Long) {
-        projectRepository.deleteById(projectId)
+        val project = projectRepository.findByIdOrNull(projectId)
+            ?: throw CustomException(ErrorCode.NOT_FOUND_PROJECT)
+
+        // 프로젝트 삭제 (cascade로 schedules, members, contacts, files 모두 삭제)
+        projectRepository.delete(project)
     }
 
     private fun toProjectDetailResponse(project: Project): ProjectDetailResponse {
