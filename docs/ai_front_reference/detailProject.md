@@ -619,5 +619,5 @@ setFiles(updatedFiles);
 - [React 공식 문서 - useEffect](https://react.dev/reference/react/useEffect)
 - [react-datepicker 문서](https://reactdatepicker.com/)
 - [React Router - useNavigate](https://reactrouter.com/en/main/hooks/use-navigate)
-- [프로젝트 등록 페이지 문서](./createProject.md)
+- [프로젝트 등록 페이지 문서](createProject.md)
 

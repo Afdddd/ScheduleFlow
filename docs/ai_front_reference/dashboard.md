@@ -871,5 +871,5 @@ frontend/src/
 
 ## 참고 문서
 
-- [dashboard-frame.md](./dashboard-frame.md) - 대시보드 화면 구성 설계 문서
+- [dashboard-frame.md](dashboard-frame.md) - 대시보드 화면 구성 설계 문서
 

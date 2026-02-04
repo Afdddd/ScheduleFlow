@@ -1,0 +1,70 @@
+server:
+  port: 8090
+
+spring:
+  application:
+    name: scheduleflow-monitoring
+
+monitoring:
+  # Access Control - IP Whitelist
+  allowed-ips:
+    - 127.0.0.1
+    - 100.83.84.21
+    - 0:0:0:0:0:0:0:1
+
+  # 서버 자원(퍼센트)
+  thresholds:
+    cpu: 80
+    ram: 80
+    ssd: 80
+    battery: 20
+
+  # 수집 주기
+  intervals:
+    system-resource: 60000   # 1 minute
+    docker: 30000            # 30 seconds
+    github-runner: 300000    # 5 minutes
+
+  # Alert cooldown to prevent spam (milliseconds)
+  alert-cooldown: 300000     # 5 minutes between same alerts
+
+  # Memory retention
+  metrics-retention-minutes: 10
+  alert-history-size: 100
+
+  # Slack Configuration
+  slack:
+    webhook-url: ""
+    channel: "error"
+    enabled: true
+
+  # GitHub Configuration
+  github:
+    token: ""
+    owner: "Afdddd"
+    repo: "ScheduleFlow"
+
+  # Docker Configuration
+  # mac: unix:///var/run/docker.sock
+  # window: npipe:////./pipe/docker_engine
+  docker:
+    host: npipe:////./pipe/docker_engine
+    monitored-containers:
+      - scheduleflow-backend
+      - scheduleflow-frontend
+      - scheduleflow-nginx
+      - scheduleflow-mysql
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    org.core.monitoring: INFO
+    com.github.dockerjava: WARN
