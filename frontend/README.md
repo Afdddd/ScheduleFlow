@@ -254,26 +254,3 @@ server {
 }
 ```
 
-## 브라우저 지원
-
-- Chrome (최신 버전)
-- Firefox (최신 버전)
-- Safari (최신 버전)
-- Edge (최신 버전)
-
-## 기여 가이드
-
-1. 컴포넌트는 기능별로 분리합니다
-2. 재사용 가능한 컴포넌트는 `components/`에 배치합니다
-3. 페이지 컴포넌트는 `pages/`에 배치합니다
-4. API 호출 로직은 `api/`에 모듈화합니다
-5. TypeScript 타입을 명확히 정의합니다
-
-## 라이선스
-
-<!-- TODO: 라이선스 정보 추가 -->
-
-## 관련 링크
-
-- [프로젝트 기획 문서](https://inyeop.notion.site/ScheduleFlow-2960c52c1219803e8d40d3d313124b9f)
-- Backend 저장소: `/backend`
