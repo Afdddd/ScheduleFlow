@@ -9,7 +9,6 @@
 - **Java**: OpenJDK 21
 - **데이터베이스**: MySQL 8.0
 - **ORM**: JPA (Hibernate)
-- **쿼리 빌더**: QueryDSL 5.1.0
 - **인증**: JWT (jjwt 0.12.6)
 - **보안**: Spring Security
 - **빌드 도구**: Gradle (Kotlin DSL)
@@ -274,19 +273,3 @@ storage:
 # 특정 테스트 실행
 ./gradlew test --tests "org.core.scheduleflow.domain.user.*"
 ```
-
-## 기여 가이드
-
-1. 도메인별 패키지 구조를 유지합니다
-2. DTO는 요청/응답 용도를 명확히 구분합니다 (`Request`, `Response` 접미사)
-3. Service 레이어에 비즈니스 로직을 구현합니다
-4. 테스트 코드를 작성합니다 (Kotest 사용)
-
-## 라이선스
-
-<!-- TODO: 라이선스 정보 추가 -->
-
-## 관련 링크
-
-- [프로젝트 기획 문서](https://inyeop.notion.site/ScheduleFlow-2960c52c1219803e8d40d3d313124b9f)
-- Frontend 저장소: `/frontend`
