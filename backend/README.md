@@ -18,7 +18,7 @@
 
 ```
 backend/src/main/kotlin/org/core/scheduleflow/
-├── SheduleFlowApplication.kt          # 애플리케이션 진입점
+├── ScheduleFlowApplication.kt          # 애플리케이션 진입점
 ├── domain/                             # 도메인별 패키지
 │   ├── user/                          # 사용자 및 인증
 │   │   ├── controller/

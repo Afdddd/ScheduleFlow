@@ -189,7 +189,7 @@ interface AuthState {
 ### 인증 헤더 자동 설정
 
 ```typescript
-// api/index.ts
+// api/client.ts
 axios.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
