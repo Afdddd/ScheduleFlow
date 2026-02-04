@@ -125,7 +125,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.MONITORING_SLACK_WEBHOOK_URL }}
           GITHUB_TOKEN_SECRET: ${{ secrets.MONITORING_GITHUB_TOKEN }}
-          JAVA_HOME: C:\Program Files\Eclipse Adoptium\jre-21.0.10.8-hotspot
+          JAVA_HOME: C:\Program Files\Eclipse Adoptium\jre-21.0.10.7-hotspot
         run: |
           $workingDir = "C:\ScheduleFlow\monitoring"
           $jarPath = "$workingDir\monitoring.jar"
