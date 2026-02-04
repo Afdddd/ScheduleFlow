@@ -63,17 +63,9 @@ class AlertService(
     }
 
     fun acknowledgeAlert(alertId: String): Boolean {
-        val alert = alertHistory.find { it.id == alertId }
-        if (alert != null) {
-            // Create acknowledged version and replace
-            val index = alertHistory.indexOf(alert)
-            if (index >= 0) {
-                alertHistory.remove(alert)
-                alertHistory.addFirst(alert.copy(acknowledged = true))
-                return true
-            }
-        }
-        return false
+        val alert = alertHistory.find { it.id == alertId } ?: return false
+        return alertHistory.remove(alert) &&
+                alertHistory.addFirst(alert.copy(acknowledged = true)).let { true }
     }
 
     private fun isInCooldown(type: AlertType): Boolean {
@@ -124,20 +116,16 @@ class AlertService(
             )
         )
 
-        try {
-            webClient.post()
-                .uri(webhookUrl)
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(payload)
-                .retrieve()
-                .bodyToMono(String::class.java)
-                .subscribe(
-                    { logger.debug { "Slack notification sent successfully" } },
-                    { e -> logger.error(e) { "Failed to send Slack notification" } }
-                )
-        } catch (e: Exception) {
-            logger.error(e) { "Failed to send Slack notification" }
-        }
+        webClient.post()
+            .uri(webhookUrl)
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(payload)
+            .retrieve()
+            .bodyToMono(String::class.java)
+            .subscribe(
+                { logger.debug { "Slack notification sent successfully" } },
+                { e -> logger.error(e) { "Failed to send Slack notification" } }
+            )
     }
 }
 
