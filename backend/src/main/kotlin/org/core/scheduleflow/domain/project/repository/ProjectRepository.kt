@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import java.time.LocalDate
 
-interface ProjectRepository: JpaRepository<Project, Long>, ProjectRepositoryCustom {
+interface ProjectRepository: JpaRepository<Project, Long> {
     fun existsByName(name: String): Boolean
 
     @Query("""
@@ -78,4 +78,3 @@ interface ProjectRepository: JpaRepository<Project, Long>, ProjectRepositoryCust
     fun findByPartnerId(partnerId: Long): List<Project>
 }
 
-interface ProjectRepositoryCustom

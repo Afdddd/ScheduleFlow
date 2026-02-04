@@ -11,7 +11,7 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import java.time.LocalDate
 
-interface ScheduleRepository: JpaRepository<Schedule, Long>, ScheduleRepositoryCustom {
+interface ScheduleRepository: JpaRepository<Schedule, Long> {
     fun findByProject(project: Project): List<Schedule>
 
     @Query("""
@@ -66,9 +66,13 @@ interface ScheduleRepository: JpaRepository<Schedule, Long>, ScheduleRepositoryC
          order by s.startDate
     """)
     fun searchScheduleList(keyword: String, pageable: Pageable): Page<ScheduleListResponse>
-}
 
-interface ScheduleRepositoryCustom {
-    fun findByIdWithAll(scheduleId: Long): Schedule?
-    fun findAllWithProject(): List<Schedule>
+    @Query("""
+        select s from Schedule s
+        left join fetch s.project p
+        left join fetch s.members m
+        left join fetch m.user u
+        where s.id = :id
+    """)
+    fun findByIdWithAll(id: Long): Schedule?
 }
