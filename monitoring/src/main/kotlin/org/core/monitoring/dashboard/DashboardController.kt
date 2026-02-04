@@ -25,9 +25,9 @@ class DashboardController(
      * Get current system metrics
      */
     @GetMapping("/system")
-    fun getSystemMetrics(): ResponseEntity<Any> {
+    fun getSystemMetrics(): ResponseEntity<SystemMetrics> {
         val health = healthCheckScheduler.getCurrentHealth()
-        return health.system?.let { ResponseEntity.ok(it as Any) }
+        return health.system?.let { ResponseEntity.ok(it) }
             ?: ResponseEntity.notFound().build()
     }
 
@@ -43,9 +43,9 @@ class DashboardController(
      * Get Docker status
      */
     @GetMapping("/docker")
-    fun getDockerStatus(): ResponseEntity<Any> {
+    fun getDockerStatus(): ResponseEntity<DockerStatus> {
         val health = healthCheckScheduler.getCurrentHealth()
-        return health.docker?.let { ResponseEntity.ok(it as Any) }
+        return health.docker?.let { ResponseEntity.ok(it) }
             ?: ResponseEntity.notFound().build()
     }
 

@@ -60,11 +60,6 @@ class IpWhitelistFilter(
     }
 
     private fun isIpAllowed(clientIp: String): Boolean {
-        for (allowedIp in properties.allowedIps) {
-            if (clientIp == allowedIp) {
-                return true
-            }
-        }
-        return false
+        return properties.allowedIps.any { it == clientIp }
     }
 }
