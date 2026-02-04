@@ -1,6 +1,5 @@
 package org.core.scheduleflow.domain.project.service
 
-import org.core.scheduleflow.domain.file.repository.FileRepository
 import org.core.scheduleflow.domain.partner.dto.ProjectPartnerContactDto
 import org.core.scheduleflow.domain.partner.repository.PartnerContactRepository
 import org.core.scheduleflow.domain.partner.repository.PartnerRepository
@@ -20,8 +19,6 @@ import org.core.scheduleflow.domain.user.dto.ProjectMemberDto
 import org.core.scheduleflow.domain.user.repository.UserRepository
 import org.core.scheduleflow.global.exception.CustomException
 import org.core.scheduleflow.global.exception.ErrorCode
-import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
@@ -38,10 +35,7 @@ class ProjectService(
     private val userRepository: UserRepository,
     private val scheduleRepository: ScheduleRepository,
     private val scheduleMemberRepository: ScheduleMemberRepository,
-    private val fileRepository: FileRepository,
-    @Value("\${storage.path}") private val uploadPath: String
 ) {
-    private val logger = LoggerFactory.getLogger(this.javaClass)
 
     fun createProject(request: ProjectCreateRequest): Long {
         validateProjectName(request.name)
