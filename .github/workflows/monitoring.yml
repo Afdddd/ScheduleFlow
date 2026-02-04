@@ -65,7 +65,7 @@ jobs:
           name: monitoring-jar
 
       - name: Create monitoring directory
-        shell: pwsh
+        shell: powershell
         run: |
           $monitoringDir = "C:\ScheduleFlow\monitoring"
           $logsDir = "$monitoringDir\logs"
@@ -81,21 +81,19 @@ jobs:
           }
 
       - name: Create environment file
-        shell: pwsh
+        shell: powershell
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.MONITORING_SLACK_WEBHOOK_URL }}
           GITHUB_TOKEN_SECRET: ${{ secrets.MONITORING_GITHUB_TOKEN }}
         run: |
-          $envContent = @"
+          @"
           MONITORING_SLACK_WEBHOOK_URL=$env:SLACK_WEBHOOK_URL
           MONITORING_GITHUB_TOKEN=$env:GITHUB_TOKEN_SECRET
-          "@
-
-          $envContent | Out-File -FilePath "C:\ScheduleFlow\monitoring\monitoring.env" -Encoding UTF8
+          "@ | Out-File -FilePath "C:\ScheduleFlow\monitoring\monitoring.env" -Encoding UTF8
           Write-Host "Environment file created"
 
       - name: Stop existing monitoring process
-        shell: pwsh
+        shell: powershell
         run: |
           Write-Host "Checking for existing monitoring processes..."
 
@@ -114,7 +112,7 @@ jobs:
           }
 
       - name: Copy JAR file
-        shell: pwsh
+        shell: powershell
         run: |
           $source = "monitoring.jar"
           $destination = "C:\ScheduleFlow\monitoring\monitoring.jar"
@@ -123,7 +121,7 @@ jobs:
           Write-Host "JAR file copied to: $destination"
 
       - name: Start monitoring application
-        shell: pwsh
+        shell: powershell
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.MONITORING_SLACK_WEBHOOK_URL }}
           GITHUB_TOKEN_SECRET: ${{ secrets.MONITORING_GITHUB_TOKEN }}
@@ -161,7 +159,7 @@ jobs:
           Write-Host "Monitoring application started"
 
       - name: Verify deployment
-        shell: pwsh
+        shell: powershell
         run: |
           Write-Host "Waiting for application to start..."
           Start-Sleep -Seconds 15
