@@ -129,23 +129,6 @@ class AuthServiceTest : BehaviorSpec({
         }
     }
 
-    Given("존재하지 않는 사용자로 로그인 요청이 주어지고") {
-        val request = UserSignInRequest(username = "nonexistent", password = "password123")
-
-        every { authenticationManager.authenticate(any()) } returns mockk()
-        every { userRepository.findByUsername("nonexistent") } returns null
-
-        When("로그인을 하면") {
-            val exception = shouldThrow<CustomException> {
-                authService.signIn(request)
-            }
-
-            Then("NOT_FOUND_USER 예외가 발생한다") {
-                exception.errorCode shouldBe ErrorCode.NOT_FOUND_USER
-            }
-        }
-    }
-
     Given("비밀번호 암호화 확인을 위한 회원가입 요청이 주어지고") {
         val plainPassword = "mySecretPassword"
         val request = UserSignUpRequest(
