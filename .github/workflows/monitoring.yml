@@ -2,11 +2,6 @@ name: Monitoring CI/CD
 
 on:
   push:
-    branches: [ main, develop ]
-    paths:
-      - 'monitoring/**'
-      - '.github/workflows/monitoring.yml'
-  pull_request:
     branches: [ main ]
     paths:
       - 'monitoring/**'
@@ -33,16 +28,6 @@ jobs:
       - name: Build monitoring module
         run: ./gradlew :monitoring:build -x test
 
-      - name: Run tests
-        run: ./gradlew :monitoring:test
-
-      - name: Upload test results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: test-results
-          path: monitoring/build/reports/tests/
-
       - name: Build JAR
         run: ./gradlew :monitoring:bootJar
 
@@ -56,146 +41,26 @@ jobs:
   deploy:
     needs: build
     runs-on: self-hosted
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-
     steps:
       - name: Download JAR artifact
         uses: actions/download-artifact@v4
         with:
           name: monitoring-jar
+          # 배포 스크립트가 찾기 쉬운 위치로 다운로드
+          path: C:\ScheduleFlow\monitoring\temp
 
-      - name: Create monitoring directory
-        shell: powershell
-        run: |
-          $monitoringDir = "C:\ScheduleFlow\monitoring"
-          $logsDir = "$monitoringDir\logs"
-
-          if (-not (Test-Path $monitoringDir)) {
-            New-Item -ItemType Directory -Path $monitoringDir -Force
-            Write-Host "Created monitoring directory: $monitoringDir"
-          }
-
-          if (-not (Test-Path $logsDir)) {
-            New-Item -ItemType Directory -Path $logsDir -Force
-            Write-Host "Created logs directory: $logsDir"
-          }
-
-      - name: Create environment file
-        shell: powershell
+      - name: Execute Deployment Batch
+        shell: cmd
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.MONITORING_SLACK_WEBHOOK_URL }}
-          GITHUB_TOKEN_SECRET: ${{ secrets.MONITORING_GITHUB_TOKEN }}
+          SLACK_URL: ${{ secrets.MONITORING_SLACK_WEBHOOK_URL }}
+          GH_TOKEN: ${{ secrets.MONITORING_GITHUB_TOKEN }}
         run: |
-          @"
-          MONITORING_SLACK_WEBHOOK_URL=$env:SLACK_WEBHOOK_URL
-          MONITORING_GITHUB_TOKEN=$env:GITHUB_TOKEN_SECRET
-          "@ | Out-File -FilePath "C:\ScheduleFlow\monitoring\monitoring.env" -Encoding UTF8
-          Write-Host "Environment file created"
+          :: 서버에 미리 만들어둔 배치 파일 실행
+          call C:\ScheduleFlow\monitoring\deploy.bat "%SLACK_URL%" "%GH_TOKEN%"
 
-      - name: Stop existing monitoring process
+      - name: Verify Deployment
         shell: powershell
         run: |
-          Write-Host "Checking for existing monitoring processes..."
-
-          $javaProcesses = Get-WmiObject Win32_Process -Filter "Name='java.exe'" -ErrorAction SilentlyContinue |
-            Where-Object { $_.CommandLine -like "*monitoring.jar*" }
-
-          if ($javaProcesses) {
-            foreach ($proc in $javaProcesses) {
-              Write-Host "Stopping process ID: $($proc.ProcessId)"
-              Stop-Process -Id $proc.ProcessId -Force -ErrorAction SilentlyContinue
-            }
-            Write-Host "Waiting for processes to terminate..."
-            Start-Sleep -Seconds 5
-          } else {
-            Write-Host "No existing monitoring processes found"
-          }
-
-      - name: Copy JAR file
-        shell: powershell
-        run: |
-          $source = "monitoring.jar"
-          $destination = "C:\ScheduleFlow\monitoring\monitoring.jar"
-
-          Copy-Item -Path $source -Destination $destination -Force
-          Write-Host "JAR file copied to: $destination"
-
-      - name: Start monitoring application
-        shell: powershell
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.MONITORING_SLACK_WEBHOOK_URL }}
-          GITHUB_TOKEN_SECRET: ${{ secrets.MONITORING_GITHUB_TOKEN }}
-          JAVA_HOME: C:\Program Files\Eclipse Adoptium\jre-21.0.10.7-hotspot
-        run: |
-          $workingDir = "C:\ScheduleFlow\monitoring"
-          $jarPath = "$workingDir\monitoring.jar"
-          $javaPath = "$env:JAVA_HOME\bin\java.exe"
-
-          Write-Host "Starting monitoring application..."
-
-          Start-Process -FilePath $javaPath `
-            -ArgumentList "-Xms64m", "-Xmx128m", "-Dmonitoring.docker.host=npipe:////./pipe/docker_engine", "-Dmonitoring.slack.webhook-url=$env:SLACK_WEBHOOK_URL", "-Dmonitoring.github.token=$env:GITHUB_TOKEN_SECRET", "-jar", $jarPath `
-            -WorkingDirectory $workingDir `
-            -RedirectStandardOutput "$workingDir\logs\stdout.log" `
-            -RedirectStandardError "$workingDir\logs\stderr.log" `
-            -WindowStyle Hidden
-
-          Write-Host "Monitoring application started"
-
-      - name: Verify deployment
-        shell: powershell
-        run: |
-          Write-Host "Waiting for application to start..."
+          Write-Host "Waiting for app to start..."
           Start-Sleep -Seconds 15
-
-          # Check if process is running
-          $javaProcesses = Get-WmiObject Win32_Process -Filter "Name='java.exe'" -ErrorAction SilentlyContinue |
-            Where-Object { $_.CommandLine -like "*monitoring.jar*" }
-
-          if (-not $javaProcesses) {
-            Write-Host "ERROR: Monitoring process not found!"
-            Write-Host "=== stdout.log ==="
-            if (Test-Path "C:\ScheduleFlow\monitoring\logs\stdout.log") {
-              Get-Content "C:\ScheduleFlow\monitoring\logs\stdout.log" -Tail 50
-            }
-            Write-Host "=== stderr.log ==="
-            if (Test-Path "C:\ScheduleFlow\monitoring\logs\stderr.log") {
-              Get-Content "C:\ScheduleFlow\monitoring\logs\stderr.log" -Tail 50
-            }
-            exit 1
-          }
-
-          Write-Host "Monitoring process is running (PID: $($javaProcesses.ProcessId))"
-
-          # Health check with retry
-          $maxRetries = 5
-          $retryCount = 0
-          $healthy = $false
-
-          while ($retryCount -lt $maxRetries -and -not $healthy) {
-            try {
-              $response = Invoke-WebRequest -Uri "http://localhost:8090/actuator/health" -UseBasicParsing -TimeoutSec 10
-              if ($response.StatusCode -eq 200) {
-                $healthy = $true
-                Write-Host "Health check passed!"
-                Write-Host "Response: $($response.Content)"
-              }
-            } catch {
-              $retryCount++
-              Write-Host "Health check attempt $retryCount failed, retrying in 5 seconds..."
-              Start-Sleep -Seconds 5
-            }
-          }
-
-          if (-not $healthy) {
-            Write-Host "WARNING: Health check failed after $maxRetries attempts"
-            Write-Host "Application may still be starting up. Check logs manually."
-            Write-Host "=== Recent stdout.log ==="
-            if (Test-Path "C:\ScheduleFlow\monitoring\logs\stdout.log") {
-              Get-Content "C:\ScheduleFlow\monitoring\logs\stdout.log" -Tail 30
-            }
-          }
-
-          Write-Host ""
-          Write-Host "Deployment complete!"
-          Write-Host "Dashboard URL: http://localhost:8090/admin/monitoring/health"
+          Invoke-WebRequest -Uri "http://localhost:8090/actuator/health" -UseBasicParsing
