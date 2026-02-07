@@ -56,7 +56,7 @@ jobs:
           GH_TOKEN: ${{ secrets.MONITORING_GITHUB_TOKEN }}
         run: |
           :: 서버에 미리 만들어둔 배치 파일 실행
-          call C:\ScheduleFlow\monitoring\deploy.bat "%SLACK_URL%" "%GH_TOKEN%"
+          call C:\ScheduleFlow\monitoring\deploy.bat
 
       - name: Verify Deployment
         shell: powershell
