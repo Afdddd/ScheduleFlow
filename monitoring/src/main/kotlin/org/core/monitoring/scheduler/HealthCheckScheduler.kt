@@ -214,7 +214,7 @@ class HealthCheckScheduler(
             if (!runner.isOnline) {
                 alertService.sendAlert(
                     type = AlertType.GITHUB_RUNNER_OFFLINE,
-                    level = AlertLevel.CRITICAL,
+                    level = AlertLevel.WARNING,
                     message = "GitHub Runner '${runner.name}'이(가) 오프라인입니다",
                     details = mapOf(
                         "runner" to runner.name,

@@ -17,7 +17,7 @@ data class MonitoringProperties(
 
 data class ThresholdProperties(
     val cpu: Int = 80,
-    val ram: Int = 80,
+    val ram: Int = 90,
     val ssd: Int = 80,
     val battery: Int = 20
 )
