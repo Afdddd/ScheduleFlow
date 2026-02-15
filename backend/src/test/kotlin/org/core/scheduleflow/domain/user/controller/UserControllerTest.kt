@@ -7,6 +7,7 @@ import org.core.scheduleflow.domain.user.repository.UserRepository
 import org.core.scheduleflow.domain.user.service.AuthService
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
@@ -16,7 +17,6 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.delete
 import org.springframework.test.web.servlet.get
 import org.springframework.transaction.annotation.Transactional
-import kotlin.test.Test
 
 @SpringBootTest
 @AutoConfigureMockMvc
