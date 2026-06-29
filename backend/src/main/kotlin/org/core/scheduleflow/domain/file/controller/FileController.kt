@@ -7,7 +7,7 @@ import org.core.scheduleflow.domain.file.service.FileService
 import org.core.scheduleflow.global.dto.PageResponse
 import org.core.scheduleflow.global.exception.CustomException
 import org.core.scheduleflow.global.exception.ErrorCode
-import org.springframework.core.io.UrlResource
+import org.springframework.core.io.Resource
 import org.springframework.data.domain.Pageable
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
@@ -64,7 +64,7 @@ class FileController(
     }
 
     @GetMapping("/download/{fileId}")
-    fun downloadFile(@PathVariable fileId: Long): ResponseEntity<UrlResource>{
+    fun downloadFile(@PathVariable fileId: Long): ResponseEntity<Resource>{
         return fileService.downloadFile(fileId)
     }
 
