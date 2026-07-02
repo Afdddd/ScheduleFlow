@@ -7,14 +7,13 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.mockkConstructor
-import io.mockk.mockkStatic
 import io.mockk.unmockkAll
 import io.mockk.verify
 import org.core.scheduleflow.domain.file.constant.FileCategory
 import org.core.scheduleflow.domain.file.dto.FileListResponse
 import org.core.scheduleflow.domain.file.entity.FileEntity
 import org.core.scheduleflow.domain.file.repository.FileRepository
+import org.core.scheduleflow.domain.file.storage.FileStorage
 import org.core.scheduleflow.domain.partner.entity.Partner
 import org.core.scheduleflow.domain.project.entity.Project
 import org.core.scheduleflow.domain.project.repository.ProjectRepository
@@ -22,17 +21,13 @@ import org.core.scheduleflow.domain.user.entity.User
 import org.core.scheduleflow.domain.user.repository.UserRepository
 import org.core.scheduleflow.global.exception.CustomException
 import org.core.scheduleflow.global.exception.ErrorCode
-import org.springframework.core.io.UrlResource
+import org.springframework.core.io.Resource
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.web.multipart.MultipartFile
-import java.io.InputStream
-import java.nio.file.CopyOption
-import java.nio.file.Files
-import java.nio.file.Path
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -43,8 +38,8 @@ class FileServiceTest : BehaviorSpec({
     val fileRepository = mockk<FileRepository>()
     val projectRepository = mockk<ProjectRepository>()
     val userRepository = mockk<UserRepository>()
-    val uploadPath = "/tmp/test-upload"
-    val fileService = FileService(fileRepository, uploadPath, projectRepository, userRepository)
+    val fileStorage = mockk<FileStorage>()
+    val fileService = FileService(fileRepository, projectRepository, userRepository, fileStorage)
 
     fun createPartner(id: Long = 1L): Partner {
         return Partner(id = id, companyName = "발주처", mainPhone = "02-1234-5678")
@@ -108,10 +103,7 @@ class FileServiceTest : BehaviorSpec({
         every { projectRepository.findByIdOrNull(1L) } returns project
         every { userRepository.findByIdOrNull(1L) } returns user
 
-        mockkStatic(Files::class)
-        every { Files.exists(any()) } returns true
-        every { Files.createDirectories(any<Path>()) } returns mockk()
-        every { Files.copy(any<InputStream>(), any<Path>(), any<CopyOption>()) } returns 13L
+        every { fileStorage.store(any(), mockFile) } returns Unit
 
         every { fileRepository.save(any()) } answers {
             val entity = firstArg<FileEntity>()
@@ -134,6 +126,7 @@ class FileServiceTest : BehaviorSpec({
             Then("파일 정보가 반환된다") {
                 result.originalFileName shouldBe "test_document.txt"
                 result.category shouldBe FileCategory.QUOTATION
+                verify(exactly = 1) { fileStorage.store(any(), mockFile) }
                 verify(exactly = 1) { fileRepository.save(any()) }
                 verify(exactly = 1) { projectRepository.findByIdOrNull(1L) }
                 verify(exactly = 1) { userRepository.findByIdOrNull(1L) }
@@ -148,8 +141,7 @@ class FileServiceTest : BehaviorSpec({
 
         every { fileRepository.findByIdOrNull(1L) } returns fileEntity
 
-        mockkStatic(Files::class)
-        every { Files.deleteIfExists(any()) } returns true
+        every { fileStorage.delete(fileEntity.filePath) } returns Unit
         every { fileRepository.delete(fileEntity) } returns Unit
 
         When("파일을 삭제하면") {
@@ -157,7 +149,7 @@ class FileServiceTest : BehaviorSpec({
 
             Then("파일이 삭제된다") {
                 verify(exactly = 1) { fileRepository.findByIdOrNull(1L) }
-                verify(exactly = 1) { Files.deleteIfExists(any()) }
+                verify(exactly = 1) { fileStorage.delete(fileEntity.filePath) }
                 verify(exactly = 1) { fileRepository.delete(fileEntity) }
             }
         }
@@ -170,9 +162,10 @@ class FileServiceTest : BehaviorSpec({
 
         every { fileRepository.findByIdOrNull(1L) } returns fileEntity
 
-        mockkConstructor(UrlResource::class)
-        every { anyConstructed<UrlResource>().exists() } returns true
-        every { anyConstructed<UrlResource>().isReadable } returns true
+        val resource = mockk<Resource>()
+        every { fileStorage.loadAsResource(fileEntity.filePath) } returns resource
+        every { resource.exists() } returns true
+        every { resource.isReadable } returns true
 
         When("파일을 다운로드하면") {
             val responseEntity = fileService.downloadFile(1L)
@@ -180,6 +173,7 @@ class FileServiceTest : BehaviorSpec({
             Then("파일 리소스가 반환된다") {
                 responseEntity.statusCode shouldBe HttpStatus.OK
                 responseEntity.headers.getFirst(HttpHeaders.CONTENT_DISPOSITION)!! shouldContain "download.txt"
+                verify(exactly = 1) { fileStorage.loadAsResource(fileEntity.filePath) }
                 verify(exactly = 1) { fileRepository.findByIdOrNull(1L) }
             }
         }
