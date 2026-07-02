@@ -4,6 +4,9 @@ server:
     context-path: /api
 
 spring:
+  profiles:
+    active: local
+
   datasource:
     url: jdbc:mysql://localhost:3306/scheduleflow?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
     username: ${MYSQL_USER}
@@ -30,9 +33,6 @@ spring:
 jwt:
   secret-key: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION}
-
-storage:
-  path: C:\ScheduleFlow
 
 springdoc:
   api-docs:

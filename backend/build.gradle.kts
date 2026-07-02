@@ -26,6 +26,10 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-security-test")
     testImplementation("io.kotest.extensions:kotest-extensions-spring:1.3.0")
     testRuntimeOnly("com.h2database:h2")
+
+    // AWS SDK v2 - S3
+    implementation(platform("software.amazon.awssdk:bom:2.46.20"))
+    implementation("software.amazon.awssdk:s3")
 }
 
 kotlin {
