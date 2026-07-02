@@ -5,6 +5,7 @@ import org.core.scheduleflow.global.exception.CustomException
 import org.core.scheduleflow.global.exception.ErrorCode
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.core.io.Resource
 import org.springframework.core.io.UrlResource
 import org.springframework.stereotype.Component
@@ -15,6 +16,7 @@ import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 
 @Component
+@ConditionalOnProperty(name = ["storage.type"], havingValue = "local", matchIfMissing = true)
 class LocalFileStorage(
     @Value("\${storage.path}")
     private val uploadPath: String,
