@@ -4,7 +4,7 @@ import org.core.scheduleflow.global.exception.CustomException
 import org.core.scheduleflow.global.exception.ErrorCode
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
-import org.springframework.core.io.ByteArrayResource
+import org.springframework.core.io.InputStreamResource
 import org.springframework.core.io.Resource
 import org.springframework.stereotype.Component
 import org.springframework.web.multipart.MultipartFile
@@ -31,15 +31,15 @@ class S3FileStorage(
         s3Client.putObject(request, RequestBody.fromInputStream(file.inputStream, file.size))
     }
 
-    // 다운로드: S3에서 GET 해서 Resource로 감싸 반환
+    // 다운로드: S3에서 GET 스트림을 열어 Resource로 감싸 반환 (메모리에 전체 적재 안 함)
     override fun loadAsResource(key: String): Resource {
         val request = GetObjectRequest.builder()
             .bucket(bucket)
             .key(key)
             .build()
         return try {
-            val bytes = s3Client.getObjectAsBytes(request).asByteArray()  // 통째로 메모리에
-            ByteArrayResource(bytes)   // Spring이 이해하는 Resource로 포장
+            val stream = s3Client.getObject(request)  // ResponseInputStream, 스트리밍
+            InputStreamResource(stream)               // 스트림을 그대로 감쌈 (힙에 안 쌓임)
         } catch (e: NoSuchKeyException) {
             throw CustomException(ErrorCode.NOT_FOUND_FILE)  // 없는 키 → 404로 변환
         }
