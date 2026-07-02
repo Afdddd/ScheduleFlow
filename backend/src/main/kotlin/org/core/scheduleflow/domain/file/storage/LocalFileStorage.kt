@@ -33,19 +33,19 @@ class LocalFileStorage(
     }
 
     override fun store(key: String, file: MultipartFile) {
-        val target = rootLocation.resolve(key).normalize()
-        Files.createDirectories(target.parent)
+        val target = resolvePath(key)
+        target.parent?.let { Files.createDirectories(target.parent) }
         file.inputStream.use { inputStream ->
             Files.copy(inputStream, target, StandardCopyOption.REPLACE_EXISTING)
         }
     }
 
     override fun loadAsResource(key: String): Resource =
-        UrlResource(rootLocation.resolve(key).normalize().toUri())
+        UrlResource(resolvePath(key).toUri())
 
 
     override fun delete(key: String) {
-        val target = rootLocation.resolve(key).normalize()
+        val target = resolvePath(key)
         try {
             val isDeleted = Files.deleteIfExists(target)
             if(isDeleted) {
@@ -57,5 +57,11 @@ class LocalFileStorage(
             logger.error("파일 삭제 중 I/O 오류 발생: {}", key, e)
             throw CustomException(ErrorCode.FAIL_DELETE_FILE)
         }
+    }
+
+    private fun resolvePath(key: String): Path {
+        val target = rootLocation.resolve(key).normalize()
+        require(target.startsWith(rootLocation)) { "잘못된 파일 경로입니다." }
+        return target
     }
 }
