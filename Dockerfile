@@ -7,6 +7,7 @@ WORKDIR /app
 COPY gradlew gradlew
 COPY gradle gradle
 COPY settings.gradle.kts settings.gradle.kts
+COPY build.gradle.kts build.gradle.kts
 COPY backend/build.gradle.kts backend/build.gradle.kts
 
 # Make gradlew executable
