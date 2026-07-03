@@ -1,6 +1,8 @@
 import React from 'react';
 import Header from './Header';
 import Sidebar from './Sidebar';
+import MobileLayout from './mobile/MobileLayout';
+import { useIsMobile } from '../hooks/useMediaQuery';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -34,8 +36,19 @@ interface LayoutProps {
  * 3. **스크롤 처리**
  *    - Content 영역만 overflow-y-auto로 스크롤 가능
  *    - Header와 Sidebar는 고정
+ *
+ * 4. **반응형 분기 (모바일 전용 레이아웃 분리)**
+ *    - 모바일 뷰포트면 사이드바 대신 `MobileLayout`(하단 탭바)을 렌더한다.
+ *    - `ProtectedRoute`는 그대로 `<Layout>`을 쓰므로, 분기는 여기 한 곳에만 둔다.
+ *    - 페이지·라우팅·store는 데스크톱과 그대로 공유한다.
  */
 const Layout: React.FC<LayoutProps> = ({ children }) => {
+  const isMobile = useIsMobile();
+
+  if (isMobile) {
+    return <MobileLayout>{children}</MobileLayout>;
+  }
+
   return (
     <div className="h-screen flex flex-col bg-gray-100">
       {/* Header */}

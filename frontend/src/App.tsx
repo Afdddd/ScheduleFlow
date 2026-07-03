@@ -18,6 +18,8 @@ import PartnerListPage from './pages/PartnerListPage';
 import PartnerCreatePage from './pages/PartnerCreatePage';
 import PartnerDetailPage from './pages/PartnerDetailPage';
 import UserManagementPage from './pages/UserManagementPage';
+import MorePage from './pages/MorePage';
+import UiPreviewPage from './pages/UiPreviewPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 function App() {
@@ -34,6 +36,8 @@ function App() {
         {/* 공개 라우트 */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignUpPage />} />
+        {/* 개발용 공통 컴포넌트 갤러리 (인증 없이 확인) */}
+        <Route path="/ui-preview" element={<UiPreviewPage />} />
 
         {/* 보호된 라우트 */}
         <Route
@@ -131,6 +135,16 @@ function App() {
           element={
             <ProtectedRoute requireAdmin>
               <UserManagementPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* 모바일 '더보기' 탭 (거래처/파일/사원관리/설정 진입점) */}
+        <Route
+          path="/more"
+          element={
+            <ProtectedRoute>
+              <MorePage />
             </ProtectedRoute>
           }
         />
