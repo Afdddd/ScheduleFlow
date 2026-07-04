@@ -50,13 +50,9 @@ resource "aws_security_group" "db" {
     security_groups = [aws_security_group.web.id]
   }
 
-  egress {
-    description = "Allow all outbound"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"            # -1 = 모든 프로토콜
-    cidr_blocks = ["0.0.0.0/0"]   # 나가는 건 다 허용 (패키지 설치, ECR pull 등)
-  }
+  # egress 규칙 없음 = 아웃바운드 전면 차단.
+  #   RDS는 외부로 먼저 연결을 걸 일이 없음. inbound 응답은 stateful이라 egress 없이도 나감.
+  #   (private subnet이라 어차피 인터넷 경로도 없지만, 명시적으로 닫아 defense-in-depth)
 
   tags = {
     Name = "scheduleflow-db-sg"

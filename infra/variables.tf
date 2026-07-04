@@ -18,3 +18,9 @@ variable "db_password" {
   type        = string
   sensitive   = true   #plan/apply 로그에 값이 '***'로 가려짐
 }
+
+variable "s3_bucket" {
+  description = "앱이 사용하는 S3 버킷 이름 (EC2 IAM 정책의 접근 대상)"
+  type        = string
+  default     = "scheduleflow-files-606531136262"
+}

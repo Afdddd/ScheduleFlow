@@ -67,3 +67,27 @@ resource "aws_route_table_association" "route_table_association" {
   subnet_id      = aws_subnet.public_a.id
   route_table_id = aws_route_table.route_table.id
 }
+
+# ────────────────────────────────────────────────
+# Private 서브넷 전용 라우트 테이블
+#   route 블록 없음 = local 경로만 존재(인터넷 경로 없음).
+#   명시적으로 붙여서, 기본(main) 라우트 테이블에 나중에 IGW가 추가돼도
+#   private 서브넷(RDS)이 인터넷에 노출되지 않게 격리.
+# ────────────────────────────────────────────────
+resource "aws_route_table" "private" {
+  vpc_id = aws_vpc.main.id
+
+  tags = {
+    Name = "scheduleflow-private-rt"
+  }
+}
+
+resource "aws_route_table_association" "private_a" {
+  subnet_id      = aws_subnet.private_a.id
+  route_table_id = aws_route_table.private.id
+}
+
+resource "aws_route_table_association" "private_b" {
+  subnet_id      = aws_subnet.private_b.id
+  route_table_id = aws_route_table.private.id
+}
