@@ -33,9 +33,34 @@ resource "aws_iam_role_policy_attachment" "ssm" {
 }
 
 
+# S3 접근 — 특정 버킷만 허용 (최소권한 원칙)
+#   AmazonS3FullAccess(모든 버킷)를 쓰지 않고, 앱 버킷 하나 + 필요한 액션만 허용.
+#   EC2가 탈취돼도 피해 범위가 이 버킷으로 한정됨.
+resource "aws_iam_policy" "s3_access" {
+  name        = "scheduleflow-s3-access"
+  description = "Allow EC2 to access the app's S3 bucket only"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject",
+        "s3:ListBucket",
+      ]
+      Resource = [
+        "arn:aws:s3:::${var.s3_bucket}",      # 버킷 자체 (ListBucket용)
+        "arn:aws:s3:::${var.s3_bucket}/*",    # 버킷 안 객체 (Get/Put/Delete용)
+      ]
+    }]
+  })
+}
+
 resource "aws_iam_role_policy_attachment" "s3" {
   role       = aws_iam_role.ec2.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+  policy_arn = aws_iam_policy.s3_access.arn
 }
 
 resource "aws_iam_instance_profile" "ec2" {
