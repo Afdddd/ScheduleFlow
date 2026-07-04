@@ -1,5 +1,6 @@
 import React from 'react';
 import BottomTabBar from './BottomTabBar';
+import InstallBanner from '../ui/InstallBanner';
 
 interface MobileLayoutProps {
   children: React.ReactNode;
@@ -20,6 +21,7 @@ interface MobileLayoutProps {
 const MobileLayout: React.FC<MobileLayoutProps> = ({ children }) => {
   return (
     <div className="flex flex-col h-screen bg-gray-50">
+      <InstallBanner />
       <main className="flex-1 overflow-y-auto">{children}</main>
       <BottomTabBar />
     </div>
