@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SearchBar from '../components/SearchBar';
 import Pagination from '../components/Pagination';
+import MobileScheduleList from './MobileScheduleList';
+import { useIsMobile } from '../hooks/useMediaQuery';
 import { useAuthStore } from '../stores/authStore';
 import { getScheduleList, ScheduleListResponse, PageResponse } from '../api/list';
 
@@ -64,6 +66,11 @@ const ScheduleListPage: React.FC = () => {
 
   const { user } = useAuthStore();
   const isAdmin = user?.role === 'ADMIN';
+  const isMobile = useIsMobile();
+
+  if (isMobile) {
+    return <MobileScheduleList />;
+  }
 
   return (
     <div className="p-6">

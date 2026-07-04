@@ -16,6 +16,7 @@ import {
 import { getAllProjects, getProjectDetail } from '../api/project';
 import { ProjectListResponse } from '../api/list';
 import { getAllUsers, UserListResponse } from '../api/user';
+import { useIsMobile } from '../hooks/useMediaQuery';
 
 /**
  * 일정 상세 페이지
@@ -30,6 +31,7 @@ const ScheduleDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const isAdmin = user?.role === 'ADMIN';
+  const isMobile = useIsMobile();
 
   // 일정 데이터
   const [schedule, setSchedule] = useState<ScheduleDetailResponse | null>(null);
@@ -304,6 +306,87 @@ const ScheduleDetailPage: React.FC = () => {
     );
   }
 
+  // ── 모바일 읽기 뷰 (편집은 아래 공용 폼 재사용) ──
+  if (isMobile && !isEditing) {
+    return (
+      <div className="min-h-full bg-gray-50 pb-10">
+        {/* 백바 */}
+        <div className="flex items-center gap-1 px-2.5 pb-3 pt-3">
+          <button
+            onClick={() => navigate('/schedules')}
+            aria-label="뒤로"
+            className="flex h-10 w-10 items-center justify-center rounded-xl text-gray-600 active:bg-gray-100"
+          >
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+              <path d="m15 18-6-6 6-6" />
+            </svg>
+          </button>
+          <h1 className="flex-1 text-center text-[17px] font-extrabold tracking-tight text-gray-900">일정 상세</h1>
+          <span className="w-10" />
+        </div>
+
+        <div className="px-[18px]">
+          {error && (
+            <Alert type="error" message={error} dismissible onClose={() => setError(null)} style={{ marginBottom: '1rem' }} />
+          )}
+
+          {/* 히어로 */}
+          <span className={`inline-block rounded-full px-2.5 py-1 text-[12.5px] font-bold ${getTypeColor(schedule.type)}`}>
+            {getTypeLabel(schedule.type)}
+          </span>
+          <h2 className="mt-2.5 text-[23px] font-extrabold leading-tight tracking-tight text-gray-900">{schedule.title}</h2>
+
+          {/* 정보 카드 */}
+          <div className="mt-4 rounded-2xl border border-gray-200 bg-white px-4 shadow-sm">
+            <InfoRow label="기간" value={`${schedule.startDate} ~ ${schedule.endDate}`} />
+            <InfoRow label="프로젝트" value={schedule.projectId ? projectName || '불러오는 중…' : '독립 일정'} />
+            <InfoRow label="타입" value={getTypeLabel(schedule.type)} last />
+          </div>
+
+          {/* 참여자 */}
+          <div className="mt-5 mb-1 px-0.5 text-[15px] font-extrabold text-gray-900">참여자</div>
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+            {schedule.members.length === 0 ? (
+              <div className="text-[14px] font-semibold text-gray-400">할당된 참여자가 없어요</div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {schedule.members.map((m) => (
+                  <div key={m.id} className="flex items-center gap-3">
+                    <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-primary-500 text-[14px] font-extrabold text-white">
+                      {m.name.charAt(0).toUpperCase()}
+                    </span>
+                    <div className="min-w-0">
+                      <div className="text-[15px] font-bold text-gray-900">{m.name}</div>
+                      {m.position && <div className="text-[12.5px] font-medium text-gray-500">{m.position}</div>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* 관리자 액션 */}
+          {isAdmin && (
+            <div className="mt-6 flex gap-2.5">
+              <button
+                onClick={handleEdit}
+                className="flex-1 rounded-2xl bg-primary-500 py-4 text-[16px] font-extrabold text-white shadow-sm active:scale-[0.99]"
+              >
+                수정
+              </button>
+              <button
+                onClick={handleDelete}
+                className="flex-1 rounded-2xl border border-red-200 bg-white py-4 text-[16px] font-extrabold text-red-500 active:scale-[0.99]"
+              >
+                삭제
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6">
       {/* 헤더 */}
@@ -537,6 +620,14 @@ const ScheduleDetailPage: React.FC = () => {
     </div>
   );
 };
+
+/** 모바일 상세 정보 행. */
+const InfoRow: React.FC<{ label: string; value: string; last?: boolean }> = ({ label, value, last }) => (
+  <div className={`flex items-center gap-3 py-3.5 ${last ? '' : 'border-b border-gray-100'}`}>
+    <span className="w-20 flex-none text-[13px] font-semibold text-gray-400">{label}</span>
+    <span className="min-w-0 flex-1 text-[15px] font-bold text-gray-900">{value}</span>
+  </div>
+);
 
 export default ScheduleDetailPage;
 

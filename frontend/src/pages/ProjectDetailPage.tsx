@@ -19,6 +19,7 @@ import { createSchedule, deleteSchedule, ScheduleCreateRequest } from '../api/sc
 import { getAllPartners, getPartnerContacts, PartnerContactResponse } from '../api/partner';
 import { getAllUsers, UserListResponse } from '../api/user';
 import { PartnerListResponse } from '../api/list';
+import { useIsMobile } from '../hooks/useMediaQuery';
 
 /**
  * 프로젝트 상세 페이지
@@ -36,6 +37,7 @@ const ProjectDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const isAdmin = user?.role === 'ADMIN';
+  const isMobile = useIsMobile();
 
   // 프로젝트 데이터
   const [project, setProject] = useState<ProjectDetailResponse | null>(null);
@@ -531,6 +533,167 @@ const ProjectDetailPage: React.FC = () => {
         >
           목록으로
         </button>
+      </div>
+    );
+  }
+
+  // ── 모바일 읽기 뷰 (편집은 아래 공용 폼 재사용) ──
+  if (isMobile && !isEditing) {
+    return (
+      <div className="min-h-full bg-gray-50 pb-10">
+        <div className="flex items-center gap-1 px-2.5 pb-3 pt-3">
+          <button
+            onClick={() => navigate('/projects')}
+            aria-label="뒤로"
+            className="flex h-10 w-10 items-center justify-center rounded-xl text-gray-600 active:bg-gray-100"
+          >
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+              <path d="m15 18-6-6 6-6" />
+            </svg>
+          </button>
+          <h1 className="flex-1 text-center text-[17px] font-extrabold tracking-tight text-gray-900">프로젝트 상세</h1>
+          <span className="w-10" />
+        </div>
+
+        <div className="px-[18px]">
+          {error && (
+            <Alert type="error" message={error} dismissible onClose={() => setError(null)} style={{ marginBottom: '1rem' }} />
+          )}
+
+          {/* 히어로 */}
+          <div className="flex items-center gap-2.5">
+            <span className="h-3.5 w-3.5 flex-none rounded-[5px]" style={{ backgroundColor: project.colorCode ?? '#0B4EC4' }} />
+            <span className={`rounded-full px-2.5 py-1 text-[12.5px] font-bold ${getStatusColor(project.status)}`}>
+              {getStatusLabel(project.status)}
+            </span>
+          </div>
+          <h2 className="mt-2.5 text-[23px] font-extrabold leading-tight tracking-tight text-gray-900">{project.name}</h2>
+
+          {/* 정보 */}
+          <div className="mt-4 rounded-2xl border border-gray-200 bg-white px-4 shadow-sm">
+            <MRow label="거래처" value={project.client?.companyName ?? '-'} />
+            <MRow label="기간" value={`${project.startDate} ~ ${project.endDate}`} last={!project.description} />
+            {project.description && <MRow label="설명" value={project.description} last />}
+          </div>
+
+          {/* 일정 */}
+          <MSection title="일정" count={project.schedules.length} />
+          {project.schedules.length === 0 ? (
+            <MEmpty>등록된 일정이 없어요</MEmpty>
+          ) : (
+            <div className="flex flex-col gap-2.5">
+              {project.schedules.map((s) => (
+                <button
+                  key={s.scheduleId}
+                  onClick={() => navigate(`/schedules/${s.scheduleId}`)}
+                  className="flex w-full items-stretch overflow-hidden rounded-2xl border border-gray-200 bg-white text-left shadow-sm active:scale-[0.99]"
+                >
+                  <span className="w-1.5 flex-none" style={{ backgroundColor: project.colorCode ?? '#0B4EC4' }} />
+                  <span className="min-w-0 flex-1 px-4 py-3.5">
+                    <span className="block truncate text-[15.5px] font-bold text-gray-900">{s.title}</span>
+                    <span className="mt-1.5 flex items-center gap-2">
+                      <span className="rounded-full bg-primary-50 px-2.5 py-0.5 text-[12px] font-bold text-primary-700">{getScheduleTypeLabel(s.type)}</span>
+                      <span className="text-[12.5px] font-semibold text-gray-400 tabular-nums">{s.startDate} – {s.endDate}</span>
+                    </span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* 담당자 */}
+          <MSection title="담당자" count={project.members.length} />
+          {project.members.length === 0 ? (
+            <MEmpty>담당자가 없어요</MEmpty>
+          ) : (
+            <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+              <div className="flex flex-col gap-3">
+                {project.members.map((m) => (
+                  <div key={m.id} className="flex items-center gap-3">
+                    <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-primary-500 text-[14px] font-extrabold text-white">
+                      {m.name.charAt(0).toUpperCase()}
+                    </span>
+                    <div className="min-w-0">
+                      <div className="text-[15px] font-bold text-gray-900">{m.name}</div>
+                      {m.position && <div className="text-[12.5px] font-medium text-gray-500">{m.position}</div>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 거래처 담당자 (전화 바로가기) */}
+          {project.partnerContacts.length > 0 && (
+            <>
+              <MSection title="거래처 담당자" count={project.partnerContacts.length} />
+              <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                {project.partnerContacts.map((c, i) => (
+                  <div key={c.partnerContactId} className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? 'border-t border-gray-100' : ''}`}>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-[15px] font-bold text-gray-900">
+                        {c.name} <span className="text-[13px] font-semibold text-gray-400">· {c.companyName}</span>
+                      </div>
+                      {c.position && <div className="text-[12.5px] font-medium text-gray-500">{c.position}</div>}
+                    </div>
+                    {c.phone && (
+                      <a
+                        href={`tel:${c.phone}`}
+                        className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-green-50 text-green-600"
+                        aria-label={`${c.name} 전화`}
+                      >
+                        <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z" />
+                        </svg>
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* 파일 */}
+          <MSection title="파일" count={files.length} />
+          {files.length === 0 ? (
+            <MEmpty>파일이 없어요</MEmpty>
+          ) : (
+            <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+              {files.map((f, i) => (
+                <button
+                  key={f.id}
+                  onClick={() => handleFileDownload(f.id, f.originalFileName)}
+                  className={`flex w-full items-center gap-3 px-4 py-3 text-left ${i > 0 ? 'border-t border-gray-100' : ''} active:bg-gray-50`}
+                >
+                  <span className="flex h-9 w-9 flex-none items-center justify-center rounded-[10px] bg-primary-50 text-primary-600">
+                    <svg className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6" />
+                    </svg>
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[14.5px] font-bold text-gray-900">{f.originalFileName}</span>
+                    <span className="text-[12px] font-semibold text-gray-400">{formatFileSize(f.fileSize)}</span>
+                  </span>
+                  <svg className="h-5 w-5 flex-none text-gray-300" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                  </svg>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* 관리자 액션 */}
+          {isAdmin && (
+            <div className="mt-6 flex gap-2.5">
+              <button onClick={handleEdit} className="flex-1 rounded-2xl bg-primary-500 py-4 text-[16px] font-extrabold text-white shadow-sm active:scale-[0.99]">
+                수정
+              </button>
+              <button onClick={handleDelete} className="flex-1 rounded-2xl border border-red-200 bg-white py-4 text-[16px] font-extrabold text-red-500 active:scale-[0.99]">
+                삭제
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     );
   }
@@ -1158,5 +1321,26 @@ const ProjectDetailPage: React.FC = () => {
     </div>
   );
 };
+
+/* ---- 모바일 상세 공용 조각 ---- */
+const MRow: React.FC<{ label: string; value: string; last?: boolean }> = ({ label, value, last }) => (
+  <div className={`flex gap-3 py-3.5 ${last ? '' : 'border-b border-gray-100'}`}>
+    <span className="w-16 flex-none text-[13px] font-semibold text-gray-400">{label}</span>
+    <span className="min-w-0 flex-1 whitespace-pre-wrap text-[15px] font-bold text-gray-900">{value}</span>
+  </div>
+);
+
+const MSection: React.FC<{ title: string; count?: number }> = ({ title, count }) => (
+  <div className="mb-2 mt-5 flex items-baseline gap-2 px-0.5">
+    <span className="text-[15px] font-extrabold text-gray-900">{title}</span>
+    {count !== undefined && <span className="text-[13px] font-bold text-gray-400">{count}</span>}
+  </div>
+);
+
+const MEmpty: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="rounded-2xl border border-dashed border-gray-300 py-8 text-center text-[13.5px] font-semibold text-gray-400">
+    {children}
+  </div>
+);
 
 export default ProjectDetailPage;

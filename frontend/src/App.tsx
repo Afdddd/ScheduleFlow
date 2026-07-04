@@ -19,6 +19,7 @@ import PartnerCreatePage from './pages/PartnerCreatePage';
 import PartnerDetailPage from './pages/PartnerDetailPage';
 import UserManagementPage from './pages/UserManagementPage';
 import MorePage from './pages/MorePage';
+import MobilePhotosPage from './pages/MobilePhotosPage';
 import UiPreviewPage from './pages/UiPreviewPage';
 import NotFoundPage from './pages/NotFoundPage';
 
@@ -145,6 +146,16 @@ function App() {
           element={
             <ProtectedRoute>
               <MorePage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* 모바일 사진·영상 올리기 흐름 (전체화면) */}
+        <Route
+          path="/photos"
+          element={
+            <ProtectedRoute bare>
+              <MobilePhotosPage />
             </ProtectedRoute>
           }
         />

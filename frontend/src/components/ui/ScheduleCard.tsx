@@ -27,7 +27,7 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({
   title,
   status,
   projectName,
-  projectColor = '#3457D5',
+  projectColor = '#0B4EC4',
   onClick,
 }) => (
   <button

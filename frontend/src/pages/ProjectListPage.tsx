@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SearchBar from '../components/SearchBar';
 import Pagination from '../components/Pagination';
+import MobileProjectList from './MobileProjectList';
+import { useIsMobile } from '../hooks/useMediaQuery';
 import { useAuthStore } from '../stores/authStore';
 import { getProjectList, ProjectListResponse, PageResponse } from '../api/list';
 
@@ -77,6 +79,11 @@ const ProjectListPage: React.FC = () => {
 
   const { user } = useAuthStore();
   const isAdmin = user?.role === 'ADMIN';
+  const isMobile = useIsMobile();
+
+  if (isMobile) {
+    return <MobileProjectList />;
+  }
 
   return (
     <div className="p-6">
