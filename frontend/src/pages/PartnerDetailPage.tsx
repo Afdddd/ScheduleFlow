@@ -312,7 +312,7 @@ const PartnerDetailPage: React.FC = () => {
         <Alert type="error" message={error || '거래처를 찾을 수 없습니다.'} />
         <button
           onClick={() => navigate('/partners')}
-          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors mt-4"
+          className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors mt-4"
         >
           목록으로
         </button>
@@ -338,7 +338,7 @@ const PartnerDetailPage: React.FC = () => {
                 <>
                   <button
                     onClick={handleEdit}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                    className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
                   >
                     수정
                   </button>
@@ -382,7 +382,7 @@ const PartnerDetailPage: React.FC = () => {
       )}
 
       {/* 기본 정보 섹션 */}
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
+      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm mb-6">
         <h2 className="text-xl font-bold mb-4">기본 정보</h2>
 
         <div className="space-y-4">
@@ -394,7 +394,7 @@ const PartnerDetailPage: React.FC = () => {
                 type="text"
                 value={companyName}
                 onChange={(e) => setCompanyName(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 placeholder="회사명을 입력하세요"
               />
             ) : (
@@ -410,7 +410,7 @@ const PartnerDetailPage: React.FC = () => {
                 type="tel"
                 value={mainPhone}
                 onChange={(e) => setMainPhone(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 placeholder="대표 전화번호를 입력하세요"
               />
             ) : (
@@ -426,7 +426,7 @@ const PartnerDetailPage: React.FC = () => {
                 type="text"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 placeholder="주소를 입력하세요"
               />
             ) : (
@@ -442,7 +442,7 @@ const PartnerDetailPage: React.FC = () => {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 placeholder="거래처에 대한 설명을 입력하세요"
               />
             ) : (
@@ -455,13 +455,13 @@ const PartnerDetailPage: React.FC = () => {
       </div>
 
       {/* 거래처 직원 섹션 */}
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
+      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm mb-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold">거래처 직원 ({contacts.length}명)</h2>
           {isAdmin && !showContactForm && (
             <button
               onClick={handleOpenContactForm}
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
             >
               직원 추가
             </button>
@@ -485,7 +485,7 @@ const PartnerDetailPage: React.FC = () => {
                   type="text"
                   value={newContact.name || ''}
                   onChange={(e) => setNewContact({ ...newContact, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                   placeholder="이름을 입력하세요"
                 />
               </div>
@@ -497,7 +497,7 @@ const PartnerDetailPage: React.FC = () => {
                   type="text"
                   value={newContact.position || ''}
                   onChange={(e) => setNewContact({ ...newContact, position: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                   placeholder="직급을 입력하세요"
                 />
               </div>
@@ -509,7 +509,7 @@ const PartnerDetailPage: React.FC = () => {
                   type="text"
                   value={newContact.department || ''}
                   onChange={(e) => setNewContact({ ...newContact, department: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                   placeholder="부서를 입력하세요"
                 />
               </div>
@@ -521,7 +521,7 @@ const PartnerDetailPage: React.FC = () => {
                   type="tel"
                   value={newContact.phone || ''}
                   onChange={(e) => setNewContact({ ...newContact, phone: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                   placeholder="전화번호를 입력하세요"
                 />
               </div>
@@ -533,7 +533,7 @@ const PartnerDetailPage: React.FC = () => {
                   type="email"
                   value={newContact.email || ''}
                   onChange={(e) => setNewContact({ ...newContact, email: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                   placeholder="이메일을 입력하세요"
                 />
               </div>
@@ -551,7 +551,7 @@ const PartnerDetailPage: React.FC = () => {
                 type="button"
                 onClick={handleSaveContact}
                 disabled={loadingContact}
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
                 {loadingContact ? '저장 중...' : editingContactId ? '수정' : '추가'}
               </button>
@@ -572,7 +572,7 @@ const PartnerDetailPage: React.FC = () => {
                 className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
               >
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium">
+                  <div className="w-10 h-10 bg-primary-500 rounded-full flex items-center justify-center text-white font-medium">
                     {contact.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1">
@@ -595,7 +595,7 @@ const PartnerDetailPage: React.FC = () => {
                   <div className="flex gap-2 mt-3">
                     <button
                       onClick={() => handleEditContact(contact)}
-                      className="flex-1 px-3 py-1.5 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                      className="flex-1 px-3 py-1.5 text-sm bg-primary-500 text-white rounded hover:bg-primary-600 transition-colors"
                     >
                       수정
                     </button>

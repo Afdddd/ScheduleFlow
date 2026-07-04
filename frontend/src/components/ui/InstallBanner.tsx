@@ -27,13 +27,13 @@ const InstallBanner: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-none items-center gap-3 border-b border-blue-100 bg-blue-50 px-4 py-2.5">
-      <span className="flex h-9 w-9 flex-none items-center justify-center rounded-lg bg-blue-500 text-white">
+    <div className="flex flex-none items-center gap-3 border-b border-primary-100 bg-primary-50 px-4 py-2.5">
+      <span className="flex h-9 w-9 flex-none items-center justify-center rounded-lg bg-primary-500 text-white">
         <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v12m0 0-4-4m4 4 4-4M4 21h16" />
         </svg>
       </span>
-      <p className="min-w-0 flex-1 text-sm font-bold text-blue-900">
+      <p className="min-w-0 flex-1 text-sm font-bold text-primary-900">
         {showAndroid ? (
           '앱으로 설치하면 더 빠르게 열려요'
         ) : (
@@ -46,12 +46,12 @@ const InstallBanner: React.FC = () => {
         <button
           type="button"
           onClick={promptInstall}
-          className="flex-none rounded-lg bg-blue-500 px-3.5 py-1.5 text-sm font-bold text-white active:scale-95"
+          className="flex-none rounded-lg bg-primary-500 px-3.5 py-1.5 text-sm font-bold text-white active:scale-95"
         >
           설치
         </button>
       )}
-      <button type="button" onClick={close} aria-label="닫기" className="flex-none px-1 text-lg text-blue-400">
+      <button type="button" onClick={close} aria-label="닫기" className="flex-none px-1 text-lg text-primary-400">
         ✕
       </button>
     </div>

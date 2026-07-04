@@ -82,7 +82,7 @@ const Calendar: React.FC<CalendarProps> = ({
           <div
             key={w}
             className={`py-1.5 text-center text-xs font-semibold ${
-              i === 0 ? 'text-red-400' : i === 6 ? 'text-blue-400' : 'text-gray-400'
+              i === 0 ? 'text-red-400' : i === 6 ? "text-blue-400" : 'text-gray-400'
             }`}
           >
             {w}
@@ -99,7 +99,7 @@ const Calendar: React.FC<CalendarProps> = ({
               onClick={() => c.current && onSelectDate?.(c.day)}
               className={`relative flex aspect-square flex-col items-center justify-center rounded-lg text-sm tabular-nums ${
                 selected
-                  ? 'bg-blue-500 font-bold text-white'
+                  ? 'bg-primary-500 font-bold text-white'
                   : c.current
                     ? 'text-gray-900 active:bg-gray-100'
                     : 'text-gray-300'

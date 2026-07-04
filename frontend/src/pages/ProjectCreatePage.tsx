@@ -380,12 +380,14 @@ const ProjectCreatePage: React.FC = () => {
 
   return (
     <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">프로젝트 등록</h1>
+      <div className="mb-6">
         <button
           onClick={() => navigate('/projects')}
-          className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+          className="inline-flex items-center gap-1 text-sm font-medium text-gray-500 transition-colors hover:text-gray-800"
         >
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
           목록으로
         </button>
       </div>
@@ -402,7 +404,7 @@ const ProjectCreatePage: React.FC = () => {
 
       <form onSubmit={handleSubmit}>
         {/* 상단 섹션: 기본 정보 */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm mb-6">
           <h2 className="text-xl font-bold mb-4">기본 정보</h2>
 
           <div className="space-y-4">
@@ -415,7 +417,7 @@ const ProjectCreatePage: React.FC = () => {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 placeholder="프로젝트 이름을 입력하세요"
                 required
               />
@@ -429,7 +431,7 @@ const ProjectCreatePage: React.FC = () => {
               <select
                 value={clientId || ''}
                 onChange={(e) => setClientId(e.target.value ? Number(e.target.value) : null)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 required
                 disabled={loadingPartners}
               >
@@ -455,7 +457,7 @@ const ProjectCreatePage: React.FC = () => {
                 selectsRange
                 locale={ko as any}
                 dateFormat="yyyy-MM-dd"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 placeholderText="시작일 ~ 종료일을 선택하세요"
                 required
               />
@@ -467,7 +469,7 @@ const ProjectCreatePage: React.FC = () => {
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="IN_PROGRESS">진행 중</option>
                 <option value="ON_HOLD">보류</option>
@@ -482,7 +484,7 @@ const ProjectCreatePage: React.FC = () => {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 placeholder="프로젝트 설명을 입력하세요"
               />
             </div>
@@ -496,7 +498,7 @@ const ProjectCreatePage: React.FC = () => {
         </div>
 
         {/* 중간 섹션: 팀 멤버 할당 */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm mb-6">
           <h2 className="text-xl font-bold mb-4">팀 멤버 할당</h2>
 
           <div className="grid grid-cols-2 gap-6">
@@ -525,9 +527,9 @@ const ProjectCreatePage: React.FC = () => {
                         type="checkbox"
                         checked={selectedMemberIds.includes(user.id)}
                         onChange={() => handleMemberToggle(user.id)}
-                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                       />
-                      <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                      <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
                         {user.name.charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1">
@@ -570,7 +572,7 @@ const ProjectCreatePage: React.FC = () => {
                                       type="checkbox"
                                       checked={selectedPartnerContactIds.includes(contact.id)}
                                       onChange={() => handlePartnerContactToggle(contact.id)}
-                                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                      className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                                   />
                                   <div className="flex-1">
                                       <div className="text-sm font-medium text-gray-900">{contact.name}</div>
@@ -587,7 +589,7 @@ const ProjectCreatePage: React.FC = () => {
         </div>
 
         {/* 하단 섹션: 일정 및 파일 */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm mb-6">
           <h2 className="text-xl font-bold mb-4">일정 및 파일</h2>
 
           {/* 일정 등록 */}
@@ -597,7 +599,7 @@ const ProjectCreatePage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowScheduleForm(!showScheduleForm)}
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors text-sm"
               >
                 {showScheduleForm ? '취소' : '일정 추가'}
               </button>
@@ -616,7 +618,7 @@ const ProjectCreatePage: React.FC = () => {
                       onChange={(e) =>
                         setNewSchedule({ ...newSchedule, title: e.target.value })
                       }
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                       placeholder="일정 제목을 입력하세요"
                     />
                   </div>
@@ -639,7 +641,7 @@ const ProjectCreatePage: React.FC = () => {
                         maxDate={endDate}
                         locale={ko as any}
                         dateFormat="yyyy-MM-dd"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                         placeholderText="시작일 ~ 종료일을 선택하세요"
                       />
                     )}
@@ -655,7 +657,7 @@ const ProjectCreatePage: React.FC = () => {
                     <select
                       value={newSchedule.type || 'PROJECT'}
                       onChange={(e) => setNewSchedule({ ...newSchedule, type: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                     >
                       <option value="PROJECT">프로젝트 일정</option>
                       <option value="TEST_RUN">시운전</option>
@@ -691,7 +693,7 @@ const ProjectCreatePage: React.FC = () => {
                                 });
                               }
                             }}
-                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                            className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                           />
                           <span className="text-sm text-gray-700">{user.name}</span>
                         </label>
@@ -785,7 +787,7 @@ const ProjectCreatePage: React.FC = () => {
                     px-4 py-2 text-sm font-medium transition-colors
                     ${
                       activeFileCategory === category
-                        ? 'border-b-2 border-blue-500 text-blue-600'
+                        ? 'border-b-2 border-primary-500 text-primary-600'
                         : 'text-gray-600 hover:text-gray-800'
                     }
                   `}
@@ -797,7 +799,7 @@ const ProjectCreatePage: React.FC = () => {
 
             {/* 파일 업로드 버튼 */}
             <div className="mb-4">
-              <label className="inline-block px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors cursor-pointer">
+              <label className="inline-block px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors cursor-pointer">
                 파일 선택
                 <input
                   type="file"
@@ -864,7 +866,7 @@ const ProjectCreatePage: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+            className="px-6 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
             {loading ? '등록 중...' : '프로젝트 등록'}
           </button>

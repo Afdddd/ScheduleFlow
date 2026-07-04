@@ -24,12 +24,12 @@ const DashboardPage: React.FC = () => {
         {/* 우측 영역 - 35% */}
         <div className="flex-1 flex flex-col gap-6" style={{ flexBasis: '35%' }}>
           {/* My Tasks 영역 - 상단 50% */}
-          <div className="flex-1 bg-white rounded-lg shadow p-6 min-h-0">
+          <div className="flex-1 min-h-0 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
             <MyTasks />
           </div>
 
           {/* 팀원 오늘 일정 영역 - 하단 50% */}
-          <div className="flex-1 bg-white rounded-lg shadow p-6 min-h-0">
+          <div className="flex-1 min-h-0 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
             <TeamTasks />
           </div>
         </div>

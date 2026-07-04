@@ -15,7 +15,7 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({ title, action, className 
   <div className={`mb-2.5 flex items-center justify-between ${className}`}>
     <h3 className="text-base font-bold tracking-tight">{title}</h3>
     {action && (
-      <button type="button" onClick={action.onClick} className="text-sm font-bold text-blue-500">
+      <button type="button" onClick={action.onClick} className="text-sm font-bold text-primary-500">
         {action.label}
       </button>
     )}

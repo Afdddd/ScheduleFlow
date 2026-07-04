@@ -296,7 +296,7 @@ const ScheduleDetailPage: React.FC = () => {
         <Alert type="error" message={error || '일정을 찾을 수 없습니다.'} />
         <button
           onClick={() => navigate('/schedules')}
-          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+          className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
         >
           목록으로
         </button>
@@ -331,7 +331,7 @@ const ScheduleDetailPage: React.FC = () => {
                 <>
                   <button
                     onClick={handleEdit}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                    className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
                   >
                     수정
                   </button>
@@ -375,7 +375,7 @@ const ScheduleDetailPage: React.FC = () => {
       )}
 
       {/* 기본 정보 섹션 */}
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
+      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm mb-6">
         <h2 className="text-xl font-bold mb-4">기본 정보</h2>
 
         <div className="space-y-4">
@@ -387,7 +387,7 @@ const ScheduleDetailPage: React.FC = () => {
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 placeholder="일정 제목을 입력하세요"
               />
             ) : (
@@ -402,7 +402,7 @@ const ScheduleDetailPage: React.FC = () => {
               <select
                 value={scheduleType}
                 onChange={(e) => setScheduleType(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="PROJECT">프로젝트 일정</option>
                 <option value="TEST_RUN">시운전</option>
@@ -435,7 +435,7 @@ const ScheduleDetailPage: React.FC = () => {
                 selectsRange
                 locale={ko as any}
                 dateFormat="yyyy-MM-dd"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 placeholderText="시작일 ~ 종료일을 선택하세요"
               />
             ) : (
@@ -452,7 +452,7 @@ const ScheduleDetailPage: React.FC = () => {
               <select
                 value={projectId || ''}
                 onChange={(e) => setProjectId(e.target.value ? Number(e.target.value) : null)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 disabled={loadingProjects}
               >
                 <option value="">프로젝트를 선택하지 않음 (독립 일정)</option>
@@ -472,7 +472,7 @@ const ScheduleDetailPage: React.FC = () => {
       </div>
 
       {/* 참여자 섹션 */}
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
+      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm mb-6">
         <h2 className="text-xl font-bold mb-4">참여자</h2>
 
         {isEditing ? (
@@ -495,9 +495,9 @@ const ScheduleDetailPage: React.FC = () => {
                     type="checkbox"
                     checked={selectedMemberIds.includes(user.id)}
                     onChange={() => handleMemberToggle(user.id)}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                   />
-                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                  <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
                     {user.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1">
@@ -518,7 +518,7 @@ const ScheduleDetailPage: React.FC = () => {
               <div className="space-y-2">
                 {schedule.members.map((member) => (
                   <div key={member.id} className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                    <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
                       {member.name.charAt(0).toUpperCase()}
                     </div>
                     <div>

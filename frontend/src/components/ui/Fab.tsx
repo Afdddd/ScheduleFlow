@@ -17,7 +17,7 @@ const Fab: React.FC<FabProps> = ({ label, onClick, icon }) => (
   <button
     type="button"
     onClick={onClick}
-    className="fixed bottom-24 right-4 z-30 flex items-center gap-1.5 rounded-2xl bg-blue-500 px-5 py-4 text-base font-bold text-white shadow-lg transition-transform active:scale-95"
+    className="fixed bottom-24 right-4 z-30 flex items-center gap-1.5 rounded-2xl bg-primary-500 px-5 py-4 text-base font-bold text-white shadow-lg transition-transform active:scale-95"
   >
     {icon ?? (
       <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={2.6} viewBox="0 0 24 24">

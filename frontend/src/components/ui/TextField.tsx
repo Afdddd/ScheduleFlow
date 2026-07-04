@@ -30,7 +30,7 @@ const TextField: React.FC<TextFieldProps> = ({
   hint,
 }) => {
   const inputClass =
-    'w-full rounded-xl border border-gray-200 bg-white px-3.5 py-3.5 text-base text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40';
+    'w-full rounded-xl border border-gray-200 bg-white px-3.5 py-3.5 text-base text-gray-900 placeholder:text-gray-400 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/40';
 
   return (
     <div>

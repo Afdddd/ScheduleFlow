@@ -527,7 +527,7 @@ const ProjectDetailPage: React.FC = () => {
         <Alert type="error" message={error || '프로젝트를 찾을 수 없습니다.'} />
         <button
           onClick={() => navigate('/projects')}
-          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+          className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
         >
           목록으로
         </button>
@@ -568,7 +568,7 @@ const ProjectDetailPage: React.FC = () => {
                 <>
                   <button
                     onClick={handleEdit}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                    className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
                   >
                     수정
                   </button>
@@ -614,7 +614,7 @@ const ProjectDetailPage: React.FC = () => {
       {/* 상단 섹션: 기본 정보 및 메타 정보 (좌우 배치) */}
       <div className="grid grid-cols-2 gap-6 mb-6">
         {/* 좌측: 기본 정보 카드 */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
           <h2 className="text-xl font-bold mb-4">기본 정보</h2>
 
           <div className="space-y-4">
@@ -626,7 +626,7 @@ const ProjectDetailPage: React.FC = () => {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                   placeholder="프로젝트 이름을 입력하세요"
                 />
               ) : (
@@ -641,7 +641,7 @@ const ProjectDetailPage: React.FC = () => {
                 <select
                   value={clientId || ''}
                   onChange={(e) => setClientId(e.target.value ? Number(e.target.value) : null)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                   disabled={loadingPartners}
                 >
                   <option value="">거래처를 선택하세요</option>
@@ -664,7 +664,7 @@ const ProjectDetailPage: React.FC = () => {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={8}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                   placeholder="프로젝트 설명을 입력하세요"
                 />
               ) : (
@@ -677,7 +677,7 @@ const ProjectDetailPage: React.FC = () => {
         </div>
 
         {/* 우측: 메타 정보 카드 */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
           <h2 className="text-xl font-bold mb-4">메타 정보</h2>
 
           <div className="space-y-4">
@@ -693,7 +693,7 @@ const ProjectDetailPage: React.FC = () => {
                   selectsRange
                   locale={ko as any}
                   dateFormat="yyyy-MM-dd"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                   placeholderText="시작일 ~ 종료일을 선택하세요"
                 />
               ) : (
@@ -710,7 +710,7 @@ const ProjectDetailPage: React.FC = () => {
                 <select
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 >
                   <option value="IN_PROGRESS">진행 중</option>
                   <option value="ON_HOLD">보류</option>
@@ -761,7 +761,7 @@ const ProjectDetailPage: React.FC = () => {
       </div>
 
       {/* 중간 섹션: 팀 멤버 할당 */}
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
+      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm mb-6">
         <h2 className="text-xl font-bold mb-4">팀 멤버 할당</h2>
 
         <div className="grid grid-cols-2 gap-6">
@@ -788,9 +788,9 @@ const ProjectDetailPage: React.FC = () => {
                         type="checkbox"
                         checked={selectedMemberIds.includes(user.id)}
                         onChange={() => handleMemberToggle(user.id)}
-                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                       />
-                      <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                      <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
                         {user.name.charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1">
@@ -811,7 +811,7 @@ const ProjectDetailPage: React.FC = () => {
                   <div className="space-y-2">
                     {project.members.map((member) => (
                       <div key={member.id} className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                        <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
                           {member.name.charAt(0).toUpperCase()}
                         </div>
                         <div>
@@ -855,7 +855,7 @@ const ProjectDetailPage: React.FC = () => {
                         type="checkbox"
                         checked={selectedPartnerContactIds.includes(contact.id)}
                         onChange={() => handlePartnerContactToggle(contact.id)}
-                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                       />
                       <div className="flex-1">
                         <div className="text-sm font-medium text-gray-900">{contact.name}</div>
@@ -896,7 +896,7 @@ const ProjectDetailPage: React.FC = () => {
       </div>
 
       {/* 하단 섹션: 일정 및 파일 */}
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
+      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm mb-6">
         <h2 className="text-xl font-bold mb-4">일정 및 파일</h2>
 
         {/* 일정 목록 */}
@@ -907,7 +907,7 @@ const ProjectDetailPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowScheduleForm(!showScheduleForm)}
-                className="px-3 py-1 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                className="px-3 py-1 text-sm bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
               >
                 {showScheduleForm ? '취소' : '일정 추가'}
               </button>
@@ -916,7 +916,7 @@ const ProjectDetailPage: React.FC = () => {
 
           {/* 일정 추가 폼 */}
           {isEditing && showScheduleForm && (
-            <div className="border border-blue-200 bg-blue-50 rounded-lg p-4 mb-4 space-y-3">
+            <div className="border border-primary-200 bg-primary-50 rounded-lg p-4 mb-4 space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">제목</label>
@@ -924,7 +924,7 @@ const ProjectDetailPage: React.FC = () => {
                     type="text"
                     value={newScheduleTitle}
                     onChange={(e) => setNewScheduleTitle(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
                     placeholder="일정 제목"
                   />
                 </div>
@@ -933,7 +933,7 @@ const ProjectDetailPage: React.FC = () => {
                   <select
                     value={newScheduleType}
                     onChange={(e) => setNewScheduleType(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
                   >
                     <option value="PROJECT">프로젝트 일정</option>
                     <option value="TEST_RUN">시운전</option>
@@ -953,7 +953,7 @@ const ProjectDetailPage: React.FC = () => {
                   selectsRange
                   locale={ko as any}
                   dateFormat="yyyy-MM-dd"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
                   placeholderText="시작일 ~ 종료일"
                 />
               </div>
@@ -969,7 +969,7 @@ const ProjectDetailPage: React.FC = () => {
                         type="checkbox"
                         checked={newScheduleMemberIds.includes(u.id)}
                         onChange={() => handleNewScheduleMemberToggle(u.id)}
-                        className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        className="w-3.5 h-3.5 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                       />
                       <span>{u.name}</span>
                       {u.position && <span className="text-xs text-gray-400">({u.position})</span>}
@@ -1065,7 +1065,7 @@ const ProjectDetailPage: React.FC = () => {
                   px-4 py-2 text-sm font-medium transition-colors
                   ${
                     activeFileCategory === category
-                      ? 'border-b-2 border-blue-500 text-blue-600'
+                      ? 'border-b-2 border-primary-500 text-primary-600'
                       : 'text-gray-600 hover:text-gray-800'
                   }
                 `}
@@ -1078,7 +1078,7 @@ const ProjectDetailPage: React.FC = () => {
           {/* 파일 업로드 (편집 모드) */}
           {isEditing && (
             <div className="mb-4">
-              <label className="inline-flex items-center gap-2 px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors">
+              <label className="inline-flex items-center gap-2 px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary-400 hover:bg-primary-50 transition-colors">
                 <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
@@ -1133,7 +1133,7 @@ const ProjectDetailPage: React.FC = () => {
                               onClick={() =>
                                 file.id && handleFileDownload(file.id, file.originalFileName)
                               }
-                              className="text-blue-600 hover:text-blue-800 text-sm"
+                              className="text-primary-600 hover:text-primary-700 text-sm"
                             >
                               다운로드
                             </button>

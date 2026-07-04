@@ -67,22 +67,23 @@ const ScheduleListPage: React.FC = () => {
 
   return (
     <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">일정 목록</h1>
+      <div className="mb-6 flex items-center gap-3">
+        <div className="flex-1">
+          <SearchBar
+            className=""
+            placeholder="일정 제목으로 검색"
+            onSearch={handleSearch}
+          />
+        </div>
         {isAdmin && (
           <button
             onClick={() => navigate('/schedules/new')}
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            className="flex-none whitespace-nowrap rounded-lg bg-primary-500 px-4 py-2 text-white transition-colors hover:bg-primary-600"
           >
             등록
           </button>
         )}
       </div>
-
-      <SearchBar
-        placeholder="일정 제목으로 검색"
-        onSearch={handleSearch}
-      />
 
       {loading && (
         <div className="text-center py-8 text-gray-500">로딩 중...</div>
@@ -90,7 +91,7 @@ const ScheduleListPage: React.FC = () => {
 
       {!loading && data && (
         <>
-          <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>

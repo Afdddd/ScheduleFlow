@@ -65,7 +65,7 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
             </button>
             <b className="flex-1 text-center text-base font-bold">{title}</b>
             {onConfirm ? (
-              <button type="button" onClick={onConfirm} className="w-16 text-right text-base font-bold text-blue-500">
+              <button type="button" onClick={onConfirm} className="w-16 text-right text-base font-bold text-primary-500">
                 {confirmLabel}
               </button>
             ) : (
