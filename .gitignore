@@ -56,5 +56,12 @@ frontend/.pnp
 frontend/.pnp.js
 frontend/coverage/
 
-# macOS
+### macOS ###
 .DS_Store
+
+### Terraform ###
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
