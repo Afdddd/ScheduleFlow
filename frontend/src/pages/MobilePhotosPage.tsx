@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSmartBack } from '../hooks/useSmartBack';
 import { getProjectList, ProjectListResponse } from '../api/list';
 import { uploadFile } from '../api/file';
 
@@ -25,6 +26,7 @@ interface Picked {
 
 const MobilePhotosPage: React.FC = () => {
   const navigate = useNavigate();
+  const goBack = useSmartBack('/');
 
   const [step, setStep] = useState<Step>('site');
   const [projects, setProjects] = useState<ProjectListResponse[]>([]);
@@ -99,7 +101,7 @@ const MobilePhotosPage: React.FC = () => {
       {/* 헤더 */}
       <div className="flex items-center gap-1 px-2.5 pb-3 pt-3">
         <button
-          onClick={() => (step === 'site' ? navigate('/') : setStep('site'))}
+          onClick={() => (step === 'site' ? goBack() : setStep('site'))}
           aria-label="뒤로"
           className="flex h-10 w-10 items-center justify-center rounded-xl text-gray-600 active:bg-gray-100"
         >
@@ -222,7 +224,7 @@ const MobilePhotosPage: React.FC = () => {
               onChange={(e) => setMemo(e.target.value)}
               rows={2}
               placeholder="예: 외벽 균열 부분"
-              className="mt-2 w-full rounded-2xl border border-gray-200 bg-white p-3.5 text-[15px] text-gray-900 outline-none focus:border-primary-500"
+              className="mt-2 w-full rounded-2xl border border-gray-200 bg-white p-3.5 text-[16px] text-gray-900 outline-none focus:border-primary-500"
             />
 
             {error && <p className="mt-3 text-[14px] font-semibold text-red-500">{error}</p>}

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import DatePickerInput from '../components/ui/DatePickerInput';
 import { ko } from 'date-fns/locale';
 import { format } from 'date-fns';
 import Alert from '../components/Alert';
@@ -197,6 +198,7 @@ const ScheduleCreatePage: React.FC = () => {
                 기간 <span className="text-red-500">*</span>
               </label>
               <DatePicker
+                customInput={<DatePickerInput />}
                 selected={dateRange[0]}
                 onChange={handleDateRangeChange}
                 startDate={dateRange[0]}

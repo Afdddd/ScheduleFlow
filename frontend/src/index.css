@@ -24,6 +24,18 @@
   --primary-900: 0 37 92;
 }
 
+/*
+ * iOS Safari는 폰트 16px 미만 input에 포커스하면 화면을 강제 확대한다.
+ * 폼 컨트롤의 최소 폰트를 16px로 보장해 확대를 막는다. (개별 유틸 클래스로 16px 이상 지정 시 그 값이 우선)
+ */
+@layer base {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',

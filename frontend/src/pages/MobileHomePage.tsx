@@ -12,18 +12,21 @@ import {
 } from 'date-fns';
 import { useAuthStore } from '../stores/authStore';
 import MobileScheduleCreateSheet from './MobileScheduleCreateSheet';
+import MediaViewer from '../components/mobile/MediaViewer';
 import {
   getMyTasks,
   getTodayTeamTasks,
   MyTaskResponse,
   TodayTeamTaskGroup,
 } from '../api/calendar';
+import { getFileList, FileListResponse } from '../api/list';
+import { downloadFile } from '../api/file';
 
 /**
  * MobileHomePage — 모바일 전용 홈 화면.
  *
- * 명세 순서(위→아래): 시간대 인사 · 날짜 → 요약 → 오늘 내 일정(전체 보기)
- * → 새 일정(큰 버튼) → 팀원. 플로팅 버튼 = 사진 올리기.
+ * 명세 순서(위→아래): 시간대 인사 · 날짜 → 요약 → 새 일정(큰 버튼)
+ * → 오늘 내 일정 → 방금 올라온 사진 → 팀원. 플로팅 버튼 = 사진 올리기.
  *
  * 데이터 메모: 일정은 **날짜 구간 기반**(시각·완료상태 필드 없음)이라
  * 목업의 "09:30·진행중/지연"은 구현하지 않고, 오늘 진행 중인 일정을
@@ -56,9 +59,11 @@ const MobileHomePage: React.FC = () => {
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [team, setTeam] = useState<TodayTeamTaskGroup[]>([]);
+  const [photos, setPhotos] = useState<FileListResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [reload, setReload] = useState(0);
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
 
   const now = useMemo(() => new Date(), []);
   const today = startOfDay(now);
@@ -68,9 +73,10 @@ const MobileHomePage: React.FC = () => {
     const load = async () => {
       setLoading(true);
       try {
-        const [groups, teamGroups] = await Promise.all([
+        const [groups, teamGroups, filepage] = await Promise.all([
           getMyTasks(startOfMonth(now), endOfMonth(now)),
           getTodayTeamTasks(now),
+          getFileList('', 0, 40),
         ]);
         if (!alive) return;
         setTasks(
@@ -79,6 +85,12 @@ const MobileHomePage: React.FC = () => {
           )
         );
         setTeam(teamGroups);
+        setPhotos(
+          filepage.content
+            .filter((f) => f.category === 'PHOTO')
+            .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+            .slice(0, 8)
+        );
       } catch (e) {
         console.error('홈 데이터 로딩 실패:', e);
       } finally {
@@ -190,6 +202,18 @@ const MobileHomePage: React.FC = () => {
         )}
       </section>
 
+      {/* 방금 올라온 사진 */}
+      {photos.length > 0 && (
+        <section className="mt-6">
+          <SectionHead title="방금 올라온 사진" actionLabel="모두 보기" onAction={() => navigate('/files')} />
+          <div className="mt-3 flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {photos.map((p, i) => (
+              <PhotoThumb key={p.id} file={p} onOpen={() => setViewerIndex(i)} />
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* 팀원 */}
       <section className="mt-6">
         <SectionHead title="지금 팀원들" />
@@ -253,6 +277,10 @@ const MobileHomePage: React.FC = () => {
         onClose={() => setSheetOpen(false)}
         onCreated={() => setReload((r) => r + 1)}
       />
+
+      {viewerIndex !== null && (
+        <MediaViewer items={photos} index={viewerIndex} onClose={() => setViewerIndex(null)} />
+      )}
     </div>
   );
 };
@@ -280,6 +308,82 @@ const SectionHead: React.FC<{ title: string; actionLabel?: string; onAction?: ()
     )}
   </div>
 );
+
+/** 상대 시간 라벨 (방금 / N분 전 / N시간 전 / N일 전). */
+function relativeTime(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const min = Math.floor(diff / 60000);
+  if (min < 1) return '방금';
+  if (min < 60) return `${min}분 전`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}시간 전`;
+  return `${Math.floor(hr / 24)}일 전`;
+}
+
+/** 현장 사진 썸네일 — 인증 필요한 파일이라 blob으로 받아 표시. 누르면 전체화면 뷰어. */
+const PhotoThumb: React.FC<{ file: FileListResponse; onOpen: () => void }> = ({ file, onOpen }) => {
+  const [url, setUrl] = useState<string | null>(null);
+  const isVideo = file.contentType?.startsWith('video');
+
+  useEffect(() => {
+    let alive = true;
+    let obj: string | null = null;
+    downloadFile(file.id)
+      .then((blob) => {
+        if (!alive) return;
+        obj = URL.createObjectURL(blob);
+        setUrl(obj);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+      if (obj) URL.revokeObjectURL(obj);
+    };
+  }, [file.id]);
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="relative h-[150px] w-[128px] flex-none overflow-hidden rounded-2xl bg-gray-200 text-left shadow-sm transition-transform active:scale-[0.98]"
+    >
+      {url ? (
+        isVideo ? (
+          <video src={url} className="h-full w-full object-cover" muted playsInline />
+        ) : (
+          <img src={url} alt="" className="h-full w-full object-cover" />
+        )
+      ) : (
+        <div className="flex h-full w-full items-center justify-center">
+          <svg className="h-6 w-6 animate-pulse text-gray-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z" />
+            <circle cx="12" cy="13" r="3.2" />
+          </svg>
+        </div>
+      )}
+      {/* 영상 표시 — 재생 아이콘 오버레이 */}
+      {isVideo && url && (
+        <span className="absolute inset-0 flex items-center justify-center">
+          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-black/45">
+            <svg className="ml-0.5 h-5 w-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </span>
+        </span>
+      )}
+      {file.projectName && (
+        <span className="absolute left-2 top-2 rounded-full bg-primary-600/90 px-2 py-0.5 text-[10.5px] font-bold text-white">
+          {file.projectName}
+        </span>
+      )}
+      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-2.5 pb-2 pt-5">
+        <div className="text-[11px] font-semibold text-white opacity-90">
+          {relativeTime(file.createdAt)} · {file.uploaderName}
+        </div>
+      </div>
+    </button>
+  );
+};
 
 const LoadingRow: React.FC = () => (
   <div className="mt-3 rounded-2xl border border-gray-200 bg-white py-8 text-center text-sm font-semibold text-gray-400 shadow-sm">

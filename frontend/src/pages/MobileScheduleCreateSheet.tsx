@@ -4,6 +4,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 import { ko } from 'date-fns/locale';
 import { format } from 'date-fns';
 import BottomSheet from '../components/ui/BottomSheet';
+import DatePickerInput from '../components/ui/DatePickerInput';
 import { createSchedule, ScheduleCreateRequest } from '../api/schedule';
 import { getAllProjects } from '../api/project';
 import { getAllUsers, UserListResponse } from '../api/user';
@@ -130,6 +131,7 @@ const MobileScheduleCreateSheet: React.FC<Props> = ({ open, onClose, onCreated }
         {/* 기간 */}
         <Field label="기간" required>
           <DatePicker
+            customInput={<DatePickerInput />}
             selected={range[0]}
             onChange={(dates) => setRange(dates as [Date | null, Date | null])}
             startDate={range[0]}

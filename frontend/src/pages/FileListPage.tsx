@@ -3,6 +3,8 @@ import SearchBar from '../components/SearchBar';
 import Pagination from '../components/Pagination';
 import { getFileList, FileListResponse, PageResponse } from '../api/list';
 import { downloadFile } from '../api/file';
+import MobileFileList from './MobileFileList';
+import { useIsMobile } from '../hooks/useMediaQuery';
 
 /**
  * 파일 목록 페이지
@@ -64,6 +66,11 @@ const FileListPage: React.FC = () => {
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
+
+  const isMobile = useIsMobile();
+  if (isMobile) {
+    return <MobileFileList />;
+  }
 
   return (
     <div className="p-6">

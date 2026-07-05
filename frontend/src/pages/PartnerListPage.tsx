@@ -4,6 +4,8 @@ import SearchBar from '../components/SearchBar';
 import Pagination from '../components/Pagination';
 import { useAuthStore } from '../stores/authStore';
 import { getPartnerList, PartnerListResponse, PageResponse } from '../api/list';
+import MobilePartnerList from './MobilePartnerList';
+import { useIsMobile } from '../hooks/useMediaQuery';
 
 /**
  * 거래처 목록 페이지
@@ -47,6 +49,11 @@ const PartnerListPage: React.FC = () => {
 
   const { user } = useAuthStore();
   const isAdmin = user?.role === 'ADMIN';
+  const isMobile = useIsMobile();
+
+  if (isMobile) {
+    return <MobilePartnerList />;
+  }
 
   return (
     <div className="p-6">

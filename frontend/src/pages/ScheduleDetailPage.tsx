@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import DatePickerInput from '../components/ui/DatePickerInput';
 import { ko } from 'date-fns/locale';
 import { format } from 'date-fns';
 import Alert from '../components/Alert';
@@ -17,6 +18,7 @@ import { getAllProjects, getProjectDetail } from '../api/project';
 import { ProjectListResponse } from '../api/list';
 import { getAllUsers, UserListResponse } from '../api/user';
 import { useIsMobile } from '../hooks/useMediaQuery';
+import { useSmartBack } from '../hooks/useSmartBack';
 
 /**
  * 일정 상세 페이지
@@ -32,6 +34,7 @@ const ScheduleDetailPage: React.FC = () => {
   const { user } = useAuthStore();
   const isAdmin = user?.role === 'ADMIN';
   const isMobile = useIsMobile();
+  const goBack = useSmartBack('/schedules');
 
   // 일정 데이터
   const [schedule, setSchedule] = useState<ScheduleDetailResponse | null>(null);
@@ -313,7 +316,7 @@ const ScheduleDetailPage: React.FC = () => {
         {/* 백바 */}
         <div className="flex items-center gap-1 px-2.5 pb-3 pt-3">
           <button
-            onClick={() => navigate('/schedules')}
+            onClick={goBack}
             aria-label="뒤로"
             className="flex h-10 w-10 items-center justify-center rounded-xl text-gray-600 active:bg-gray-100"
           >
@@ -401,50 +404,33 @@ const ScheduleDetailPage: React.FC = () => {
             {getTypeLabel(schedule.type)}
           </span>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => navigate('/schedules')}
-            className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
-          >
-            목록으로
-          </button>
-          {isAdmin && (
-            <>
-              {!isEditing ? (
-                <>
-                  <button
-                    onClick={handleEdit}
-                    className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
-                  >
-                    수정
-                  </button>
-                  <button
-                    onClick={handleDelete}
-                    className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-                  >
-                    삭제
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button
-                    onClick={handleCancel}
-                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-                  >
-                    취소
-                  </button>
-                  <button
-                    onClick={handleSave}
-                    disabled={loading}
-                    className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-                  >
-                    {loading ? '저장 중...' : '저장'}
-                  </button>
-                </>
-              )}
-            </>
-          )}
-        </div>
+        {/* 뷰 모드 액션은 상단, 편집 모드 액션(목록으로·취소·저장)은 페이지 맨 밑으로 */}
+        {!isEditing && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate('/schedules')}
+              className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+            >
+              목록으로
+            </button>
+            {isAdmin && (
+              <>
+                <button
+                  onClick={handleEdit}
+                  className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
+                >
+                  수정
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                >
+                  삭제
+                </button>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {error && (
@@ -511,6 +497,7 @@ const ScheduleDetailPage: React.FC = () => {
             <label className="block text-sm font-medium text-gray-700 mb-1">기간</label>
             {isEditing ? (
               <DatePicker
+                customInput={<DatePickerInput />}
                 selected={dateRange[0]}
                 onChange={handleDateRangeChange}
                 startDate={dateRange[0]}
@@ -617,6 +604,31 @@ const ScheduleDetailPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* 편집 모드 하단 액션: 목록으로 · 취소 · 저장 */}
+      {isEditing && (
+        <div className="mt-2 flex justify-end gap-3">
+          <button
+            onClick={() => navigate('/schedules')}
+            className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+          >
+            목록으로
+          </button>
+          <button
+            onClick={handleCancel}
+            className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            취소
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={loading}
+            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+          >
+            {loading ? '저장 중...' : '저장'}
+          </button>
+        </div>
+      )}
     </div>
   );
 };

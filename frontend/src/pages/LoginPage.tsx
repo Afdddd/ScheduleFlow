@@ -89,136 +89,71 @@ const LoginPage: React.FC = () => {
     // 다음 로그인 시도 시에만 제거 (handleSubmit에서 setApiError('') 처리)
   };
 
-  return (
-    <div
-      style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '100vh',
-        backgroundColor: '#f5f5f5',
-      }}
-    >
-      <div
-        style={{
-          width: '100%',
-          maxWidth: '400px',
-          padding: '40px',
-          backgroundColor: 'white',
-          borderRadius: '8px',
-          boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-        }}
-      >
-        <h1 style={{ marginBottom: '30px', textAlign: 'center' }}>로그인</h1>
+  const inputCls =
+    'w-full rounded-xl border bg-white px-4 py-3 text-[16px] text-gray-900 outline-none transition-colors focus:border-transparent focus:ring-2 focus:ring-primary-500 disabled:opacity-60';
 
-        <form onSubmit={handleSubmit}>
-          {/* 사용자명 입력 */}
-          <div style={{ marginBottom: '20px' }}>
-            <label
-              htmlFor="username"
-              style={{
-                display: 'block',
-                marginBottom: '8px',
-                fontWeight: '500',
-              }}
-            >
-              사용자명
-            </label>
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-6 py-10">
+      <div className="w-full max-w-sm">
+        {/* 로고 · 타이틀 */}
+        <div className="mb-7 flex flex-col items-center">
+          <span className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 text-white shadow-lg shadow-primary-500/35">
+            <svg className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+              <rect x="3" y="4.5" width="18" height="16.5" rx="3" />
+              <path d="M16 2.5v4M8 2.5v4M3 10h18M8.5 15l2.3 2.3 4.2-4.6" />
+            </svg>
+          </span>
+          <h1 className="text-2xl font-extrabold tracking-tight text-gray-900">ScheduleFlow</h1>
+          <p className="mt-1.5 text-sm font-medium text-gray-500">사내 일정·현장 관리</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          {/* 아이디 */}
+          <div>
+            <label htmlFor="username" className="mb-2 block text-[14px] font-bold text-gray-600">아이디</label>
             <input
               type="text"
               id="username"
               name="username"
               value={formData.username}
               onChange={handleChange}
-              style={{
-                width: '100%',
-                padding: '10px',
-                border: `1px solid ${errors.username ? '#e74c3c' : '#ddd'}`,
-                borderRadius: '4px',
-                fontSize: '16px',
-                boxSizing: 'border-box',
-              }}
+              placeholder="아이디 입력"
               disabled={loading}
+              className={`${inputCls} ${errors.username ? 'border-red-400' : 'border-gray-300'}`}
             />
-            {errors.username && (
-              <p style={{ color: '#e74c3c', fontSize: '14px', marginTop: '4px' }}>
-                {errors.username}
-              </p>
-            )}
+            {errors.username && <p className="mt-1.5 text-[13px] font-semibold text-red-500">{errors.username}</p>}
           </div>
 
-          {/* 비밀번호 입력 */}
-          <div style={{ marginBottom: '20px' }}>
-            <label
-              htmlFor="password"
-              style={{
-                display: 'block',
-                marginBottom: '8px',
-                fontWeight: '500',
-              }}
-            >
-              비밀번호
-            </label>
+          {/* 비밀번호 */}
+          <div>
+            <label htmlFor="password" className="mb-2 block text-[14px] font-bold text-gray-600">비밀번호</label>
             <input
               type="password"
               id="password"
               name="password"
               value={formData.password}
               onChange={handleChange}
-              style={{
-                width: '100%',
-                padding: '10px',
-                border: `1px solid ${errors.password ? '#e74c3c' : '#ddd'}`,
-                borderRadius: '4px',
-                fontSize: '16px',
-                boxSizing: 'border-box',
-              }}
+              placeholder="비밀번호 입력"
               disabled={loading}
+              className={`${inputCls} ${errors.password ? 'border-red-400' : 'border-gray-300'}`}
             />
-            {errors.password && (
-              <p style={{ color: '#e74c3c', fontSize: '14px', marginTop: '4px' }}>
-                {errors.password}
-              </p>
-            )}
+            {errors.password && <p className="mt-1.5 text-[13px] font-semibold text-red-500">{errors.password}</p>}
           </div>
 
-          {/* API 에러 메시지 */}
-          {apiError && (
-            <Alert
-              type="error"
-              message={apiError}
-              onClose={() => setApiError('')}
-            />
-          )}
+          {apiError && <Alert type="error" message={apiError} onClose={() => setApiError('')} />}
 
-          {/* 로그인 버튼 */}
           <button
             type="submit"
             disabled={loading}
-            style={{
-              width: '100%',
-              padding: '12px',
-              backgroundColor: loading ? '#ccc' : '#007bff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              fontSize: '16px',
-              fontWeight: '500',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              marginBottom: '20px',
-            }}
+            className="mt-2 w-full rounded-xl bg-primary-500 py-3.5 text-[16px] font-extrabold text-white shadow-lg shadow-primary-500/30 transition-transform active:scale-[0.99] disabled:opacity-60"
           >
             {loading ? '로그인 중...' : '로그인'}
           </button>
         </form>
 
-        {/* 회원가입 링크 */}
-        <div style={{ textAlign: 'center' }}>
-          <span style={{ color: '#666' }}>계정이 없으신가요? </span>
-          <Link
-            to="/signup"
-            style={{ color: '#007bff', textDecoration: 'none' }}
-          >
+        <div className="mt-5 text-center text-[13.5px] font-semibold text-gray-500">
+          계정이 없나요?{' '}
+          <Link to="/signup" className="font-bold text-primary-600">
             회원가입
           </Link>
         </div>

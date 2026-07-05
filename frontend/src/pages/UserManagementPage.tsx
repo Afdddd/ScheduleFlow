@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import SearchBar from '../components/SearchBar';
 import Pagination from '../components/Pagination';
 import { getUserList, UserListResponse, PageResponse } from '../api/list';
+import MobileUserList from './MobileUserList';
+import { useIsMobile } from '../hooks/useMediaQuery';
 
 /**
  * 사원 관리 페이지 (ADMIN 권한 필요)
@@ -63,6 +65,11 @@ const UserManagementPage: React.FC = () => {
         return 'bg-gray-100 text-gray-800';
     }
   };
+
+  const isMobile = useIsMobile();
+  if (isMobile) {
+    return <MobileUserList />;
+  }
 
   return (
     <div className="p-6">

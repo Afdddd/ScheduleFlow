@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+import React from 'react';
+import { useScrollLock } from '../../hooks/useScrollLock';
 
 interface BottomSheetProps {
   open: boolean;
@@ -30,14 +31,7 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
   confirmLabel = '저장',
   cancelLabel = '취소',
 }) => {
-  useEffect(() => {
-    if (!open) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [open]);
+  useScrollLock(open);
 
   return (
     <div className={`fixed inset-0 z-50 ${open ? '' : 'pointer-events-none'}`} aria-hidden={!open}>
@@ -73,7 +67,7 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
             )}
           </div>
         )}
-        <div className="flex-1 overflow-y-auto px-4 pb-6">{children}</div>
+        <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-6">{children}</div>
       </div>
     </div>
   );

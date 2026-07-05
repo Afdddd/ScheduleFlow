@@ -2,9 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   startOfMonth,
-  endOfMonth,
   startOfWeek,
-  endOfWeek,
   addMonths,
   subMonths,
   format,
@@ -158,11 +156,12 @@ const CalendarView: React.FC<{
   const [selected, setSelected] = useState(todayStr);
 
   const days = useMemo(() => {
+    // 달마다 주 수가 5/6으로 달라지면 캘린더 높이가 바뀌어 아래 목록이 위아래로 밀린다.
+    // 항상 6주(42칸)를 그려 높이를 고정한다. (마지막 주가 비면 다음 달 날짜로 채움)
     const start = startOfWeek(startOfMonth(month), { weekStartsOn: 0 });
-    const end = endOfWeek(endOfMonth(month), { weekStartsOn: 0 });
     const out: Date[] = [];
     const cur = new Date(start);
-    while (cur <= end) {
+    for (let i = 0; i < 42; i++) {
       out.push(new Date(cur));
       cur.setDate(cur.getDate() + 1);
     }
@@ -277,7 +276,7 @@ const SearchInput: React.FC<{ onSearch: (q: string) => void; placeholder?: strin
         value={q}
         onChange={(e) => setQ(e.target.value)}
         placeholder={placeholder}
-        className="min-w-0 flex-1 bg-transparent text-[15px] font-medium text-gray-900 outline-none placeholder:text-gray-400"
+        className="min-w-0 flex-1 bg-transparent text-[16px] font-medium text-gray-900 outline-none placeholder:text-gray-400"
       />
       {q && (
         <button type="button" onClick={() => { setQ(''); onSearch(''); }} aria-label="지우기" className="flex-none text-gray-400">
