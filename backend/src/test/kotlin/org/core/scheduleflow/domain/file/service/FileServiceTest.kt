@@ -7,6 +7,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.unmockkAll
 import io.mockk.verify
 import org.core.scheduleflow.domain.file.constant.FileCategory
@@ -130,6 +131,48 @@ class FileServiceTest : BehaviorSpec({
                 verify(exactly = 1) { fileRepository.save(any()) }
                 verify(exactly = 1) { projectRepository.findByIdOrNull(1L) }
                 verify(exactly = 1) { userRepository.findByIdOrNull(1L) }
+            }
+        }
+    }
+
+    Given("현장 사진(PHOTO) 업로드 요청이 주어지고") {
+        val project = createProject()
+        val user = createUser()
+        val photoFile = mockk<MultipartFile>()
+
+        every { photoFile.originalFilename } returns "site.jpg"
+        every { photoFile.size } returns 2048L
+        every { photoFile.contentType } returns "image/jpeg"
+
+        every { projectRepository.findByIdOrNull(1L) } returns project
+        every { userRepository.findByIdOrNull(1L) } returns user
+
+        val keySlot = slot<String>()
+        every { fileStorage.store(capture(keySlot), photoFile) } returns Unit
+        every { fileRepository.save(any()) } answers {
+            val entity = firstArg<FileEntity>()
+            FileEntity(
+                id = 2L,
+                project = entity.project,
+                user = entity.user,
+                category = entity.category,
+                storedFileName = entity.storedFileName,
+                originalFileName = entity.originalFileName,
+                filePath = entity.filePath,
+                fileSize = entity.fileSize,
+                contentType = entity.contentType
+            )
+        }
+
+        When("PHOTO 카테고리로 업로드하면") {
+            val result = fileService.uploadFile(1L, photoFile, FileCategory.PHOTO, 1L)
+
+            Then("사진 카테고리로 저장되고 PHOTO 경로에 보관된다") {
+                result.category shouldBe FileCategory.PHOTO
+                result.originalFileName shouldBe "site.jpg"
+                keySlot.captured shouldContain "PHOTO/"
+                verify(exactly = 1) { fileStorage.store(any(), photoFile) }
+                verify(exactly = 1) { fileRepository.save(any()) }
             }
         }
     }

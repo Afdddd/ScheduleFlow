@@ -48,7 +48,9 @@ class FileController(
         return PageResponse.from(files)
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    // 사진(PHOTO)은 인증된 사용자 누구나(현장 사원 포함) 올릴 수 있고,
+    // 그 외 문서 카테고리는 ADMIN만 올릴 수 있다.
+    @PreAuthorize("isAuthenticated() and (#category.name() == 'PHOTO' or hasRole('ADMIN'))")
     @PostMapping("/{projectId}/upload")
     fun uploadFile(
         @PathVariable projectId: Long,

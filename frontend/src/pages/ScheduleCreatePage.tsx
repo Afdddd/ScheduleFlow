@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import DatePickerInput from '../components/ui/DatePickerInput';
 import { ko } from 'date-fns/locale';
 import { format } from 'date-fns';
 import Alert from '../components/Alert';
@@ -132,12 +133,14 @@ const ScheduleCreatePage: React.FC = () => {
 
   return (
     <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">일정 등록</h1>
+      <div className="mb-6">
         <button
           onClick={() => navigate('/schedules')}
-          className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+          className="inline-flex items-center gap-1 text-sm font-medium text-gray-500 transition-colors hover:text-gray-800"
         >
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
           목록으로
         </button>
       </div>
@@ -154,7 +157,7 @@ const ScheduleCreatePage: React.FC = () => {
 
       <form onSubmit={handleSubmit}>
         {/* 기본 정보 섹션 */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm mb-6">
           <h2 className="text-xl font-bold mb-4">기본 정보</h2>
 
           <div className="space-y-4">
@@ -167,7 +170,7 @@ const ScheduleCreatePage: React.FC = () => {
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 placeholder="일정 제목을 입력하세요"
                 required
               />
@@ -179,7 +182,7 @@ const ScheduleCreatePage: React.FC = () => {
               <select
                 value={scheduleType}
                 onChange={(e) => setScheduleType(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="PROJECT">프로젝트 일정</option>
                 <option value="TEST_RUN">시운전</option>
@@ -195,6 +198,7 @@ const ScheduleCreatePage: React.FC = () => {
                 기간 <span className="text-red-500">*</span>
               </label>
               <DatePicker
+                customInput={<DatePickerInput />}
                 selected={dateRange[0]}
                 onChange={handleDateRangeChange}
                 startDate={dateRange[0]}
@@ -202,7 +206,7 @@ const ScheduleCreatePage: React.FC = () => {
                 selectsRange
                 locale={ko as any}
                 dateFormat="yyyy-MM-dd"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 placeholderText="시작일 ~ 종료일을 선택하세요"
                 required
               />
@@ -214,7 +218,7 @@ const ScheduleCreatePage: React.FC = () => {
               <select
                 value={projectId || ''}
                 onChange={(e) => setProjectId(e.target.value ? Number(e.target.value) : null)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 disabled={loadingProjects}
               >
                 <option value="">프로젝트를 선택하지 않음 (독립 일정)</option>
@@ -229,7 +233,7 @@ const ScheduleCreatePage: React.FC = () => {
         </div>
 
         {/* 참여자 섹션 */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm mb-6">
           <h2 className="text-xl font-bold mb-4">참여자</h2>
 
           {loadingUsers ? (
@@ -251,9 +255,9 @@ const ScheduleCreatePage: React.FC = () => {
                     type="checkbox"
                     checked={selectedMemberIds.includes(user.id)}
                     onChange={() => handleMemberToggle(user.id)}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                   />
-                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                  <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
                     {user.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1">
@@ -280,7 +284,7 @@ const ScheduleCreatePage: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+            className="px-6 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
             {loading ? '등록 중...' : '일정 등록'}
           </button>

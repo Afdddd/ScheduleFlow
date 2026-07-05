@@ -6,6 +6,8 @@ import Layout from './Layout';
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requireAdmin?: boolean;
+  /** 전체화면 흐름(예: 사진 올리기) — 셸(사이드바/탭바) 없이 페이지만 렌더한다. */
+  bare?: boolean;
 }
 
 /**
@@ -25,9 +27,10 @@ interface ProtectedRouteProps {
  *   <UserManagementPage />
  * </ProtectedRoute>
  */
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
-  children, 
-  requireAdmin = false 
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+  children,
+  requireAdmin = false,
+  bare = false,
 }) => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const user = useAuthStore((state) => state.user);
@@ -42,6 +45,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     // ADMIN 권한이 없으면 홈으로 리다이렉트
     // TODO: 권한 없음 메시지 표시하는 페이지로 변경 가능
     return <Navigate to="/" replace />;
+  }
+
+  // 전체화면 흐름은 셸 없이 페이지만
+  if (bare) {
+    return <>{children}</>;
   }
 
   // Layout으로 감싸서 반환 (Header + Sidebar 포함)

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import SearchBar from '../components/SearchBar';
 import Pagination from '../components/Pagination';
 import { getUserList, UserListResponse, PageResponse } from '../api/list';
+import MobileUserList from './MobileUserList';
+import { useIsMobile } from '../hooks/useMediaQuery';
 
 /**
  * 사원 관리 페이지 (ADMIN 권한 필요)
@@ -64,10 +66,13 @@ const UserManagementPage: React.FC = () => {
     }
   };
 
+  const isMobile = useIsMobile();
+  if (isMobile) {
+    return <MobileUserList />;
+  }
+
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">사원 관리</h1>
-
       <SearchBar
         placeholder="사원 이름으로 검색"
         onSearch={handleSearch}
@@ -79,7 +84,7 @@ const UserManagementPage: React.FC = () => {
 
       {!loading && data && (
         <>
-          <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>

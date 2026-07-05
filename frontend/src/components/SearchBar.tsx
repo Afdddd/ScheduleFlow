@@ -4,6 +4,8 @@ interface SearchBarProps {
   placeholder?: string;
   onSearch: (query: string) => void;
   initialValue?: string;
+  /** 폼 래퍼 클래스. 기본은 아래 여백(mb-6). 툴바에 나란히 둘 땐 ""로 여백 제거. */
+  className?: string;
 }
 
 /**
@@ -18,6 +20,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
   placeholder = '검색어를 입력하세요',
   onSearch,
   initialValue = '',
+  className = 'mb-6',
 }) => {
   const [query, setQuery] = useState<string>(initialValue);
 
@@ -32,7 +35,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="mb-6">
+    <form onSubmit={handleSubmit} className={className}>
       <div className="flex gap-2">
         <div className="flex-1 relative">
           <input
@@ -40,7 +43,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={placeholder}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           />
           {query && (
             <button
@@ -57,7 +60,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
         </div>
         <button
           type="submit"
-          className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+          className="px-6 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
         >
           검색
         </button>

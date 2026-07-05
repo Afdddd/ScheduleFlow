@@ -55,3 +55,6 @@ frontend/build/
 frontend/.pnp
 frontend/.pnp.js
 frontend/coverage/
+
+# macOS
+.DS_Store

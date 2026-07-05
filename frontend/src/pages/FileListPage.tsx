@@ -3,6 +3,8 @@ import SearchBar from '../components/SearchBar';
 import Pagination from '../components/Pagination';
 import { getFileList, FileListResponse, PageResponse } from '../api/list';
 import { downloadFile } from '../api/file';
+import MobileFileList from './MobileFileList';
+import { useIsMobile } from '../hooks/useMediaQuery';
 
 /**
  * 파일 목록 페이지
@@ -65,10 +67,13 @@ const FileListPage: React.FC = () => {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
+  const isMobile = useIsMobile();
+  if (isMobile) {
+    return <MobileFileList />;
+  }
+
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">파일 목록</h1>
-
       <SearchBar
         placeholder="파일명으로 검색"
         onSearch={handleSearch}
@@ -80,7 +85,7 @@ const FileListPage: React.FC = () => {
 
       {!loading && data && (
         <>
-          <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
@@ -140,7 +145,7 @@ const FileListPage: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <button
                           onClick={() => handleDownload(file.id, file.originalFileName)}
-                          className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                          className="text-primary-600 hover:text-primary-700 text-sm font-medium"
                         >
                           다운로드
                         </button>

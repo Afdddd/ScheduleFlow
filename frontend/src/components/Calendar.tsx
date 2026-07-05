@@ -14,8 +14,9 @@ import {
   isBefore,
   isEqual,
 } from 'date-fns';
-import { 
-  getProjectsByPeriod,  
+import SegmentedControl from './ui/SegmentedControl';
+import {
+  getProjectsByPeriod,
   getProjectsByPeriodWithSchedules, 
   getSchedulesByPeriod,
   ProjectCalendarResponse,
@@ -183,50 +184,47 @@ const Calendar: React.FC = () => {
   const weekDays = ['일', '월', '화', '수', '목', '금', '토'];
 
   return (
-    <div className="bg-white rounded-lg shadow p-6 h-full flex flex-col">
+    <div className="flex h-full flex-col rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
       {/* 헤더: 월 표시 + 네비게이션 + 토글 모드 */}
-      <div className="flex justify-between items-center mb-4">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         {/* 월 표시 + 네비게이션 */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center gap-1">
           <button
             onClick={handlePrevMonth}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100"
             aria-label="이전 월"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <h3 className="text-xl font-bold">
+          <h3 className="min-w-[7rem] text-center text-lg font-bold text-gray-900">
             {format(currentDate, 'yyyy년 M월')}
           </h3>
           <button
             onClick={handleNextMonth}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100"
             aria-label="다음 월"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
+          <button
+            onClick={() => setCurrentDate(new Date())}
+            className="ml-2 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-50"
+          >
+            오늘
+          </button>
         </div>
 
         {/* 토글 모드 */}
-        <div className="flex gap-2">
-          {modes.map((m) => (
-            <button
-              key={m.id}
-              onClick={() => setMode(m.id)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                mode === m.id
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              {m.label}
-            </button>
-          ))}
-        </div>
+        <SegmentedControl
+          className="min-w-[300px]"
+          options={modes.map((m) => ({ value: m.id, label: m.label }))}
+          value={mode}
+          onChange={setMode}
+        />
       </div>
 
       {/* 캘린더 그리드 */}
@@ -239,10 +237,12 @@ const Calendar: React.FC = () => {
           <>
             {/* 요일 헤더 */}
             <div className="grid grid-cols-7 border border-gray-200 border-b-0">
-              {weekDays.map((day) => (
+              {weekDays.map((day, i) => (
                 <div
                   key={day}
-                  className="bg-gray-100 py-2 text-center text-sm font-medium text-gray-700 border-r border-gray-200 last:border-r-0"
+                  className={`border-r border-gray-200 bg-gray-50 py-2 text-center text-sm font-semibold last:border-r-0 ${
+                    i === 0 ? 'text-red-500' : i === 6 ? 'text-primary-500' : 'text-gray-600'
+                  }`}
                 >
                   {day}
                 </div>
@@ -254,25 +254,33 @@ const Calendar: React.FC = () => {
               {calendarDays.map((day: Date) => {
                 const isCurrentMonth = isSameMonth(day, currentDate);
                 const isTodayDate = isToday(day);
+                const dayOfWeek = day.getDay();
                 const items = getItemsForDate(day);
 
                 return (
                   <div
                     key={day.toISOString()}
-                    className={`
-                      bg-white min-h-[100px] p-2 relative border-r border-b border-gray-200
-                      ${!isCurrentMonth ? 'text-gray-400' : 'text-gray-900'}
-                      ${isTodayDate ? 'bg-blue-200' : ''}
-                    `}
+                    className={`relative min-h-[100px] border-r border-b border-gray-200 p-2 ${
+                      isTodayDate ? 'bg-primary-50' : 'bg-white'
+                    } ${!isCurrentMonth ? 'text-gray-400' : 'text-gray-700'}`}
                   >
                     {/* 날짜 표시 */}
-                    <div
-                      className={`
-                        text-sm font-medium mb-1
-                        ${isTodayDate ? 'text-blue-600' : ''}
-                      `}
-                    >
-                      {format(day, 'd')}
+                    <div className="mb-1">
+                      <span
+                        className={`inline-flex h-6 min-w-[1.5rem] items-center justify-center rounded-full px-1 text-sm font-semibold ${
+                          isTodayDate
+                            ? 'bg-primary-500 text-white'
+                            : !isCurrentMonth
+                            ? 'text-gray-300'
+                            : dayOfWeek === 0
+                            ? 'text-red-500'
+                            : dayOfWeek === 6
+                            ? 'text-primary-500'
+                            : 'text-gray-700'
+                        }`}
+                      >
+                        {format(day, 'd')}
+                      </span>
                     </div>
 
                     {/* 프로젝트/일정 영역 */}

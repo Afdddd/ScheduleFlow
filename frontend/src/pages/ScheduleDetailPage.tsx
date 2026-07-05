@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import DatePickerInput from '../components/ui/DatePickerInput';
 import { ko } from 'date-fns/locale';
 import { format } from 'date-fns';
 import Alert from '../components/Alert';
@@ -16,6 +17,8 @@ import {
 import { getAllProjects, getProjectDetail } from '../api/project';
 import { ProjectListResponse } from '../api/list';
 import { getAllUsers, UserListResponse } from '../api/user';
+import { useIsMobile } from '../hooks/useMediaQuery';
+import { useSmartBack } from '../hooks/useSmartBack';
 
 /**
  * 일정 상세 페이지
@@ -30,6 +33,8 @@ const ScheduleDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const isAdmin = user?.role === 'ADMIN';
+  const isMobile = useIsMobile();
+  const goBack = useSmartBack('/schedules');
 
   // 일정 데이터
   const [schedule, setSchedule] = useState<ScheduleDetailResponse | null>(null);
@@ -296,10 +301,91 @@ const ScheduleDetailPage: React.FC = () => {
         <Alert type="error" message={error || '일정을 찾을 수 없습니다.'} />
         <button
           onClick={() => navigate('/schedules')}
-          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+          className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
         >
           목록으로
         </button>
+      </div>
+    );
+  }
+
+  // ── 모바일 읽기 뷰 (편집은 아래 공용 폼 재사용) ──
+  if (isMobile && !isEditing) {
+    return (
+      <div className="min-h-full bg-gray-50 pb-10">
+        {/* 백바 */}
+        <div className="flex items-center gap-1 px-2.5 pb-3 pt-3">
+          <button
+            onClick={goBack}
+            aria-label="뒤로"
+            className="flex h-10 w-10 items-center justify-center rounded-xl text-gray-600 active:bg-gray-100"
+          >
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+              <path d="m15 18-6-6 6-6" />
+            </svg>
+          </button>
+          <h1 className="flex-1 text-center text-[17px] font-extrabold tracking-tight text-gray-900">일정 상세</h1>
+          <span className="w-10" />
+        </div>
+
+        <div className="px-[18px]">
+          {error && (
+            <Alert type="error" message={error} dismissible onClose={() => setError(null)} style={{ marginBottom: '1rem' }} />
+          )}
+
+          {/* 히어로 */}
+          <span className={`inline-block rounded-full px-2.5 py-1 text-[12.5px] font-bold ${getTypeColor(schedule.type)}`}>
+            {getTypeLabel(schedule.type)}
+          </span>
+          <h2 className="mt-2.5 text-[23px] font-extrabold leading-tight tracking-tight text-gray-900">{schedule.title}</h2>
+
+          {/* 정보 카드 */}
+          <div className="mt-4 rounded-2xl border border-gray-200 bg-white px-4 shadow-sm">
+            <InfoRow label="기간" value={`${schedule.startDate} ~ ${schedule.endDate}`} />
+            <InfoRow label="프로젝트" value={schedule.projectId ? projectName || '불러오는 중…' : '독립 일정'} />
+            <InfoRow label="타입" value={getTypeLabel(schedule.type)} last />
+          </div>
+
+          {/* 참여자 */}
+          <div className="mt-5 mb-1 px-0.5 text-[15px] font-extrabold text-gray-900">참여자</div>
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+            {schedule.members.length === 0 ? (
+              <div className="text-[14px] font-semibold text-gray-400">할당된 참여자가 없어요</div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {schedule.members.map((m) => (
+                  <div key={m.id} className="flex items-center gap-3">
+                    <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-primary-500 text-[14px] font-extrabold text-white">
+                      {m.name.charAt(0).toUpperCase()}
+                    </span>
+                    <div className="min-w-0">
+                      <div className="text-[15px] font-bold text-gray-900">{m.name}</div>
+                      {m.position && <div className="text-[12.5px] font-medium text-gray-500">{m.position}</div>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* 관리자 액션 */}
+          {isAdmin && (
+            <div className="mt-6 flex gap-2.5">
+              <button
+                onClick={handleEdit}
+                className="flex-1 rounded-2xl bg-primary-500 py-4 text-[16px] font-extrabold text-white shadow-sm active:scale-[0.99]"
+              >
+                수정
+              </button>
+              <button
+                onClick={handleDelete}
+                className="flex-1 rounded-2xl border border-red-200 bg-white py-4 text-[16px] font-extrabold text-red-500 active:scale-[0.99]"
+              >
+                삭제
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     );
   }
@@ -318,50 +404,33 @@ const ScheduleDetailPage: React.FC = () => {
             {getTypeLabel(schedule.type)}
           </span>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => navigate('/schedules')}
-            className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
-          >
-            목록으로
-          </button>
-          {isAdmin && (
-            <>
-              {!isEditing ? (
-                <>
-                  <button
-                    onClick={handleEdit}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                  >
-                    수정
-                  </button>
-                  <button
-                    onClick={handleDelete}
-                    className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-                  >
-                    삭제
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button
-                    onClick={handleCancel}
-                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-                  >
-                    취소
-                  </button>
-                  <button
-                    onClick={handleSave}
-                    disabled={loading}
-                    className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-                  >
-                    {loading ? '저장 중...' : '저장'}
-                  </button>
-                </>
-              )}
-            </>
-          )}
-        </div>
+        {/* 뷰 모드 액션은 상단, 편집 모드 액션(목록으로·취소·저장)은 페이지 맨 밑으로 */}
+        {!isEditing && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate('/schedules')}
+              className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+            >
+              목록으로
+            </button>
+            {isAdmin && (
+              <>
+                <button
+                  onClick={handleEdit}
+                  className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
+                >
+                  수정
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                >
+                  삭제
+                </button>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {error && (
@@ -375,7 +444,7 @@ const ScheduleDetailPage: React.FC = () => {
       )}
 
       {/* 기본 정보 섹션 */}
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
+      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm mb-6">
         <h2 className="text-xl font-bold mb-4">기본 정보</h2>
 
         <div className="space-y-4">
@@ -387,7 +456,7 @@ const ScheduleDetailPage: React.FC = () => {
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 placeholder="일정 제목을 입력하세요"
               />
             ) : (
@@ -402,7 +471,7 @@ const ScheduleDetailPage: React.FC = () => {
               <select
                 value={scheduleType}
                 onChange={(e) => setScheduleType(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="PROJECT">프로젝트 일정</option>
                 <option value="TEST_RUN">시운전</option>
@@ -428,6 +497,7 @@ const ScheduleDetailPage: React.FC = () => {
             <label className="block text-sm font-medium text-gray-700 mb-1">기간</label>
             {isEditing ? (
               <DatePicker
+                customInput={<DatePickerInput />}
                 selected={dateRange[0]}
                 onChange={handleDateRangeChange}
                 startDate={dateRange[0]}
@@ -435,7 +505,7 @@ const ScheduleDetailPage: React.FC = () => {
                 selectsRange
                 locale={ko as any}
                 dateFormat="yyyy-MM-dd"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 placeholderText="시작일 ~ 종료일을 선택하세요"
               />
             ) : (
@@ -452,7 +522,7 @@ const ScheduleDetailPage: React.FC = () => {
               <select
                 value={projectId || ''}
                 onChange={(e) => setProjectId(e.target.value ? Number(e.target.value) : null)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 disabled={loadingProjects}
               >
                 <option value="">프로젝트를 선택하지 않음 (독립 일정)</option>
@@ -472,7 +542,7 @@ const ScheduleDetailPage: React.FC = () => {
       </div>
 
       {/* 참여자 섹션 */}
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
+      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm mb-6">
         <h2 className="text-xl font-bold mb-4">참여자</h2>
 
         {isEditing ? (
@@ -495,9 +565,9 @@ const ScheduleDetailPage: React.FC = () => {
                     type="checkbox"
                     checked={selectedMemberIds.includes(user.id)}
                     onChange={() => handleMemberToggle(user.id)}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                   />
-                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                  <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
                     {user.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1">
@@ -518,7 +588,7 @@ const ScheduleDetailPage: React.FC = () => {
               <div className="space-y-2">
                 {schedule.members.map((member) => (
                   <div key={member.id} className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                    <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
                       {member.name.charAt(0).toUpperCase()}
                     </div>
                     <div>
@@ -534,9 +604,42 @@ const ScheduleDetailPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* 편집 모드 하단 액션: 목록으로 · 취소 · 저장 */}
+      {isEditing && (
+        <div className="mt-2 flex justify-end gap-3">
+          <button
+            onClick={() => navigate('/schedules')}
+            className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+          >
+            목록으로
+          </button>
+          <button
+            onClick={handleCancel}
+            className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            취소
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={loading}
+            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+          >
+            {loading ? '저장 중...' : '저장'}
+          </button>
+        </div>
+      )}
     </div>
   );
 };
+
+/** 모바일 상세 정보 행. */
+const InfoRow: React.FC<{ label: string; value: string; last?: boolean }> = ({ label, value, last }) => (
+  <div className={`flex items-center gap-3 py-3.5 ${last ? '' : 'border-b border-gray-100'}`}>
+    <span className="w-20 flex-none text-[13px] font-semibold text-gray-400">{label}</span>
+    <span className="min-w-0 flex-1 text-[15px] font-bold text-gray-900">{value}</span>
+  </div>
+);
 
 export default ScheduleDetailPage;
 
