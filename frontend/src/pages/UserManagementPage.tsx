@@ -1,168 +1,118 @@
 import React, { useState, useEffect } from 'react';
-import SearchBar from '../components/SearchBar';
-import Pagination from '../components/Pagination';
+import ListView, { ListColumn } from '../components/list/ListView';
+import Badge, { BadgeTone } from '../components/list/Badge';
+import { NameCell, Avatar, Sub, Muted, Num } from '../components/list/cells';
 import { getUserList, UserListResponse, PageResponse } from '../api/list';
 import MobileUserList from './MobileUserList';
 import { useIsMobile } from '../hooks/useMediaQuery';
 
 /**
- * 사원 관리 페이지 (ADMIN 권한 필요)
- * 
- * 기능:
- * 1. 사원 목록 조회 (검색, 페이징)
- * 2. 사원 상세 보기/수정 (추후 구현)
+ * 사원 관리 페이지 (ADMIN 전용) — 데스크톱은 공통 `ListView`(컬럼형), 모바일은 전용 화면.
  */
+
+const ROLE: Record<string, { label: string; tone: BadgeTone }> = {
+  ADMIN: { label: '관리자', tone: 'red' },
+  STAFF: { label: '일반', tone: 'blue' },
+};
+const roleOf = (r: string) => ROLE[r] ?? { label: r, tone: 'gray' as BadgeTone };
+
+// 아바타 배경 — 이름 첫 글자로 팔레트에서 안정적으로 선택(같은 사람은 항상 같은 색).
+const AVATAR_BG = ['bg-primary-500', 'bg-green-500', 'bg-purple-500', 'bg-amber-500', 'bg-red-500', 'bg-primary-600'];
+const avatarBg = (name: string) => AVATAR_BG[(name.charCodeAt(0) || 0) % AVATAR_BG.length];
+
 const UserManagementPage: React.FC = () => {
+  const isMobile = useIsMobile();
+
   const [data, setData] = useState<PageResponse<UserListResponse> | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [currentPage, setCurrentPage] = useState<number>(0);
-  const pageSize = 8;
+  const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(0);
+  const pageSize = 10;
 
   useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      try {
-        const result = await getUserList(searchQuery, currentPage, pageSize);
-        setData(result);
-      } catch (error) {
-        console.error('사원 목록 로딩 실패:', error);
-      } finally {
-        setLoading(false);
-      }
+    if (isMobile) return;
+    let alive = true;
+    setLoading(true);
+    getUserList(searchQuery, currentPage, pageSize)
+      .then((res) => alive && setData(res))
+      .catch((e) => console.error('사원 목록 로딩 실패:', e))
+      .finally(() => alive && setLoading(false));
+    return () => {
+      alive = false;
     };
+  }, [searchQuery, currentPage, isMobile]);
 
-    loadData();
-  }, [searchQuery, currentPage]);
+  if (isMobile) return <MobileUserList />;
 
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    setCurrentPage(0);
-  };
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-
-  const getRoleLabel = (role: string): string => {
-    switch (role) {
-      case 'ADMIN':
-        return '관리자';
-      case 'STAFF':
-        return '일반';
-      default:
-        return role;
-    }
-  };
-
-  const getRoleColor = (role: string): string => {
-    switch (role) {
-      case 'ADMIN':
-        return 'bg-red-100 text-red-800';
-      case 'STAFF':
-        return 'bg-blue-100 text-blue-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const isMobile = useIsMobile();
-  if (isMobile) {
-    return <MobileUserList />;
-  }
+  const columns: ListColumn<UserListResponse>[] = [
+    {
+      key: 'name',
+      header: '이름',
+      width: 'minmax(0,1.2fr)',
+      render: (u) => <NameCell lead={<Avatar text={u.name.charAt(0)} className={avatarBg(u.name)} />}>{u.name}</NameCell>,
+    },
+    {
+      key: 'username',
+      header: '사용자명',
+      width: 'minmax(0,1fr)',
+      render: (u) => <Muted>{u.username}</Muted>,
+    },
+    {
+      key: 'email',
+      header: '이메일',
+      width: 'minmax(0,1.4fr)',
+      render: (u) => <Sub>{u.email || '-'}</Sub>,
+    },
+    {
+      key: 'phone',
+      header: '전화번호',
+      width: '150px',
+      render: (u) => <Num>{u.phone}</Num>,
+    },
+    {
+      key: 'position',
+      header: '직책',
+      width: '128px',
+      render: (u) => <Muted>{u.position || '-'}</Muted>,
+    },
+    {
+      key: 'role',
+      header: '권한',
+      width: '116px',
+      render: (u) => {
+        const r = roleOf(u.role);
+        return <Badge label={r.label} tone={r.tone} dot={false} />;
+      },
+    },
+  ];
 
   return (
-    <div className="p-6">
-      <SearchBar
-        placeholder="사원 이름으로 검색"
-        onSearch={handleSearch}
-      />
-
-      {loading && (
-        <div className="text-center py-8 text-gray-500">로딩 중...</div>
-      )}
-
-      {!loading && data && (
-        <>
-          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    이름
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    사용자명
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    이메일
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    전화번호
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    직책
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    권한
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {data.content.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
-                      사원이 없습니다.
-                    </td>
-                  </tr>
-                ) : (
-                  data.content.map((user) => (
-                    <tr key={user.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm font-medium text-gray-900">
-                          {user.name}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {user.username}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {user.email || '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {user.phone}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {user.position || '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(
-                            user.role
-                          )}`}
-                        >
-                          {getRoleLabel(user.role)}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {data && (
-            <Pagination
-              currentPage={data.currentPage}
-              totalPages={data.totalPages}
-              pageSize={data.pageSize}
-              totalElements={data.totalElements}
-              onPageChange={handlePageChange}
-            />
-          )}
-        </>
-      )}
-    </div>
+    <ListView<UserListResponse>
+      columns={columns}
+      items={data?.content ?? []}
+      rowKey={(u) => u.id}
+      loading={loading}
+      searchPlaceholder="사원 이름으로 검색"
+      searchInitial={searchQuery}
+      onSearch={(q) => {
+        setSearchQuery(q);
+        setCurrentPage(0);
+      }}
+      totalLabel={data ? <><b className="font-extrabold text-gray-900">{data.totalElements}명</b> 사원</> : null}
+      empty={{
+        icon: (
+          <svg className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+            <path d="M17 20h5v-1a4 4 0 00-3-3.9M9 20H2v-1a6 6 0 0112 0v1zm3-12a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+        ),
+        title: searchQuery ? '검색 결과가 없어요' : '등록된 사원이 없어요',
+        description: searchQuery ? '다른 검색어로 찾아보세요.' : undefined,
+      }}
+      currentPage={data?.currentPage ?? 0}
+      totalPages={data?.totalPages ?? 0}
+      totalElements={data?.totalElements ?? 0}
+      onPageChange={setCurrentPage}
+    />
   );
 };
 

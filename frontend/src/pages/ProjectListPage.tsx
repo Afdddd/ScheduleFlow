@@ -1,195 +1,115 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import SearchBar from '../components/SearchBar';
-import Pagination from '../components/Pagination';
+import ListView, { ListColumn } from '../components/list/ListView';
+import Badge, { BadgeTone } from '../components/list/Badge';
+import { NameCell, Dot, Sub, Num } from '../components/list/cells';
 import MobileProjectList from './MobileProjectList';
 import { useIsMobile } from '../hooks/useMediaQuery';
 import { useAuthStore } from '../stores/authStore';
 import { getProjectList, ProjectListResponse, PageResponse } from '../api/list';
 
 /**
- * 프로젝트 목록 페이지
- * 
- * 기능:
- * 1. 프로젝트 목록 조회 (검색, 페이징)
- * 2. 프로젝트 클릭 시 상세 페이지로 이동
+ * 프로젝트 목록 페이지 — 데스크톱은 공통 `ListView`(컬럼형), 모바일은 전용 화면.
  */
+
+const STATUS: Record<string, { label: string; tone: BadgeTone }> = {
+  IN_PROGRESS: { label: '진행 중', tone: 'blue' },
+  ON_HOLD: { label: '보류', tone: 'amber' },
+  COMPLETE: { label: '완료', tone: 'green' },
+};
+const statusOf = (s: string) => STATUS[s] ?? { label: s, tone: 'gray' as BadgeTone };
+const fmtDate = (s: string) => s.replace(/-/g, '.');
+
 const ProjectListPage: React.FC = () => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
+  const isAdmin = useAuthStore((state) => state.user?.role === 'ADMIN');
+
   const [data, setData] = useState<PageResponse<ProjectListResponse> | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [currentPage, setCurrentPage] = useState<number>(0);
-  const pageSize = 8;
+  const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(0);
+  const pageSize = 10;
 
   useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      try {
-        const result = await getProjectList(searchQuery, currentPage, pageSize);
-        setData(result);
-      } catch (error) {
-        console.error('프로젝트 목록 로딩 실패:', error);
-      } finally {
-        setLoading(false);
-      }
+    if (isMobile) return;
+    let alive = true;
+    setLoading(true);
+    getProjectList(searchQuery, currentPage, pageSize)
+      .then((res) => alive && setData(res))
+      .catch((e) => console.error('프로젝트 목록 로딩 실패:', e))
+      .finally(() => alive && setLoading(false));
+    return () => {
+      alive = false;
     };
+  }, [searchQuery, currentPage, isMobile]);
 
-    loadData();
-  }, [searchQuery, currentPage]);
+  if (isMobile) return <MobileProjectList />;
 
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    setCurrentPage(0); // 검색 시 첫 페이지로 이동
-  };
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-
-  const handleRowClick = (projectId: number) => {
-    navigate(`/projects/${projectId}`);
-  };
-
-  const getStatusLabel = (status: string): string => {
-    switch (status) {
-      case 'IN_PROGRESS':
-        return '진행 중';
-      case 'ON_HOLD':
-        return '보류';
-      case 'COMPLETE':
-        return '완료';
-      default:
-        return status;
-    }
-  };
-
-  const getStatusColor = (status: string): string => {
-    switch (status) {
-      case 'IN_PROGRESS':
-        return 'bg-blue-100 text-blue-800';
-      case 'ON_HOLD':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'COMPLETE':
-        return 'bg-green-100 text-green-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const { user } = useAuthStore();
-  const isAdmin = user?.role === 'ADMIN';
-  const isMobile = useIsMobile();
-
-  if (isMobile) {
-    return <MobileProjectList />;
-  }
+  const columns: ListColumn<ProjectListResponse>[] = [
+    {
+      key: 'name',
+      header: '프로젝트',
+      width: 'minmax(0,2.2fr)',
+      render: (p) => <NameCell lead={<Dot color={p.colorCode} />}>{p.name}</NameCell>,
+    },
+    {
+      key: 'client',
+      header: '거래처',
+      width: 'minmax(0,1.2fr)',
+      render: (p) => <Sub>{p.clientName}</Sub>,
+    },
+    {
+      key: 'period',
+      header: '기간',
+      width: '210px',
+      render: (p) => (
+        <Num>
+          {fmtDate(p.startDate)} ~ {fmtDate(p.endDate)}
+        </Num>
+      ),
+    },
+    {
+      key: 'status',
+      header: '상태',
+      width: '128px',
+      render: (p) => {
+        const s = statusOf(p.status);
+        return <Badge label={s.label} tone={s.tone} />;
+      },
+    },
+  ];
 
   return (
-    <div className="p-6">
-      <div className="mb-6 flex items-center gap-3">
-        <div className="flex-1">
-          <SearchBar
-            className=""
-            placeholder="프로젝트 이름으로 검색"
-            onSearch={handleSearch}
-          />
-        </div>
-        {isAdmin && (
-          <button
-            onClick={() => navigate('/projects/new')}
-            className="flex-none whitespace-nowrap rounded-lg bg-primary-500 px-4 py-2 text-white transition-colors hover:bg-primary-600"
-          >
-            등록
-          </button>
-        )}
-      </div>
-
-      {loading && (
-        <div className="text-center py-8 text-gray-500">로딩 중...</div>
-      )}
-
-      {!loading && data && (
-        <>
-          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    프로젝트명
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    거래처
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    상태
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    기간
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {data.content.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="px-6 py-4 text-center text-gray-500">
-                      프로젝트가 없습니다.
-                    </td>
-                  </tr>
-                ) : (
-                  data.content.map((project) => (
-                    <tr
-                      key={project.id}
-                      onClick={() => handleRowClick(project.id)}
-                      className="hover:bg-gray-50 cursor-pointer transition-colors"
-                    >
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          {project.colorCode && (
-                            <div
-                              className="w-3 h-3 rounded-full mr-2"
-                              style={{ backgroundColor: project.colorCode }}
-                            />
-                          )}
-                          <span className="text-sm font-medium text-gray-900">
-                            {project.name}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {project.clientName}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
-                            project.status
-                          )}`}
-                        >
-                          {getStatusLabel(project.status)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {project.startDate} ~ {project.endDate}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {data && (
-            <Pagination
-              currentPage={data.currentPage}
-              totalPages={data.totalPages}
-              pageSize={data.pageSize}
-              totalElements={data.totalElements}
-              onPageChange={handlePageChange}
-            />
-          )}
-        </>
-      )}
-    </div>
+    <ListView<ProjectListResponse>
+      columns={columns}
+      items={data?.content ?? []}
+      rowKey={(p) => p.id}
+      loading={loading}
+      onRowClick={(p) => navigate(`/projects/${p.id}`)}
+      searchPlaceholder="프로젝트명 · 거래처로 검색"
+      searchInitial={searchQuery}
+      onSearch={(q) => {
+        setSearchQuery(q);
+        setCurrentPage(0);
+      }}
+      createButton={isAdmin ? { label: '새 프로젝트', onClick: () => navigate('/projects/new') } : undefined}
+      totalLabel={data ? <><b className="font-extrabold text-gray-900">{data.totalElements}개</b> 프로젝트</> : null}
+      empty={{
+        icon: (
+          <svg className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+            <path d="M9 12h6m-6 4h6M7 3h6l6 6v10a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z" />
+          </svg>
+        ),
+        title: searchQuery ? '검색 결과가 없어요' : '아직 프로젝트가 없어요',
+        description: searchQuery ? '다른 검색어로 찾아보세요.' : '첫 프로젝트를 등록해 일정과 파일을 한곳에서 관리해 보세요.',
+        action: isAdmin && !searchQuery ? { label: '새 프로젝트', onClick: () => navigate('/projects/new') } : undefined,
+      }}
+      currentPage={data?.currentPage ?? 0}
+      totalPages={data?.totalPages ?? 0}
+      totalElements={data?.totalElements ?? 0}
+      onPageChange={setCurrentPage}
+    />
   );
 };
 
