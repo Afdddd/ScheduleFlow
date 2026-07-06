@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useIsMobile } from '../hooks/useMediaQuery';
 import { useSmartBack } from '../hooks/useSmartBack';
+import { useScrollLock } from '../hooks/useScrollLock';
 import Alert from '../components/Alert';
 import { useAuthStore } from '../stores/authStore';
 import {
@@ -19,17 +20,16 @@ import {
   PartnerContactUpdateRequest,
 } from '../api/partner';
 
+const AVATAR_COLORS = ['#0B4EC4', '#1B9E5A', '#8B5CF6', '#C6771A', '#E5484D', '#0EA5E9'];
+const inputCls =
+  'h-[42px] w-full rounded-xl border border-gray-300 bg-white px-3.5 text-[14px] font-medium text-gray-900 placeholder:text-gray-400 focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-100';
+const labelCls = 'mb-1.5 block text-[12.5px] font-bold text-gray-500';
+
 /**
  * 거래처 상세 페이지
  *
- * 기능:
- * 1. 거래처 상세 정보 조회
- * 2. 거래처 수정 (ADMIN 권한)
- * 3. 거래처 삭제 (ADMIN 권한)
- * 4. 거래처 직원 목록 조회
- * 5. 거래처 직원 추가 (ADMIN 권한)
- * 6. 거래처 직원 수정 (ADMIN 권한)
- * 7. 거래처 직원 삭제 (ADMIN 권한)
+ * 기능: 조회 / 수정·삭제(ADMIN) / 직원 목록·추가·수정·삭제(ADMIN)
+ * 데스크톱: 좌측 정보 + 우측 고정 요약/액션 레일 / 모바일: 전용 읽기 뷰
  */
 const PartnerDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -116,7 +116,6 @@ const PartnerDetailPage: React.FC = () => {
   const handleCancel = () => {
     setIsEditing(false);
     setError(null);
-    // 원본 데이터로 복원
     if (partner) {
       setCompanyName(partner.companyName || '');
       setMainPhone(partner.mainPhone || '');
@@ -128,10 +127,8 @@ const PartnerDetailPage: React.FC = () => {
   // 거래처 수정 저장
   const handleSave = async () => {
     if (!id || !partner) return;
-
     setError(null);
 
-    // 검증
     if (!companyName.trim()) {
       setError('회사명을 입력해주세요.');
       return;
@@ -165,9 +162,7 @@ const PartnerDetailPage: React.FC = () => {
   const handleDelete = async () => {
     if (!id) return;
 
-    const confirmed = window.confirm(
-      '정말로 이 거래처를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.'
-    );
+    const confirmed = window.confirm('정말로 이 거래처를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.');
     if (!confirmed) return;
 
     setLoading(true);
@@ -189,13 +184,7 @@ const PartnerDetailPage: React.FC = () => {
   const handleOpenContactForm = () => {
     setShowContactForm(true);
     setEditingContactId(null);
-    setNewContact({
-      name: '',
-      position: '',
-      department: '',
-      phone: '',
-      email: '',
-    });
+    setNewContact({ name: '', position: '', department: '', phone: '', email: '' });
     setError(null);
   };
 
@@ -217,23 +206,15 @@ const PartnerDetailPage: React.FC = () => {
   const handleCancelContactForm = () => {
     setShowContactForm(false);
     setEditingContactId(null);
-    setNewContact({
-      name: '',
-      position: '',
-      department: '',
-      phone: '',
-      email: '',
-    });
+    setNewContact({ name: '', position: '', department: '', phone: '', email: '' });
     setError(null);
   };
 
   // 직원 추가/수정
   const handleSaveContact = async () => {
     if (!id) return;
-
     setError(null);
 
-    // 검증
     if (!newContact.name?.trim()) {
       setError('이름을 입력해주세요.');
       return;
@@ -245,7 +226,6 @@ const PartnerDetailPage: React.FC = () => {
       const partnerId = parseInt(id, 10);
 
       if (editingContactId) {
-        // 수정
         const updateRequest: PartnerContactUpdateRequest = {
           id: editingContactId,
           name: newContact.name.trim(),
@@ -258,7 +238,6 @@ const PartnerDetailPage: React.FC = () => {
         const updatedContact = await updatePartnerContact(partnerId, updateRequest);
         setContacts(contacts.map((c) => (c.id === editingContactId ? updatedContact : c)));
       } else {
-        // 추가
         const createRequest: PartnerContactCreateRequest = {
           name: newContact.name.trim(),
           position: newContact.position?.trim() || null,
@@ -302,10 +281,12 @@ const PartnerDetailPage: React.FC = () => {
     }
   };
 
+  useScrollLock(showContactForm);
+
   if (loading && !partner) {
     return (
       <div className="p-6">
-        <div className="text-center py-8 text-gray-500">로딩 중...</div>
+        <div className="py-8 text-center text-gray-500">로딩 중...</div>
       </div>
     );
   }
@@ -316,7 +297,7 @@ const PartnerDetailPage: React.FC = () => {
         <Alert type="error" message={error || '거래처를 찾을 수 없습니다.'} />
         <button
           onClick={() => navigate('/partners')}
-          className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors mt-4"
+          className="mt-4 rounded-lg bg-primary-500 px-4 py-2 text-white transition-colors hover:bg-primary-600"
         >
           목록으로
         </button>
@@ -401,230 +382,258 @@ const PartnerDetailPage: React.FC = () => {
     );
   }
 
+  // ── 데스크톱 뷰 (+ 모바일 편집) ──
+  const previewName = isEditing ? companyName : partner.companyName;
+  const previewPhone = isEditing ? mainPhone : partner.mainPhone;
+  const previewAddress = isEditing ? address : partner.address;
+
   return (
-    <div className="p-6">
-      {/* 헤더 */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">{partner.companyName}</h1>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => navigate('/partners')}
-            className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
-          >
-            목록으로
-          </button>
+    <div className="mx-auto max-w-[1080px] px-5 py-6 sm:px-6">
+      <button
+        onClick={() => navigate('/partners')}
+        className="mb-4 inline-flex items-center gap-1.5 text-[13px] font-bold text-gray-500 transition-colors hover:text-gray-800"
+      >
+        <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+          <path d="M15 18l-6-6 6-6" />
+        </svg>
+        거래처 목록으로
+      </button>
+      <div className="mb-5 flex items-center gap-2.5">
+        <h1 className="text-[22px] font-extrabold tracking-tight text-gray-900">{partner.companyName}</h1>
+        {isEditing && <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-[11.5px] font-bold text-amber-700">편집 중</span>}
+      </div>
+
+      {error && <Alert type="error" message={error} dismissible onClose={() => setError(null)} style={{ marginBottom: '1.25rem' }} />}
+
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start lg:gap-5">
+        {/* 좌: 정보 */}
+        <div className="min-w-0 space-y-4 lg:space-y-5">
+          {/* 기본 정보 */}
+          <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+            <h2 className="mb-5 text-[15.5px] font-extrabold tracking-tight text-gray-900">기본 정보</h2>
+            {isEditing ? (
+              <div className="space-y-4">
+                <div>
+                  <label className={labelCls}>
+                    회사명 <span className="text-red-500">*</span>
+                  </label>
+                  <input type="text" value={companyName} onChange={(e) => setCompanyName(e.target.value)} className={inputCls} placeholder="회사명을 입력하세요" />
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className={labelCls}>대표 전화번호</label>
+                    <input type="tel" value={mainPhone} onChange={(e) => setMainPhone(e.target.value)} className={inputCls} placeholder="02-000-0000" />
+                  </div>
+                  <div>
+                    <label className={labelCls}>주소</label>
+                    <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} className={inputCls} placeholder="주소를 입력하세요" />
+                  </div>
+                </div>
+                <div>
+                  <label className={labelCls}>설명</label>
+                  <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className={`${inputCls} h-auto py-2.5 leading-relaxed`} placeholder="거래처에 대한 설명을 입력하세요" />
+                </div>
+              </div>
+            ) : (
+              <dl className="divide-y divide-gray-100">
+                <DRow label="대표 전화" value={partner.mainPhone || '-'} mono />
+                <DRow label="주소" value={partner.address || '-'} />
+                <DRow label="설명" value={partner.description || '-'} preLine />
+              </dl>
+            )}
+          </section>
+
+          {/* 거래처 직원 */}
+          <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+            <div className="mb-4 flex items-center gap-2.5">
+              <h2 className="text-[15.5px] font-extrabold tracking-tight text-gray-900">거래처 직원</h2>
+              {contacts.length > 0 && (
+                <span className="inline-grid h-5 min-w-[20px] place-items-center rounded-full bg-primary-50 px-1.5 text-[11.5px] font-extrabold text-primary-600">{contacts.length}</span>
+              )}
+              <div className="flex-1" />
+              {isAdmin && isEditing && (
+                <button
+                  type="button"
+                  onClick={handleOpenContactForm}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3.5 py-2 text-[13px] font-bold text-white shadow-sm shadow-primary-500/25 transition-colors hover:bg-primary-600"
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg>
+                  직원 추가
+                </button>
+              )}
+            </div>
+
+            {contacts.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-gray-300 py-8 text-center text-[13px] font-semibold text-gray-400">
+                등록된 직원이 없어요.
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                {contacts.map((contact, i) => (
+                  <div key={contact.id} className="flex items-center gap-3 rounded-xl border border-gray-200 px-3.5 py-3">
+                    <span
+                      className="flex h-9 w-9 flex-none items-center justify-center rounded-full text-[13px] font-bold text-white"
+                      style={{ backgroundColor: AVATAR_COLORS[i % AVATAR_COLORS.length] }}
+                    >
+                      {contact.name.charAt(0)}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="truncate text-[14px] font-extrabold text-gray-900">{contact.name}</span>
+                        {contact.position && <span className="flex-none rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-bold text-gray-600">{contact.position}</span>}
+                      </div>
+                      <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[12.5px] font-semibold text-gray-500">
+                        {contact.department && <span>{contact.department}</span>}
+                        {contact.phone && <span className="tabular-nums">{contact.phone}</span>}
+                        {contact.email && <span className="truncate">{contact.email}</span>}
+                      </div>
+                    </div>
+                    {isAdmin && isEditing && (
+                      <div className="flex flex-none items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleEditContact(contact)}
+                          aria-label="직원 수정"
+                          className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-primary-600"
+                        >
+                          <svg className="h-[17px] w-[17px]" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteContact(contact.id)}
+                          aria-label="직원 삭제"
+                          className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500"
+                        >
+                          <svg className="h-[17px] w-[17px]" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" /></svg>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
+
+        {/* 우: 요약 + 액션 레일 */}
+        <div className="mt-4 space-y-3.5 lg:sticky lg:top-4 lg:mt-0">
+          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <div className="px-[18px] pt-3.5 text-[11.5px] font-extrabold tracking-wide text-gray-400">거래처</div>
+            <div className="flex items-center gap-2.5 border-b border-gray-200 px-[18px] pb-3.5 pt-1.5">
+              <span className="flex h-8 w-8 flex-none items-center justify-center rounded-lg bg-primary-50 text-[13px] font-extrabold text-primary-600">
+                {previewName?.charAt(0) || '거'}
+              </span>
+              <span className="truncate text-[15px] font-extrabold tracking-tight text-gray-900">{previewName || '거래처명'}</span>
+            </div>
+            <div className="flex items-center justify-between gap-3 border-b border-gray-200 px-[18px] py-2.5">
+              <span className="text-[12.5px] font-bold text-gray-400">대표 전화</span>
+              <span className="truncate text-[13px] font-bold text-gray-800 tabular-nums">{previewPhone || '—'}</span>
+            </div>
+            <div className="flex items-center justify-between gap-3 border-b border-gray-200 px-[18px] py-2.5">
+              <span className="flex-none text-[12.5px] font-bold text-gray-400">주소</span>
+              <span className="truncate text-[13px] font-bold text-gray-800">{previewAddress || '—'}</span>
+            </div>
+            <div className="flex items-center justify-between gap-3 px-[18px] py-2.5">
+              <span className="text-[12.5px] font-bold text-gray-400">직원</span>
+              <span className="text-[13px] font-bold text-gray-800 tabular-nums">{contacts.length}명</span>
+            </div>
+          </div>
+
           {isAdmin && (
-            <>
-              {!isEditing ? (
+            <div className="space-y-2.5">
+              {isEditing ? (
                 <>
                   <button
-                    onClick={handleEdit}
-                    className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
+                    type="button"
+                    onClick={handleSave}
+                    disabled={loading}
+                    className="flex h-11 w-full items-center justify-center rounded-xl bg-primary-500 text-[14.5px] font-extrabold text-white shadow-md shadow-primary-500/30 transition-colors hover:bg-primary-600 disabled:cursor-not-allowed disabled:bg-gray-400"
                   >
-                    수정
+                    {loading ? '저장 중…' : '저장'}
                   </button>
                   <button
-                    onClick={handleDelete}
-                    className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                    type="button"
+                    onClick={handleCancel}
+                    className="flex h-11 w-full items-center justify-center rounded-xl border border-gray-300 bg-white text-[14px] font-bold text-gray-600 transition-colors hover:bg-gray-50"
                   >
-                    삭제
+                    취소
                   </button>
                 </>
               ) : (
                 <>
                   <button
-                    onClick={handleCancel}
-                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                    type="button"
+                    onClick={handleEdit}
+                    className="flex h-11 w-full items-center justify-center rounded-xl bg-primary-500 text-[14.5px] font-extrabold text-white shadow-md shadow-primary-500/30 transition-colors hover:bg-primary-600"
                   >
-                    취소
+                    수정
                   </button>
                   <button
-                    onClick={handleSave}
-                    disabled={loading}
-                    className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    type="button"
+                    onClick={handleDelete}
+                    className="flex h-11 w-full items-center justify-center rounded-xl border border-red-200 bg-white text-[14px] font-bold text-red-500 transition-colors hover:bg-red-50"
                   >
-                    {loading ? '저장 중...' : '저장'}
+                    삭제
                   </button>
                 </>
               )}
-            </>
-          )}
-        </div>
-      </div>
-
-      {error && (
-        <Alert
-          type="error"
-          message={error}
-          dismissible
-          onClose={() => setError(null)}
-          style={{ marginBottom: '1.5rem' }}
-        />
-      )}
-
-      {/* 기본 정보 섹션 */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm mb-6">
-        <h2 className="text-xl font-bold mb-4">기본 정보</h2>
-
-        <div className="space-y-4">
-          {/* 회사명 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">회사명</label>
-            {isEditing ? (
-              <input
-                type="text"
-                value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="회사명을 입력하세요"
-              />
-            ) : (
-              <div className="px-4 py-2 text-gray-900">{partner.companyName}</div>
-            )}
-          </div>
-
-          {/* 대표 전화번호 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">대표 전화번호</label>
-            {isEditing ? (
-              <input
-                type="tel"
-                value={mainPhone}
-                onChange={(e) => setMainPhone(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="대표 전화번호를 입력하세요"
-              />
-            ) : (
-              <div className="px-4 py-2 text-gray-900">{partner.mainPhone || '-'}</div>
-            )}
-          </div>
-
-          {/* 주소 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">주소</label>
-            {isEditing ? (
-              <input
-                type="text"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="주소를 입력하세요"
-              />
-            ) : (
-              <div className="px-4 py-2 text-gray-900">{partner.address || '-'}</div>
-            )}
-          </div>
-
-          {/* 설명 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">설명</label>
-            {isEditing ? (
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={3}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="거래처에 대한 설명을 입력하세요"
-              />
-            ) : (
-              <div className="px-4 py-2 text-gray-900 whitespace-pre-wrap">
-                {partner.description || '-'}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* 거래처 직원 섹션 */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold">거래처 직원 ({contacts.length}명)</h2>
-          {isAdmin && !showContactForm && (
-            <button
-              onClick={handleOpenContactForm}
-              className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
-            >
-              직원 추가
-            </button>
-          )}
-        </div>
-
-        {/* 직원 추가/편집 폼 */}
-        {showContactForm && (
-          <div className="border border-gray-200 rounded-lg p-4 mb-4 bg-gray-50">
-            <h3 className="text-lg font-semibold mb-4">
-              {editingContactId ? '직원 수정' : '직원 추가'}
-            </h3>
-
-            <div className="space-y-4">
-              {/* 이름 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  이름 <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={newContact.name || ''}
-                  onChange={(e) => setNewContact({ ...newContact, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  placeholder="이름을 입력하세요"
-                />
-              </div>
-
-              {/* 직급 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">직급</label>
-                <input
-                  type="text"
-                  value={newContact.position || ''}
-                  onChange={(e) => setNewContact({ ...newContact, position: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  placeholder="직급을 입력하세요"
-                />
-              </div>
-
-              {/* 부서 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">부서</label>
-                <input
-                  type="text"
-                  value={newContact.department || ''}
-                  onChange={(e) => setNewContact({ ...newContact, department: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  placeholder="부서를 입력하세요"
-                />
-              </div>
-
-              {/* 전화번호 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">전화번호</label>
-                <input
-                  type="tel"
-                  value={newContact.phone || ''}
-                  onChange={(e) => setNewContact({ ...newContact, phone: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  placeholder="전화번호를 입력하세요"
-                />
-              </div>
-
-              {/* 이메일 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">이메일</label>
-                <input
-                  type="email"
-                  value={newContact.email || ''}
-                  onChange={(e) => setNewContact({ ...newContact, email: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  placeholder="이메일을 입력하세요"
-                />
-              </div>
             </div>
+          )}
+        </div>
+      </div>
 
-            <div className="flex justify-end gap-3 mt-6">
+      {/* 직원 추가/수정 — 모달(데스크톱 중앙) / 하단 시트(모바일) */}
+      {showContactForm && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-6">
+          <div className="absolute inset-0 bg-gray-900/50" onClick={handleCancelContactForm} />
+          <div className="relative flex max-h-[88vh] w-full flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:max-w-[540px] sm:rounded-2xl">
+            <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
+              <h3 className="text-[17px] font-extrabold text-gray-900">{editingContactId ? '직원 수정' : '직원 추가'}</h3>
               <button
                 type="button"
                 onClick={handleCancelContactForm}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                aria-label="닫기"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+              >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" viewBox="0 0 24 24"><path d="M6 6l12 12M6 18 18 6" /></svg>
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-4 overflow-y-auto overscroll-contain px-5 py-5">
+              <div>
+                <label className={labelCls}>
+                  이름 <span className="text-red-500">*</span>
+                </label>
+                <input type="text" value={newContact.name || ''} onChange={(e) => setNewContact({ ...newContact, name: e.target.value })} className={inputCls} placeholder="이름을 입력하세요" />
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className={labelCls}>직급</label>
+                  <input type="text" value={newContact.position || ''} onChange={(e) => setNewContact({ ...newContact, position: e.target.value })} className={inputCls} placeholder="예: 구매 부장" />
+                </div>
+                <div>
+                  <label className={labelCls}>부서</label>
+                  <input type="text" value={newContact.department || ''} onChange={(e) => setNewContact({ ...newContact, department: e.target.value })} className={inputCls} placeholder="예: 구매팀" />
+                </div>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className={labelCls}>전화번호</label>
+                  <input type="tel" value={newContact.phone || ''} onChange={(e) => setNewContact({ ...newContact, phone: e.target.value })} className={inputCls} placeholder="010-0000-0000" />
+                </div>
+                <div>
+                  <label className={labelCls}>이메일</label>
+                  <input type="email" value={newContact.email || ''} onChange={(e) => setNewContact({ ...newContact, email: e.target.value })} className={inputCls} placeholder="name@company.co.kr" />
+                </div>
+              </div>
+              {error && <p className="text-[13px] font-semibold text-red-500">{error}</p>}
+            </div>
+
+            <div className="flex justify-end gap-2.5 border-t border-gray-200 bg-gray-50 px-5 py-4">
+              <button
+                type="button"
+                onClick={handleCancelContactForm}
+                className="flex h-[42px] items-center rounded-xl border border-gray-300 bg-white px-4 text-[14px] font-bold text-gray-600 hover:bg-gray-100"
               >
                 취소
               </button>
@@ -632,67 +641,14 @@ const PartnerDetailPage: React.FC = () => {
                 type="button"
                 onClick={handleSaveContact}
                 disabled={loadingContact}
-                className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                className="flex h-[42px] items-center rounded-xl bg-primary-500 px-5 text-[14px] font-extrabold text-white shadow-sm shadow-primary-500/30 hover:bg-primary-600 disabled:cursor-not-allowed disabled:bg-gray-400"
               >
-                {loadingContact ? '저장 중...' : editingContactId ? '수정' : '추가'}
+                {loadingContact ? '저장 중…' : editingContactId ? '수정' : '추가'}
               </button>
             </div>
           </div>
-        )}
-
-        {/* 직원 목록 */}
-        {contacts.length === 0 ? (
-          <div className="text-sm text-gray-500 p-4 border border-gray-200 rounded-lg text-center">
-            등록된 직원이 없습니다.
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {contacts.map((contact) => (
-              <div
-                key={contact.id}
-                className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-              >
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 bg-primary-500 rounded-full flex items-center justify-center text-white font-medium">
-                    {contact.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-medium text-gray-900">{contact.name}</div>
-                    {contact.position && (
-                      <div className="text-sm text-gray-500">{contact.position}</div>
-                    )}
-                  </div>
-                </div>
-                {contact.department && (
-                  <div className="text-sm text-gray-600 mb-1">부서: {contact.department}</div>
-                )}
-                {contact.phone && (
-                  <div className="text-sm text-gray-600 mb-1">전화: {contact.phone}</div>
-                )}
-                {contact.email && (
-                  <div className="text-sm text-gray-600 mb-3">이메일: {contact.email}</div>
-                )}
-                {isAdmin && (
-                  <div className="flex gap-2 mt-3">
-                    <button
-                      onClick={() => handleEditContact(contact)}
-                      className="flex-1 px-3 py-1.5 text-sm bg-primary-500 text-white rounded hover:bg-primary-600 transition-colors"
-                    >
-                      수정
-                    </button>
-                    <button
-                      onClick={() => handleDeleteContact(contact.id)}
-                      className="flex-1 px-3 py-1.5 text-sm bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
-                    >
-                      삭제
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -705,5 +661,12 @@ const PRow: React.FC<{ label: string; value: string; last?: boolean }> = ({ labe
   </div>
 );
 
-export default PartnerDetailPage;
+/** 데스크톱 읽기 모드 정보 행. */
+const DRow: React.FC<{ label: string; value: string; mono?: boolean; preLine?: boolean }> = ({ label, value, mono, preLine }) => (
+  <div className="flex gap-4 py-3">
+    <span className="w-20 flex-none text-[13px] font-bold text-gray-400">{label}</span>
+    <span className={`min-w-0 flex-1 text-[14px] font-semibold text-gray-800 ${mono ? 'tabular-nums' : ''} ${preLine ? 'whitespace-pre-wrap' : ''}`}>{value}</span>
+  </div>
+);
 
+export default PartnerDetailPage;

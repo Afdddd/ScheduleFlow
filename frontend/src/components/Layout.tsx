@@ -46,7 +46,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       {/* 오른쪽 컬럼: 컨텍스트 바 + 콘텐츠 */}
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header />
-        <main className="flex-1 overflow-y-auto bg-gray-50">{children}</main>
+        <main className="flex-1 overflow-y-auto bg-gray-50 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{children}</main>
       </div>
     </div>
   );
