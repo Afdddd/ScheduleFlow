@@ -24,11 +24,10 @@ import {
  * 대시보드 페이지 (홈, 라우트 "/")
  *
  * - 모바일: 전용 홈 화면(`MobileHomePage`).
- * - 데스크톱: **관리자 상황판** — 한 화면(무스크롤)에 아래 4블록:
- *   1. 날짜 + 빠른 액션(새 일정 / 새 프로젝트)
- *   2. 요약 KPI 4칸
- *   3. 캘린더(프로젝트 범례·필터) + 선택한 날 일정
- *   4. 오늘 팀원 현황
+ * - 데스크톱: **관리자 상황판** — 한 화면(무스크롤)에 아래 3블록:
+ *   1. 요약 KPI 4칸(컴팩트)
+ *   2. 캘린더(프로젝트 범례·필터) + 선택한 날 일정
+ *   3. 오늘 팀원 현황
  *
  * 데이터: `getProjectsByPeriodWithSchedules`(캘린더·일정·KPI) + `getTodayTeamTasks`(팀원).
  * "점=일정, 색=프로젝트" 규칙이라 일정은 프로젝트 색을 물려받는다.
@@ -134,51 +133,20 @@ const DesktopDashboard: React.FC = () => {
     [schedules, selectedDate]
   );
 
-  const dateLabel = `${format(today, 'yyyy년 M월 d일')} (${WEEKDAYS[today.getDay()]})`;
   const selLabel = `${format(selectedDate, 'M월 d일')} (${WEEKDAYS[selectedDate.getDay()]})`;
 
   return (
-    <div className="flex h-full flex-col gap-3.5 overflow-hidden p-5">
-      {/* 1. 날짜 + 빠른 액션 */}
-      <div className="flex flex-none items-center justify-between">
-        <p className="text-sm font-bold text-gray-500">{dateLabel}</p>
-        <div className="flex gap-2.5">
-          <button
-            type="button"
-            onClick={() => navigate('/schedules/new')}
-            className="inline-flex items-center gap-2 rounded-xl bg-primary-500 px-5 py-2.5 text-sm font-extrabold text-white shadow-md shadow-primary-500/25 transition-colors hover:bg-primary-600"
-          >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-              <rect x="3" y="4.5" width="18" height="16.5" rx="3" />
-              <path d="M16 2.5v4M8 2.5v4M3 10h18M12 13.5v4M10 15.5h4" />
-            </svg>
-            새 일정
-          </button>
-          {isAdmin && (
-            <button
-              type="button"
-              onClick={() => navigate('/projects/new')}
-              className="inline-flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-5 py-2.5 text-sm font-extrabold text-primary-600 transition-colors hover:border-primary-400"
-            >
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                <path d="M12 5v14M5 12h14" />
-              </svg>
-              새 프로젝트
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* 2. KPI */}
-      <div className="grid flex-none grid-cols-4 gap-3">
+    <div className="mx-auto flex h-full w-full max-w-[1200px] flex-col gap-4 overflow-hidden px-8 py-6">
+      {/* KPI 요약 (컴팩트) */}
+      <div className="grid flex-none grid-cols-4 gap-3.5">
         <Kpi n={todayCount} label="오늘 일정" icon="calendar" />
         <Kpi n={weekCount} label="이번 주 일정" icon="week" />
         <Kpi n={inProgressCount} label="진행 중 프로젝트" icon="folder" />
         <Kpi n={workingCount} suffix="명" label="오늘 근무 팀원" icon="users" />
       </div>
 
-      {/* 3~4. 캘린더 + 선택일 일정 + 팀원 */}
-      <div className="grid min-h-0 flex-1 gap-3.5" style={{ gridTemplateColumns: '1.6fr 1fr' }}>
+      {/* 캘린더 + 선택일 일정 + 팀원 */}
+      <div className="grid min-h-0 flex-1 gap-5" style={{ gridTemplateColumns: '1.65fr 1fr' }}>
         <DashboardCalendar
           viewDate={viewDate}
           selectedDate={selectedDate}
@@ -192,9 +160,9 @@ const DesktopDashboard: React.FC = () => {
           }}
         />
 
-        <div className="flex min-h-0 flex-col gap-3.5">
+        <div className="flex min-h-0 flex-col gap-5">
           {/* 이 날 일정 */}
-          <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl bg-white shadow">
             <div className="flex flex-none items-baseline justify-between px-5 pb-1.5 pt-4">
               <h2 className="text-base font-extrabold tracking-tight text-gray-900">
                 {selLabel} <span className="text-gray-400">· {selectedSchedules.length}건</span>
@@ -212,7 +180,7 @@ const DesktopDashboard: React.FC = () => {
                     <button
                       key={s.id}
                       onClick={() => navigate(`/schedules/${s.id}`)}
-                      className="flex items-stretch overflow-hidden rounded-xl border border-gray-200 bg-white text-left transition-colors hover:border-gray-300"
+                      className="flex items-stretch overflow-hidden rounded-xl border border-gray-100 bg-white text-left transition-colors hover:border-gray-300"
                     >
                       <span className="w-1.5 flex-none" style={{ backgroundColor: s.color }} />
                       <span className="min-w-0 flex-1 px-3.5 py-3">
@@ -232,7 +200,7 @@ const DesktopDashboard: React.FC = () => {
           </section>
 
           {/* 오늘 팀원 현황 */}
-          <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl bg-white shadow">
             <div className="flex flex-none items-baseline justify-between px-5 pb-1.5 pt-4">
               <h2 className="text-base font-extrabold tracking-tight text-gray-900">오늘 팀원 현황</h2>
               {isAdmin && (
@@ -299,23 +267,26 @@ const KPI_ICONS: Record<string, React.ReactNode> = {
   users: <path d="M17 20h5v-1a4 4 0 00-3-3.9M9 20H2v-1a6 6 0 0112 0v1zm3-12a4 4 0 11-8 0 4 4 0 018 0z" />,
 };
 
+/** 컴팩트 KPI — 아이콘 · 숫자 · 라벨을 가로 한 줄로. */
 const Kpi: React.FC<{ n: number; label: string; icon: string; suffix?: string }> = ({
   n,
   label,
   icon,
   suffix,
 }) => (
-  <div className="relative rounded-2xl border border-gray-200 bg-white px-4 py-3.5 shadow-sm">
-    <span className="absolute right-3.5 top-3.5 flex h-8 w-8 items-center justify-center rounded-lg bg-primary-50 text-primary-600">
+  <div className="flex items-center gap-3 rounded-xl bg-white px-4 py-3 shadow">
+    <span className="flex h-9 w-9 flex-none items-center justify-center rounded-[10px] bg-primary-50 text-primary-600">
       <svg className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
         {KPI_ICONS[icon]}
       </svg>
     </span>
-    <div className="text-[26px] font-extrabold leading-none tracking-tight text-gray-900 tabular-nums">
-      {n}
-      {suffix && <span className="text-base text-gray-400">{suffix}</span>}
+    <div className="flex min-w-0 flex-col gap-0.5">
+      <div className="text-xl font-extrabold leading-none tracking-tight text-gray-900 tabular-nums">
+        {n}
+        {suffix && <span className="ml-0.5 text-sm font-bold text-gray-400">{suffix}</span>}
+      </div>
+      <div className="text-xs font-bold text-gray-500">{label}</div>
     </div>
-    <div className="mt-2 text-[13px] font-bold text-gray-500">{label}</div>
   </div>
 );
 

@@ -92,7 +92,7 @@ const DashboardCalendar: React.FC<DashboardCalendarProps> = ({
   };
 
   return (
-    <section className="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+    <section className="flex h-full flex-col overflow-hidden rounded-xl bg-white shadow">
       {/* 상단: 월 + 네비 */}
       <div className="flex flex-none items-center gap-3 px-5 pb-2 pt-4">
         <span className="text-lg font-extrabold tracking-tight tabular-nums text-gray-900">
@@ -184,35 +184,42 @@ const DashboardCalendar: React.FC<DashboardCalendarProps> = ({
         </div>
       </div>
 
-      {/* 범례 (이번 달 프로젝트 + 필터) */}
-      <div className="flex flex-none flex-wrap items-center gap-2 border-t border-gray-200 px-4 py-3">
-        <span className="mr-0.5 text-xs font-extrabold text-gray-400">이번 달 프로젝트</span>
-        {projects.length === 0 && (
+      {/*
+        범례 (이번 달 프로젝트 + 필터)
+        - 프로젝트 수와 무관하게 **한 줄 고정 높이** + 가로 스크롤.
+          (flex-wrap이면 프로젝트가 많을수록 여러 줄로 쌓여 위 캘린더 높이를 달마다 밀어냄)
+      */}
+      <div className="flex flex-none items-center gap-2 border-t border-gray-200 px-4 py-3">
+        <span className="flex-none text-xs font-extrabold text-gray-400">이번 달 프로젝트</span>
+        {projects.length === 0 ? (
           <span className="text-xs font-semibold text-gray-400">이 달에 진행 중인 프로젝트가 없어요</span>
+        ) : (
+          <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {projects.map((p) => {
+              const color = p.project.colorCode || DEFAULT_COLOR;
+              const active = activeProjectId === p.project.id;
+              return (
+                <button
+                  key={p.project.id}
+                  type="button"
+                  onClick={() => toggleFilter(p.project.id)}
+                  style={{ color }}
+                  className={`inline-flex flex-none items-center gap-2 whitespace-nowrap rounded-full border bg-white py-1 pl-2.5 pr-3 text-xs font-extrabold transition-shadow ${
+                    active
+                      ? 'border-current shadow-[inset_0_0_0_1px_currentColor]'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <span className="h-2.5 w-2.5 flex-none rounded-full" style={{ backgroundColor: color }} />
+                  <span className="text-gray-900">{p.project.name}</span>
+                  <span className="font-bold text-gray-400 tabular-nums">
+                    {format(toDay(p.project.startDate), 'M.d')}–{format(toDay(p.project.endDate), 'M.d')}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         )}
-        {projects.map((p) => {
-          const color = p.project.colorCode || DEFAULT_COLOR;
-          const active = activeProjectId === p.project.id;
-          return (
-            <button
-              key={p.project.id}
-              type="button"
-              onClick={() => toggleFilter(p.project.id)}
-              style={{ color }}
-              className={`inline-flex items-center gap-2 rounded-full border bg-white py-1 pl-2.5 pr-3 text-xs font-extrabold transition-shadow ${
-                active
-                  ? 'border-current shadow-[inset_0_0_0_1px_currentColor]'
-                  : 'border-gray-200 hover:border-gray-300'
-              }`}
-            >
-              <span className="h-2.5 w-2.5 flex-none rounded-full" style={{ backgroundColor: color }} />
-              <span className="text-gray-900">{p.project.name}</span>
-              <span className="font-bold text-gray-400 tabular-nums">
-                {format(toDay(p.project.startDate), 'M.d')}–{format(toDay(p.project.endDate), 'M.d')}
-              </span>
-            </button>
-          );
-        })}
       </div>
     </section>
   );
