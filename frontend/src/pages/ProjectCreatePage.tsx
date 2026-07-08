@@ -391,7 +391,7 @@ const ProjectCreatePage: React.FC = () => {
   const pickRow = (user: UserListResponse, i: number, checked: boolean, onToggle: () => void) => (
     <label
       key={user.id}
-      className={`flex cursor-pointer items-center gap-3 border-b border-gray-100 px-3 py-2.5 last:border-b-0 ${
+      className={`relative flex cursor-pointer items-center gap-3 border-b border-gray-100 px-3 py-2.5 last:border-b-0 ${
         checked ? 'bg-primary-50/60' : 'hover:bg-gray-50'
       }`}
     >
@@ -582,7 +582,7 @@ const ProjectCreatePage: React.FC = () => {
                       return (
                         <label
                           key={contact.id}
-                          className={`flex cursor-pointer items-center gap-3 border-b border-gray-100 px-3 py-2.5 last:border-b-0 ${
+                          className={`relative flex cursor-pointer items-center gap-3 border-b border-gray-100 px-3 py-2.5 last:border-b-0 ${
                             on ? 'bg-primary-50/60' : 'hover:bg-gray-50'
                           }`}
                         >
