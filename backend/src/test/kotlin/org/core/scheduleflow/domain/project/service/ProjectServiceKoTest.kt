@@ -285,7 +285,8 @@ class ProjectServiceKoTest() : BehaviorSpec({
             status = ProjectStatus.IN_PROGRESS,
             startDate = LocalDate.now(),
             endDate = LocalDate.now().plusDays(30),
-            colorCode = "#FF0000"
+            colorCode = "#FF0000",
+            scheduleCount = 3L,
         )
         val project2 = ProjectListResponse(
             id = 2L,
@@ -294,7 +295,9 @@ class ProjectServiceKoTest() : BehaviorSpec({
             status = ProjectStatus.IN_PROGRESS,
             startDate = LocalDate.now(),
             endDate = LocalDate.now().plusDays(30),
-            colorCode = "#FF0000")
+            colorCode = "#FF0000",
+            scheduleCount = 0L,
+        )
 
         When("키워드가 null 이거나 빈 공백이면") {
             val emptyKeyword = ""

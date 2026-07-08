@@ -24,6 +24,7 @@ export interface ProjectListResponse {
   startDate: string;
   endDate: string;
   colorCode: string | null;
+  scheduleCount: number;
 }
 
 /**
