@@ -21,7 +21,7 @@ const TYPE_LABEL: Record<string, string> = {
 };
 const typeLabelOf = (t: string) => TYPE_LABEL[t] ?? t;
 const fmtDate = (s: string) => s.replace(/-/g, '.');
-// memberNames는 백엔드 목록 응답에 아직 없어 undefined일 수 있다(이슈 #101에서 채울 예정). 방어적으로 처리.
+// 참여자 없음/undefined 방어 처리.
 const membersLabel = (names?: string[]) =>
   !names || names.length === 0 ? '-' : names.length === 1 ? names[0] : `${names[0]} 외 ${names.length - 1}`;
 
