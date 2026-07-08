@@ -70,6 +70,12 @@ const ProjectListPage: React.FC = () => {
       ),
     },
     {
+      key: 'scheduleCount',
+      header: '일정',
+      width: '96px',
+      render: (p) => <Num>{p.scheduleCount}건</Num>,
+    },
+    {
       key: 'status',
       header: '상태',
       width: '128px',

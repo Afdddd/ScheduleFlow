@@ -10,5 +10,6 @@ data class ProjectListResponse(
     val status: ProjectStatus?,
     val startDate: LocalDate,
     val endDate: LocalDate,
-    val colorCode: String?
+    val colorCode: String?,
+    val scheduleCount: Long,
 )

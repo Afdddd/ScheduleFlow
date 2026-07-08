@@ -21,35 +21,43 @@ interface ProjectRepository: JpaRepository<Project, Long> {
     )
     fun findByIdWithClient(projectId: Long): Project?
 
-    @Query("""
+    @Query(
+        value = """
         select new org.core.scheduleflow.domain.project.dto.ProjectListResponse(
-            p.id, 
-            p.name, 
+            p.id,
+            p.name,
             c.companyName,
             p.status,
-            p.startDate, 
-            p.endDate, 
-            p.colorCode
+            p.startDate,
+            p.endDate,
+            p.colorCode,
+            (select count(s) from Schedule s where s.project = p)
         )
         from Project p
         join p.client c
-    """)
+        """,
+        countQuery = "select count(p) from Project p join p.client c"
+    )
     fun findProjectList(pageable: Pageable): Page<ProjectListResponse>
 
-    @Query("""
+    @Query(
+        value = """
         select new org.core.scheduleflow.domain.project.dto.ProjectListResponse(
-            p.id, 
-            p.name, 
+            p.id,
+            p.name,
             c.companyName,
             p.status,
-            p.startDate, 
-            p.endDate, 
-            p.colorCode
+            p.startDate,
+            p.endDate,
+            p.colorCode,
+            (select count(s) from Schedule s where s.project = p)
         )
         from Project p
         join p.client c
         where p.name like %:keyword%
-    """)
+        """,
+        countQuery = "select count(p) from Project p join p.client c where p.name like %:keyword%"
+    )
     fun searchProjectList(keyword: String, pageable: Pageable): Page<ProjectListResponse>
 
     @Query("""
