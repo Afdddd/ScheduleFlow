@@ -3,7 +3,6 @@ package org.core.scheduleflow.domain.schedule.repository
 import org.core.scheduleflow.domain.project.entity.Project
 import org.core.scheduleflow.domain.schedule.dto.MyTaskResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleCalenderResponse
-import org.core.scheduleflow.domain.schedule.dto.ScheduleListResponse
 import org.core.scheduleflow.domain.schedule.entity.Schedule
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -35,37 +34,27 @@ interface ScheduleRepository: JpaRepository<Schedule, Long> {
     )
     fun findMyTasksByUserIdAndPeriod(userId: Long, startDate: LocalDate, endDate: LocalDate): List<MyTaskResponse>
 
-    @Query("""
-        select new org.core.scheduleflow.domain.schedule.dto.ScheduleListResponse(
-            s.id,
-            s.title,
-            p.name,
-            s.type,
-            s.startDate,
-            s.endDate
-        )
-         from Schedule s
-         left join s.project p
+    @Query(
+        value = """
+         select s from Schedule s
+         left join fetch s.project p
          order by s.startDate
-    """)
-    fun findScheduleList(pageable: Pageable): Page<ScheduleListResponse>
+        """,
+        countQuery = "select count(s) from Schedule s"
+    )
+    fun findScheduleList(pageable: Pageable): Page<Schedule>
 
 
-    @Query("""
-        select new org.core.scheduleflow.domain.schedule.dto.ScheduleListResponse(
-            s.id,
-            s.title,
-            p.name,
-            s.type,
-            s.startDate,
-            s.endDate
-        )
-         from Schedule s
-         left join s.project p
+    @Query(
+        value = """
+         select s from Schedule s
+         left join fetch s.project p
          where s.title like %:keyword%
          order by s.startDate
-    """)
-    fun searchScheduleList(keyword: String, pageable: Pageable): Page<ScheduleListResponse>
+        """,
+        countQuery = "select count(s) from Schedule s where s.title like %:keyword%"
+    )
+    fun searchScheduleList(keyword: String, pageable: Pageable): Page<Schedule>
 
     @Query("""
         select s from Schedule s
