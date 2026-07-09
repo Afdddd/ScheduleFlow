@@ -5,3 +5,22 @@ aws:
   region: ap-northeast-2
   s3:
     bucket: scheduleflow-files-606531136262
+
+spring:
+  jpa:
+    # 운영 스키마는 앱이 자동 변형하지 못하게 검증만. 엔티티↔실DB 불일치 시 기동 실패(fail-fast).
+    # (스키마는 기존 MySQL → RDS 이관(mysqldump)으로 준비됨)
+    hibernate:
+      ddl-auto: validate
+    # 운영 로그에 SQL 노출/부하 방지
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+
+# 운영에서는 API 문서 표면을 노출하지 않는다(엔드포인트 자체 비활성).
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
