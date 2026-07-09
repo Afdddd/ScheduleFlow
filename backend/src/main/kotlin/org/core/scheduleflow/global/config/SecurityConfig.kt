@@ -40,7 +40,8 @@ class SecurityConfig {
             .authorizeHttpRequests { auth ->
                 auth
                     .requestMatchers(
-                        "/auth/**",
+                        // 로그인만 공개. 회원가입(/auth/sign-up)은 ADMIN 전용이라 인증 대상에 남긴다.
+                        "/auth/sign-in",
                         "/swagger-ui/**",
                         "/swagger-ui.html",
                         "/v3/api-docs/**",

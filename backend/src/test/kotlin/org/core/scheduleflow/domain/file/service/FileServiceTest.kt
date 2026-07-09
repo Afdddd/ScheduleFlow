@@ -28,6 +28,9 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+import org.springframework.security.core.authority.SimpleGrantedAuthority
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.multipart.MultipartFile
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -41,6 +44,14 @@ class FileServiceTest : BehaviorSpec({
     val userRepository = mockk<UserRepository>()
     val fileStorage = mockk<FileStorage>()
     val fileService = FileService(fileRepository, projectRepository, userRepository, fileStorage)
+
+    // 다운로드 인가는 SecurityContext의 권한을 본다. 테스트에서 로그인 역할을 심어준다.
+    fun authenticateAs(role: String) {
+        SecurityContextHolder.getContext().authentication =
+            UsernamePasswordAuthenticationToken("user", null, listOf(SimpleGrantedAuthority("ROLE_$role")))
+    }
+
+    afterTest { SecurityContextHolder.clearContext() }
 
     fun createPartner(id: Long = 1L): Partner {
         return Partner(id = id, companyName = "발주처", mainPhone = "02-1234-5678")
@@ -198,10 +209,10 @@ class FileServiceTest : BehaviorSpec({
         }
     }
 
-    Given("파일 다운로드 요청이 주어지고") {
+    Given("ADMIN이 문서 파일 다운로드를 요청하고") {
         val project = createProject()
         val user = createUser()
-        val fileEntity = createFileEntity(1L, project, user, originalFileName = "download.txt")
+        val fileEntity = createFileEntity(1L, project, user, originalFileName = "download.txt", category = FileCategory.QUOTATION)
 
         every { fileRepository.findByIdOrNull(1L) } returns fileEntity
 
@@ -211,6 +222,7 @@ class FileServiceTest : BehaviorSpec({
         every { resource.isReadable } returns true
 
         When("파일을 다운로드하면") {
+            authenticateAs("ADMIN")
             val responseEntity = fileService.downloadFile(1L)
 
             Then("파일 리소스가 반환된다") {
@@ -218,6 +230,49 @@ class FileServiceTest : BehaviorSpec({
                 responseEntity.headers.getFirst(HttpHeaders.CONTENT_DISPOSITION)!! shouldContain "download.txt"
                 verify(exactly = 1) { fileStorage.loadAsResource(fileEntity.filePath) }
                 verify(exactly = 1) { fileRepository.findByIdOrNull(1L) }
+            }
+        }
+    }
+
+    Given("STAFF가 문서(비-PHOTO) 파일 다운로드를 요청하고") {
+        val project = createProject()
+        val user = createUser()
+        val fileEntity = createFileEntity(1L, project, user, category = FileCategory.QUOTATION)
+
+        every { fileRepository.findByIdOrNull(1L) } returns fileEntity
+
+        When("파일을 다운로드하면") {
+            authenticateAs("STAFF")
+
+            Then("PERMISSION_DENIED 예외가 발생하고 스토리지에 접근하지 않는다") {
+                val exception = shouldThrow<CustomException> {
+                    fileService.downloadFile(1L)
+                }
+                exception.errorCode shouldBe ErrorCode.PERMISSION_DENIED
+                verify(exactly = 0) { fileStorage.loadAsResource(any()) }
+            }
+        }
+    }
+
+    Given("STAFF가 현장 사진(PHOTO) 파일 다운로드를 요청하고") {
+        val project = createProject()
+        val user = createUser()
+        val fileEntity = createFileEntity(1L, project, user, originalFileName = "site.jpg", category = FileCategory.PHOTO)
+
+        every { fileRepository.findByIdOrNull(1L) } returns fileEntity
+
+        val resource = mockk<Resource>()
+        every { fileStorage.loadAsResource(fileEntity.filePath) } returns resource
+        every { resource.exists() } returns true
+        every { resource.isReadable } returns true
+
+        When("파일을 다운로드하면") {
+            authenticateAs("STAFF")
+            val responseEntity = fileService.downloadFile(1L)
+
+            Then("PHOTO는 권한 제한 없이 반환된다") {
+                responseEntity.statusCode shouldBe HttpStatus.OK
+                verify(exactly = 1) { fileStorage.loadAsResource(fileEntity.filePath) }
             }
         }
     }
