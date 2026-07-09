@@ -6,6 +6,7 @@ import org.core.scheduleflow.domain.user.dto.UserSignUpRequest
 import org.core.scheduleflow.domain.user.service.AuthService
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -17,6 +18,8 @@ class AuthController(
     private val authService: AuthService
 ) {
 
+    // 내부 ~10명 고정 사용자 도구. 셀프 가입은 막고 ADMIN이 계정을 발급한다.
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/sign-up")
     fun signUp(@RequestBody @Valid request: UserSignUpRequest): ResponseEntity<Long> {
         return ResponseEntity.status(HttpStatus.CREATED).body(

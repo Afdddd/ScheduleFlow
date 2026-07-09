@@ -26,6 +26,8 @@ class UserController(
     private val service: UserService
 ) {
 
+    // 전 직원 목록(username·email·phone·role 포함)은 계정/멤버 편성용 관리자 기능. ADMIN만 조회.
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     fun getUsers(
         @RequestParam keyword: String?,
