@@ -76,17 +76,11 @@ class FileService(
         return FileResponse.fromEntity(uploadFile)
     }
 
-    @Transactional
     fun downloadFile(fileId: Long): ResponseEntity<Resource> {
-        val file = fileRepository.findByIdOrNull(fileId) ?: throw CustomException(ErrorCode.NOT_FOUND_FILE)
-
-        // 문서 카테고리(견적서·회로도·PLC 등)는 ADMIN만 다운로드할 수 있다.
-        // 현장 사진(PHOTO)만 인증된 사용자 누구나 받을 수 있다 — 업로드 권한 분기와 대칭.
-        // (미적용 시 저권한 사용자가 fileId 순회로 기밀문서를 전량 내려받는 IDOR 발생)
+        val file = getFileById(fileId)
         if (file.category != FileCategory.PHOTO && !hasAdminRole()) {
             throw CustomException(ErrorCode.PERMISSION_DENIED)
         }
-
         val resource = fileStorage.loadAsResource(file.filePath)
         if(!resource.exists() || !resource.isReadable) throw CustomException(ErrorCode.NOT_FOUND_FILE)
         val encodedFileName = UriUtils.encode(file.originalFileName, StandardCharsets.UTF_8)
@@ -98,13 +92,16 @@ class FileService(
             .body(resource)
     }
 
+    fun getFileById(fileId: Long): FileEntity =
+        fileRepository.findByIdOrNull(fileId) ?: throw CustomException(ErrorCode.NOT_FOUND_FILE)
+
     private fun hasAdminRole(): Boolean =
         SecurityContextHolder.getContext().authentication?.authorities
             ?.any { it.authority == "ROLE_ADMIN" } ?: false
 
     @Transactional
     fun deleteFile(fileId: Long) {
-        val file = fileRepository.findByIdOrNull(fileId) ?: throw CustomException(ErrorCode.NOT_FOUND_FILE)
+        val file = getFileById(fileId)
         fileStorage.delete(file.filePath)
         fileRepository.delete(file)
     }
