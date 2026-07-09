@@ -309,9 +309,9 @@ const ProjectCreatePage: React.FC = () => {
         await createSchedule(scheduleRequest);
       }
 
-      for (const file of files) {
-        await uploadFile(projectId, file.file, file.category);
-      }
+      await Promise.all(
+        files.map((file) => uploadFile(projectId, file.file, file.category))
+      );
 
       navigate(`/projects/${projectId}`);
     } catch (error: any) {
