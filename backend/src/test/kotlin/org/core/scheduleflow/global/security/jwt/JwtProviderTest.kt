@@ -1,12 +1,10 @@
 package org.core.scheduleflow.global.security.jwt
 
 import org.core.scheduleflow.domain.user.constant.Role
-import org.core.scheduleflow.global.exception.CustomException
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 
 class JwtProviderTest {
 
@@ -34,13 +32,16 @@ class JwtProviderTest {
     }
 
     @Test
-    @DisplayName("위조된 토큰은 조회 실패")
+    @DisplayName("위조된 토큰은 검증 실패(Result.failure)를 반환한다")
     fun validateToken_invalidToken_fail() {
         // given
         val invalidToken = "this.is.invalid.token"
 
-        //when & then
-        assertThrows<CustomException> { jwtProvider.validateToken(invalidToken) }
+        // when
+        val result = jwtProvider.validateToken(invalidToken)
+
+        // then: 예외를 던지지 않고 실패 Result를 돌려준다(필터가 삼키고 401로 이어짐)
+        assertTrue(result.isFailure)
     }
 
 }

@@ -4,8 +4,6 @@ import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.io.Decoders
 import io.jsonwebtoken.security.Keys
 import org.core.scheduleflow.domain.user.constant.Role
-import org.core.scheduleflow.global.exception.CustomException
-import org.core.scheduleflow.global.exception.ErrorCode
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
@@ -55,14 +53,18 @@ class JwtProvider(
     }
 
     fun validateToken(token: String): Result<Boolean> {
-        try{
+        // 검증 실패 시 예외를 던지지 않고 Result.failure로 돌려준다.
+        // 필터가 이 실패를 삼키고 인증을 세팅하지 않으면, 이후 authenticated() 단계에서
+        // JwtAuthenticationEntryPoint가 일관된 401을 반환한다(→ 프론트 로그인 리다이렉트).
+        // (예외를 던지면 필터 밖으로 새어나가 @RestControllerAdvice가 못 잡고 500성 응답이 됨)
+        return try {
             Jwts.parser()
                 .verifyWith(getSecurityKey(secretKey))
                 .build()
                 .parseSignedClaims(token)
-            return Result.success(true)
-        }catch (e: Exception){
-            throw CustomException(ErrorCode.INVALID_ACCESS_TOKEN)
+            Result.success(true)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 
