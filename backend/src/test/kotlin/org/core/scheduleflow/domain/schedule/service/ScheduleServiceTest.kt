@@ -15,9 +15,10 @@ import org.core.scheduleflow.domain.schedule.constant.ScheduleType
 import org.core.scheduleflow.domain.schedule.dto.MyTaskResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleCalenderResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleCreateRequest
-import org.core.scheduleflow.domain.schedule.dto.ScheduleListResponse
 import org.core.scheduleflow.domain.schedule.dto.ScheduleUpdateRequest
 import org.core.scheduleflow.domain.schedule.entity.Schedule
+import org.core.scheduleflow.domain.schedule.entity.ScheduleMember
+import org.core.scheduleflow.domain.schedule.repository.ScheduleMemberRepository
 import org.core.scheduleflow.domain.schedule.repository.ScheduleRepository
 import org.core.scheduleflow.domain.user.entity.User
 import org.core.scheduleflow.domain.user.repository.UserRepository
@@ -33,9 +34,10 @@ class ScheduleServiceTest : BehaviorSpec({
     isolationMode = IsolationMode.InstancePerLeaf
 
     val scheduleRepository = mockk<ScheduleRepository>()
+    val scheduleMemberRepository = mockk<ScheduleMemberRepository>()
     val projectRepository = mockk<ProjectRepository>()
     val userRepository = mockk<UserRepository>()
-    val service = ScheduleService(scheduleRepository, projectRepository, userRepository)
+    val service = ScheduleService(scheduleRepository, scheduleMemberRepository, projectRepository, userRepository)
 
     val mockClient = mockk<Partner>()
 
@@ -137,21 +139,21 @@ class ScheduleServiceTest : BehaviorSpec({
 
     Given("일정 목록 조회 요청이 주어질 때") {
         val pageable = PageRequest.of(0, 10)
-        val schedule1 = ScheduleListResponse(
+        val schedule1 = Schedule(
             id = 1L,
             title = "test-schedule-1",
-            projectName = mockProject.name,
             type = ScheduleType.MEETING,
             startDate = LocalDate.now(),
-            endDate = LocalDate.now().plusDays(10)
+            endDate = LocalDate.now().plusDays(10),
+            project = mockProject,
         )
-        val schedule2 = ScheduleListResponse(
+        val schedule2 = Schedule(
             id = 2L,
             title = "test-schedule-2",
-            projectName = mockProject.name,
             type = ScheduleType.TEST_RUN,
             startDate = LocalDate.now(),
-            endDate = LocalDate.now().plusDays(10)
+            endDate = LocalDate.now().plusDays(10),
+            project = mockProject,
         )
 
         When("키워드가 null 이거나 빈 공백이면") {
@@ -159,12 +161,22 @@ class ScheduleServiceTest : BehaviorSpec({
             val expectedPage = PageImpl(listOf(schedule1, schedule2), pageable, 2)
 
             every { scheduleRepository.findScheduleList(pageable) } returns expectedPage
+            every { scheduleMemberRepository.findByScheduleIdIn(listOf(1L, 2L)) } returns
+                listOf(ScheduleMember(schedule = schedule1, user = mockUser))
 
             val result = service.findSchedules(emptyKeyword, pageable)
 
-            Then("전체 목록을 조회하는 findScheduleList가 호출된다") {
+            Then("전체 목록을 조회하는 findScheduleList가 호출되고 참여자가 채워진다") {
                 result.content.size shouldBe 2
-                result.content shouldContainAll listOf(schedule1, schedule2)
+                result.content.map { it.id } shouldContainAll listOf(1L, 2L)
+
+                val dto1 = result.content.first { it.id == 1L }
+                dto1.title shouldBe "test-schedule-1"
+                dto1.projectName shouldBe mockProject.name
+                dto1.memberNames shouldBe listOf(mockUser.name)
+
+                val dto2 = result.content.first { it.id == 2L }
+                dto2.memberNames shouldBe emptyList()
 
                 verify(exactly = 1) { scheduleRepository.findScheduleList(any()) }
                 verify(exactly = 0) { scheduleRepository.searchScheduleList(any(), any()) }
@@ -176,12 +188,15 @@ class ScheduleServiceTest : BehaviorSpec({
             val expectedPage = PageImpl(listOf(schedule1), pageable, 1)
 
             every { scheduleRepository.searchScheduleList(keyword, pageable) } returns expectedPage
+            every { scheduleMemberRepository.findByScheduleIdIn(listOf(1L)) } returns
+                listOf(ScheduleMember(schedule = schedule1, user = mockUser))
 
             val result = service.findSchedules(keyword, pageable)
 
             Then("검색 전용 메서드인 searchScheduleList 호출된다") {
                 result.content.size shouldBe 1
                 result.content[0].title shouldBe "test-schedule-1"
+                result.content[0].memberNames shouldBe listOf(mockUser.name)
 
                 verify(exactly = 1) { scheduleRepository.searchScheduleList(eq(keyword), any()) }
                 verify(exactly = 0) { scheduleRepository.findScheduleList(any()) }

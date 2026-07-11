@@ -16,6 +16,7 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.HttpHeaders
 import org.springframework.http.ResponseEntity
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
@@ -75,9 +76,11 @@ class FileService(
         return FileResponse.fromEntity(uploadFile)
     }
 
-    @Transactional
     fun downloadFile(fileId: Long): ResponseEntity<Resource> {
-        val file = fileRepository.findByIdOrNull(fileId) ?: throw CustomException(ErrorCode.NOT_FOUND_FILE)
+        val file = getFileById(fileId)
+        if (file.category != FileCategory.PHOTO && !hasAdminRole()) {
+            throw CustomException(ErrorCode.PERMISSION_DENIED)
+        }
         val resource = fileStorage.loadAsResource(file.filePath)
         if(!resource.exists() || !resource.isReadable) throw CustomException(ErrorCode.NOT_FOUND_FILE)
         val encodedFileName = UriUtils.encode(file.originalFileName, StandardCharsets.UTF_8)
@@ -89,9 +92,16 @@ class FileService(
             .body(resource)
     }
 
+    fun getFileById(fileId: Long): FileEntity =
+        fileRepository.findByIdOrNull(fileId) ?: throw CustomException(ErrorCode.NOT_FOUND_FILE)
+
+    private fun hasAdminRole(): Boolean =
+        SecurityContextHolder.getContext().authentication?.authorities
+            ?.any { it.authority == "ROLE_ADMIN" } ?: false
+
     @Transactional
     fun deleteFile(fileId: Long) {
-        val file = fileRepository.findByIdOrNull(fileId) ?: throw CustomException(ErrorCode.NOT_FOUND_FILE)
+        val file = getFileById(fileId)
         fileStorage.delete(file.filePath)
         fileRepository.delete(file)
     }

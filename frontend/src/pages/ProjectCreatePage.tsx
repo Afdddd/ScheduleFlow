@@ -3,13 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { ko } from 'date-fns/locale';
-import ColorPicker from '../components/ColorPicker';
 import Alert from '../components/Alert';
 import { createProject, ProjectCreateRequest } from '../api/project';
 import { getAllPartners, getPartnerContacts, PartnerContactResponse } from '../api/partner';
 import { getAllUsers, UserListResponse } from '../api/user';
 import { createSchedule, ScheduleCreateRequest } from '../api/schedule';
-import { uploadFile, FileUploadResponse } from '../api/file';
+import { uploadFile } from '../api/file';
 import { PartnerListResponse } from '../api/list';
 import { format } from 'date-fns';
 import { useScrollLock } from '../hooks/useScrollLock';
@@ -36,16 +35,38 @@ interface LocalFile {
   category: string;
 }
 
+// 대표 색상 프리셋(스와치) — 목록 색 점/캘린더와 톤 통일.
+const COLOR_SWATCHES = ['#0B4EC4', '#12805C', '#6B46C1', '#A3610C', '#C1352F', '#0EA5E9'];
+const STATUS_OPTS = [
+  { v: 'IN_PROGRESS', l: '진행 중' },
+  { v: 'ON_HOLD', l: '보류' },
+  { v: 'COMPLETE', l: '완료' },
+];
+const TYPE_OPTS = [
+  { v: 'PROJECT', l: '프로젝트' },
+  { v: 'TEST_RUN', l: '시운전' },
+  { v: 'WIRING', l: '전기 배선' },
+  { v: 'DESIGN', l: '설계' },
+  { v: 'MEETING', l: '미팅' },
+];
+const STATUS_CHIP: Record<string, { label: string; cls: string }> = {
+  IN_PROGRESS: { label: '진행 중', cls: 'text-primary-600 bg-primary-50' },
+  ON_HOLD: { label: '보류', cls: 'text-amber-700 bg-amber-50' },
+  COMPLETE: { label: '완료', cls: 'text-green-700 bg-green-50' },
+};
+
+// 공통 폼 클래스
+const inputCls =
+  'h-[42px] w-full rounded-xl border border-gray-300 bg-white px-3.5 text-[14px] font-medium text-gray-900 placeholder:text-gray-400 focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-100';
+const labelCls = 'mb-1.5 block text-[12.5px] font-bold text-gray-500';
+const segWrap = 'inline-flex flex-wrap gap-1 rounded-xl border border-gray-200 bg-gray-50 p-1';
+const segCls = (on: boolean) =>
+  on
+    ? 'rounded-lg bg-primary-500 px-3.5 py-2 text-[13px] font-bold text-white shadow-sm'
+    : 'rounded-lg px-3.5 py-2 text-[13px] font-bold text-gray-500 transition-colors hover:text-gray-700';
+
 /**
- * 프로젝트 등록 페이지
- * 
- * 기능:
- * 1. 프로젝트 기본 정보 입력
- * 2. 거래처/연락처 선택
- * 3. 멤버 선택
- * 4. 일정 등록
- * 5. 파일 업로드
- * 6. 프로젝트 생성
+ * 프로젝트 등록 페이지 (데스크톱: 좌측 입력 + 우측 고정 요약 레일 / 모바일: 단일단 + 하단 시트)
  */
 const ProjectCreatePage: React.FC = () => {
   const navigate = useNavigate();
@@ -58,7 +79,7 @@ const ProjectCreatePage: React.FC = () => {
   const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([null, null]);
   const [status, setStatus] = useState<string>('IN_PROGRESS');
   const [description, setDescription] = useState<string>('');
-  const [colorCode, setColorCode] = useState<string>('#3b82f6');
+  const [colorCode, setColorCode] = useState<string>('#0B4EC4');
 
   // 거래처/연락처
   const [partners, setPartners] = useState<PartnerListResponse[]>([]);
@@ -72,10 +93,7 @@ const ProjectCreatePage: React.FC = () => {
   // 일정
   const [schedules, setSchedules] = useState<LocalSchedule[]>([]);
   const [showScheduleForm, setShowScheduleForm] = useState<boolean>(false);
-  const [scheduleDateRange, setScheduleDateRange] = useState<[Date | null, Date | null]>([
-    null,
-    null,
-  ]);
+  const [scheduleDateRange, setScheduleDateRange] = useState<[Date | null, Date | null]>([null, null]);
   const [newSchedule, setNewSchedule] = useState<Partial<LocalSchedule>>({
     title: '',
     startDate: new Date(),
@@ -108,7 +126,6 @@ const ProjectCreatePage: React.FC = () => {
         setLoadingPartners(false);
       }
     };
-
     loadPartners();
   }, []);
 
@@ -125,7 +142,6 @@ const ProjectCreatePage: React.FC = () => {
         setLoadingUsers(false);
       }
     };
-
     loadUsers();
   }, []);
 
@@ -137,7 +153,6 @@ const ProjectCreatePage: React.FC = () => {
         try {
           const data = await getPartnerContacts(clientId);
           setPartnerContacts(data);
-          // 거래처 변경 시 연락처 선택 초기화
           setSelectedPartnerContactIds([]);
         } catch (error) {
           console.error('거래처 연락처 로딩 실패:', error);
@@ -146,7 +161,6 @@ const ProjectCreatePage: React.FC = () => {
           setLoadingContacts(false);
         }
       };
-
       loadContacts();
     } else {
       setPartnerContacts([]);
@@ -157,41 +171,29 @@ const ProjectCreatePage: React.FC = () => {
   // 날짜 범위 선택 핸들러
   const handleDateRangeChange = (dates: [Date | null, Date | null]) => {
     setDateRange(dates);
-    if (dates[0]) {
-      setStartDate(dates[0]);
-    }
-    if (dates[1]) {
-      setEndDate(dates[1]);
-    }
+    if (dates[0]) setStartDate(dates[0]);
+    if (dates[1]) setEndDate(dates[1]);
   };
 
   // 거래처 연락처 체크박스 핸들러
   const handlePartnerContactToggle = (contactId: number) => {
     setSelectedPartnerContactIds((prev) =>
-      prev.includes(contactId)
-        ? prev.filter((id) => id !== contactId)
-        : [...prev, contactId]
+      prev.includes(contactId) ? prev.filter((id) => id !== contactId) : [...prev, contactId]
     );
   };
 
   // 멤버 체크박스 핸들러
   const handleMemberToggle = (userId: number) => {
     setSelectedMemberIds((prev) =>
-      prev.includes(userId)
-        ? prev.filter((id) => id !== userId)
-        : [...prev, userId]
+      prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
     );
   };
 
   // 일정 날짜 범위 변경 핸들러
   const handleScheduleDateRangeChange = (dates: [Date | null, Date | null]) => {
     setScheduleDateRange(dates);
-    if (dates[0]) {
-      setNewSchedule({ ...newSchedule, startDate: dates[0] });
-    }
-    if (dates[1]) {
-      setNewSchedule({ ...newSchedule, endDate: dates[1] });
-    }
+    if (dates[0]) setNewSchedule({ ...newSchedule, startDate: dates[0] });
+    if (dates[1]) setNewSchedule({ ...newSchedule, endDate: dates[1] });
   };
 
   // 일정 추가
@@ -200,26 +202,18 @@ const ProjectCreatePage: React.FC = () => {
       setError('일정 제목, 시작일, 종료일을 모두 입력해주세요.');
       return;
     }
-
-    // 프로젝트 기간 검증
     if (!startDate || !endDate) {
       setError('프로젝트 기간을 먼저 설정해주세요.');
       return;
     }
-
-    // 일정 시작일이 프로젝트 시작일보다 빠른지 확인
     if (newSchedule.startDate! < startDate) {
       setError('일정 시작일은 프로젝트 시작일보다 빠를 수 없습니다.');
       return;
     }
-
-    // 일정 종료일이 프로젝트 종료일보다 늦은지 확인
     if (newSchedule.endDate! > endDate) {
       setError('일정 종료일은 프로젝트 종료일보다 늦을 수 없습니다.');
       return;
     }
-
-    // 일정 시작일이 종료일보다 늦은지 확인
     if (newSchedule.startDate! > newSchedule.endDate!) {
       setError('일정 시작일이 종료일보다 늦을 수 없습니다.');
       return;
@@ -235,16 +229,10 @@ const ProjectCreatePage: React.FC = () => {
     };
 
     setSchedules([...schedules, schedule]);
-    setNewSchedule({
-      title: '',
-      startDate: new Date(),
-      endDate: new Date(),
-      type: 'PROJECT',
-      memberIds: [],
-    });
+    setNewSchedule({ title: '', startDate: new Date(), endDate: new Date(), type: 'PROJECT', memberIds: [] });
     setScheduleDateRange([null, null]);
     setShowScheduleForm(false);
-    setError(null); // 성공 시 에러 메시지 초기화
+    setError(null);
   };
 
   // 일정 삭제
@@ -256,15 +244,12 @@ const ProjectCreatePage: React.FC = () => {
   const handleFileAdd = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = event.target.files;
     if (!selectedFiles) return;
-
     const newFiles: LocalFile[] = Array.from(selectedFiles).map((file) => ({
       id: `temp-${Date.now()}-${Math.random()}`,
       file,
       category: activeFileCategory,
     }));
-
     setFiles([...files, ...newFiles]);
-    // input 초기화
     event.target.value = '';
   };
 
@@ -278,7 +263,6 @@ const ProjectCreatePage: React.FC = () => {
     e.preventDefault();
     setError(null);
 
-    // 검증
     if (!name.trim()) {
       setError('프로젝트 이름을 입력해주세요.');
       return;
@@ -299,7 +283,6 @@ const ProjectCreatePage: React.FC = () => {
     setLoading(true);
 
     try {
-      // 1. 프로젝트 생성
       const projectRequest: ProjectCreateRequest = {
         name: name.trim(),
         clientId,
@@ -314,7 +297,6 @@ const ProjectCreatePage: React.FC = () => {
 
       const projectId = await createProject(projectRequest);
 
-      // 2. 일정 생성
       for (const schedule of schedules) {
         const scheduleRequest: ScheduleCreateRequest = {
           title: schedule.title,
@@ -327,39 +309,21 @@ const ProjectCreatePage: React.FC = () => {
         await createSchedule(scheduleRequest);
       }
 
-      // 3. 파일 업로드
-      for (const file of files) {
-        await uploadFile(projectId, file.file, file.category);
-      }
+      await Promise.all(
+        files.map((file) => uploadFile(projectId, file.file, file.category))
+      );
 
-      // 성공 시 프로젝트 상세 페이지로 이동
       navigate(`/projects/${projectId}`);
     } catch (error: any) {
       console.error('프로젝트 생성 실패:', error);
-      setError(
-        error.response?.data?.message || '프로젝트 생성에 실패했습니다. 다시 시도해주세요.'
-      );
+      setError(error.response?.data?.message || '프로젝트 생성에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setLoading(false);
     }
   };
 
-  const getScheduleTypeLabel = (type: string): string => {
-    switch (type) {
-      case 'PROJECT':
-        return '프로젝트 일정';
-      case 'TEST_RUN':
-        return '시운전';
-      case 'WIRING':
-        return '전기 배선';
-      case 'DESIGN':
-        return '설계';
-      case 'MEETING':
-        return '미팅';
-      default:
-        return type;
-    }
-  };
+  const getScheduleTypeLabel = (type: string): string =>
+    TYPE_OPTS.find((o) => o.v === type)?.l ?? type;
 
   const getFileCategoryLabel = (category: string): string => {
     switch (category) {
@@ -398,7 +362,7 @@ const ProjectCreatePage: React.FC = () => {
     }
   };
 
-  // 참여자 아바타 색상 팔레트 (모바일 목록과 동일 톤)
+  // 참여자 아바타 색상 팔레트
   const AVATAR_COLORS = ['#0B4EC4', '#1B9E5A', '#8B5CF6', '#C6771A', '#E5484D', '#0EA5E9'];
 
   // 파일 확장자 → 아이콘 라벨/색
@@ -407,8 +371,7 @@ const ProjectCreatePage: React.FC = () => {
     if (ext === 'pdf') return { label: 'PDF', bg: '#E5484D' };
     if (['dwg', 'dxf'].includes(ext)) return { label: 'DWG', bg: '#0B4EC4' };
     if (['xls', 'xlsx', 'csv'].includes(ext)) return { label: 'XLS', bg: '#177245' };
-    if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic'].includes(ext))
-      return { label: 'IMG', bg: '#1B9E5A' };
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic'].includes(ext)) return { label: 'IMG', bg: '#1B9E5A' };
     if (['doc', 'docx'].includes(ext)) return { label: 'DOC', bg: '#2B5797' };
     if (['zip', 'rar', '7z'].includes(ext)) return { label: 'ZIP', bg: '#7C3AED' };
     return { label: ext ? ext.slice(0, 3).toUpperCase() : 'FILE', bg: '#6B7280' };
@@ -421,228 +384,239 @@ const ProjectCreatePage: React.FC = () => {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  // 일정 추가 바텀시트가 열려 있는 동안 배경 스크롤 잠금
+  // 일정 추가 시트가 열려 있는 동안 배경 스크롤 잠금
   useScrollLock(showScheduleForm);
 
-  return (
-    <div className="p-6">
-      <div className="mb-6">
-        <button
-          onClick={() => navigate('/projects')}
-          className="inline-flex items-center gap-1 text-sm font-medium text-gray-500 transition-colors hover:text-gray-800"
-        >
-          <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+  // 선택 리스트 한 행(멤버/참여자 공통)
+  const pickRow = (user: UserListResponse, i: number, checked: boolean, onToggle: () => void) => (
+    <label
+      key={user.id}
+      className={`relative flex cursor-pointer items-center gap-3 border-b border-gray-100 px-3 py-2.5 last:border-b-0 ${
+        checked ? 'bg-primary-50/60' : 'hover:bg-gray-50'
+      }`}
+    >
+      <input type="checkbox" checked={checked} onChange={onToggle} className="sr-only" />
+      <span
+        className={`flex h-[18px] w-[18px] flex-none items-center justify-center rounded-[6px] border transition-colors ${
+          checked ? 'border-primary-500 bg-primary-500 text-white' : 'border-gray-300'
+        }`}
+      >
+        {checked && (
+          <svg className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+            <path d="M5 13l4 4L19 7" />
           </svg>
-          목록으로
-        </button>
+        )}
+      </span>
+      <span
+        className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-full text-[12px] font-bold text-white"
+        style={{ backgroundColor: AVATAR_COLORS[i % AVATAR_COLORS.length] }}
+      >
+        {user.name.charAt(0)}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[13.5px] font-bold text-gray-900">{user.name}</span>
+        {user.position && <span className="block truncate text-[11.5px] font-semibold text-gray-400">{user.position}</span>}
+      </span>
+    </label>
+  );
+
+  const clientName = partners.find((p) => p.id === clientId)?.companyName;
+  const statusChip = STATUS_CHIP[status];
+
+  return (
+    <div className="mx-auto max-w-[1080px] px-5 py-6 sm:px-6">
+      {/* 상단 */}
+      <button
+        onClick={() => navigate('/projects')}
+        className="mb-4 inline-flex items-center gap-1.5 text-[13px] font-bold text-gray-500 transition-colors hover:text-gray-800"
+      >
+        <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+          <path d="M15 18l-6-6 6-6" />
+        </svg>
+        프로젝트 목록으로
+      </button>
+      <div className="mb-5">
+        <h1 className="text-[22px] font-extrabold tracking-tight text-gray-900">새 프로젝트</h1>
+        <p className="mt-1 text-[13.5px] font-semibold text-gray-400">기본 정보와 팀·일정·파일을 한 화면에서 등록합니다.</p>
       </div>
 
-      {error && (
-        <Alert
-          type="error"
-          message={error}
-          dismissible
-          onClose={() => setError(null)}
-          style={{ marginBottom: '1.5rem' }}
-        />
-      )}
+      {error && <Alert type="error" message={error} dismissible onClose={() => setError(null)} style={{ marginBottom: '1.25rem' }} />}
 
-      <form onSubmit={handleSubmit}>
-        {/* 상단 섹션: 기본 정보 */}
-        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm mb-6">
-          <h2 className="text-xl font-bold mb-4">기본 정보</h2>
+      <form onSubmit={handleSubmit} className="lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start lg:gap-5">
+        {/* 좌: 입력 */}
+        <div className="min-w-0 space-y-4 lg:space-y-5">
+          {/* 기본 정보 */}
+          <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+            <h2 className="text-[15.5px] font-extrabold tracking-tight text-gray-900">기본 정보</h2>
+            <p className="mb-5 mt-0.5 text-[12.5px] font-semibold text-gray-400">프로젝트를 식별하는 핵심 정보입니다.</p>
+            <div className="space-y-4">
+              <div>
+                <label className={labelCls}>
+                  프로젝트 이름 <span className="text-red-500">*</span>
+                </label>
+                <input type="text" value={name} onChange={(e) => setName(e.target.value)} className={inputCls} placeholder="프로젝트 이름을 입력하세요" required />
+              </div>
 
-          <div className="space-y-4">
-            {/* 프로젝트 이름 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                프로젝트 이름 <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="프로젝트 이름을 입력하세요"
-                required
-              />
-            </div>
-
-            {/* 거래처 선택 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                거래처 <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={clientId || ''}
-                onChange={(e) => setClientId(e.target.value ? Number(e.target.value) : null)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                required
-                disabled={loadingPartners}
-              >
-                <option value="">거래처를 선택하세요</option>
-                {partners.map((partner) => (
-                  <option key={partner.id} value={partner.id}>
-                    {partner.companyName}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* 날짜 범위 선택 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                기간 <span className="text-red-500">*</span>
-              </label>
-              <DatePicker
-                customInput={<DatePickerInput />}
-                selected={dateRange[0]}
-                onChange={handleDateRangeChange}
-                startDate={dateRange[0]}
-                endDate={dateRange[1]}
-                selectsRange
-                locale={ko as any}
-                dateFormat="yyyy-MM-dd"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholderText="시작일 ~ 종료일을 선택하세요"
-                required
-              />
-            </div>
-
-            {/* 상태 선택 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">상태</label>
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-              >
-                <option value="IN_PROGRESS">진행 중</option>
-                <option value="ON_HOLD">보류</option>
-                <option value="COMPLETE">완료</option>
-              </select>
-            </div>
-
-            {/* 설명 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">설명</label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={3}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="프로젝트 설명을 입력하세요"
-              />
-            </div>
-
-            {/* 색상 코드 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">색상 코드</label>
-              <ColorPicker value={colorCode} onChange={setColorCode} />
-            </div>
-          </div>
-        </div>
-
-        {/* 중간 섹션: 팀 멤버 할당 */}
-        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm mb-6">
-          <h2 className="text-xl font-bold mb-4">팀 멤버 할당</h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-            {/* 사원(멤버) 선택 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                사원(멤버)
-              </label>
-              {loadingUsers ? (
-                <div className="text-sm text-gray-500 p-4 border border-gray-200 rounded-lg">
-                  로딩 중...
-                </div>
-              ) : users.length === 0 ? (
-                <div className="text-sm text-gray-500 p-4 border border-gray-200 rounded-lg">
-                  등록된 사원이 없습니다.
-                </div>
-              ) : (
-                <div className="border border-gray-200 rounded-lg p-4 max-h-64 overflow-y-auto">
-                  {users.map((user) => (
-                    <label
-                      key={user.id}
-                      className="flex items-center space-x-3 py-2 hover:bg-gray-50 cursor-pointer"
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className={labelCls}>
+                    거래처 <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={clientId || ''}
+                      onChange={(e) => setClientId(e.target.value ? Number(e.target.value) : null)}
+                      className={`${inputCls} cursor-pointer appearance-none pr-9`}
+                      required
+                      disabled={loadingPartners}
                     >
-                      <input
-                        type="checkbox"
-                        checked={selectedMemberIds.includes(user.id)}
-                        onChange={() => handleMemberToggle(user.id)}
-                        className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-                      />
-                      <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
-                        {user.name.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="flex-1">
-                        <div className="text-sm font-medium text-gray-900">{user.name}</div>
-                        {user.position && (
-                          <div className="text-xs text-gray-500">{user.position}</div>
-                        )}
-                      </div>
-                    </label>
+                      <option value="">거래처를 선택하세요</option>
+                      {partners.map((partner) => (
+                        <option key={partner.id} value={partner.id}>
+                          {partner.companyName}
+                        </option>
+                      ))}
+                    </select>
+                    <svg className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                      <path d="M6 9l6 6 6-6" />
+                    </svg>
+                  </div>
+                </div>
+                <div>
+                  <label className={labelCls}>
+                    기간 <span className="text-red-500">*</span>
+                  </label>
+                  <DatePicker
+                    customInput={<DatePickerInput />}
+                    selected={dateRange[0]}
+                    onChange={handleDateRangeChange}
+                    startDate={dateRange[0]}
+                    endDate={dateRange[1]}
+                    selectsRange
+                    locale={ko as any}
+                    dateFormat="yyyy-MM-dd"
+                    placeholderText="시작일 ~ 종료일"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className={labelCls}>상태</label>
+                <div className={segWrap}>
+                  {STATUS_OPTS.map((o) => (
+                    <button key={o.v} type="button" onClick={() => setStatus(o.v)} className={segCls(status === o.v)}>
+                      {o.l}
+                    </button>
                   ))}
                 </div>
-              )}
-            </div>
-
-              {/* 거래처 연락처 선택 */}
-              <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                      거래처 연락처
-                  </label>
-                  {!clientId ? (
-                      <div className="text-sm text-gray-500 p-4 border border-gray-200 rounded-lg">
-                          거래처를 먼저 선택해주세요.
-                      </div>
-                  ) : loadingContacts ? (
-                      <div className="text-sm text-gray-500 p-4 border border-gray-200 rounded-lg">
-                          로딩 중...
-                      </div>
-                  ) : partnerContacts.length === 0 ? (
-                      <div className="text-sm text-gray-500 p-4 border border-gray-200 rounded-lg">
-                          등록된 연락처가 없습니다.
-                      </div>
-                  ) : (
-                      <div className="border border-gray-200 rounded-lg p-4 max-h-64 overflow-y-auto">
-                          {partnerContacts.map((contact) => (
-                              <label
-                                  key={contact.id}
-                                  className="flex items-center space-x-2 py-2 hover:bg-gray-50 cursor-pointer"
-                              >
-                                  <input
-                                      type="checkbox"
-                                      checked={selectedPartnerContactIds.includes(contact.id)}
-                                      onChange={() => handlePartnerContactToggle(contact.id)}
-                                      className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-                                  />
-                                  <div className="flex-1">
-                                      <div className="text-sm font-medium text-gray-900">{contact.name}</div>
-                                      {contact.position && (
-                                          <div className="text-xs text-gray-500">{contact.position}</div>
-                                      )}
-                                  </div>
-                              </label>
-                          ))}
-                      </div>
-                  )}
               </div>
-          </div>
-        </div>
 
-        {/* 하단 섹션: 일정 및 파일 */}
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 sm:p-6 shadow-sm mb-6">
+              <div>
+                <label className={labelCls}>대표 색상</label>
+                <div className="flex flex-wrap gap-2.5">
+                  {COLOR_SWATCHES.map((c) => {
+                    const on = colorCode.toUpperCase() === c;
+                    return (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => setColorCode(c)}
+                        aria-label={`색상 ${c}`}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg transition-transform hover:scale-105"
+                        style={{ backgroundColor: c, boxShadow: on ? `0 0 0 2px #fff, 0 0 0 4px ${c}` : undefined }}
+                      >
+                        {on && (
+                          <svg className="h-4 w-4 text-white" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                            <path d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <label className={labelCls}>설명</label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={3}
+                  className={`${inputCls} h-auto py-2.5 leading-relaxed`}
+                  placeholder="프로젝트 설명을 입력하세요"
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* 팀 & 연락처 */}
+          <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+            <h2 className="text-[15.5px] font-extrabold tracking-tight text-gray-900">팀 · 거래처 연락처</h2>
+            <p className="mb-5 mt-0.5 text-[12.5px] font-semibold text-gray-400">프로젝트에 참여할 사원과 거래처 담당자를 고릅니다.</p>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className={labelCls}>사원(멤버)</label>
+                {loadingUsers ? (
+                  <div className="rounded-xl border border-gray-200 p-4 text-sm font-semibold text-gray-400">로딩 중…</div>
+                ) : users.length === 0 ? (
+                  <div className="rounded-xl border border-gray-200 p-4 text-sm font-semibold text-gray-400">등록된 사원이 없습니다.</div>
+                ) : (
+                  <div className="max-h-[220px] overflow-y-auto rounded-xl border border-gray-200">
+                    {users.map((user, i) => pickRow(user, i, selectedMemberIds.includes(user.id), () => handleMemberToggle(user.id)))}
+                  </div>
+                )}
+              </div>
+              <div>
+                <label className={labelCls}>거래처 연락처</label>
+                {!clientId ? (
+                  <div className="rounded-xl border border-gray-200 p-4 text-sm font-semibold text-gray-400">거래처를 먼저 선택해주세요.</div>
+                ) : loadingContacts ? (
+                  <div className="rounded-xl border border-gray-200 p-4 text-sm font-semibold text-gray-400">로딩 중…</div>
+                ) : partnerContacts.length === 0 ? (
+                  <div className="rounded-xl border border-gray-200 p-4 text-sm font-semibold text-gray-400">등록된 연락처가 없습니다.</div>
+                ) : (
+                  <div className="max-h-[220px] overflow-y-auto rounded-xl border border-gray-200">
+                    {partnerContacts.map((contact) => {
+                      const on = selectedPartnerContactIds.includes(contact.id);
+                      return (
+                        <label
+                          key={contact.id}
+                          className={`relative flex cursor-pointer items-center gap-3 border-b border-gray-100 px-3 py-2.5 last:border-b-0 ${
+                            on ? 'bg-primary-50/60' : 'hover:bg-gray-50'
+                          }`}
+                        >
+                          <input type="checkbox" checked={on} onChange={() => handlePartnerContactToggle(contact.id)} className="sr-only" />
+                          <span
+                            className={`flex h-[18px] w-[18px] flex-none items-center justify-center rounded-[6px] border transition-colors ${
+                              on ? 'border-primary-500 bg-primary-500 text-white' : 'border-gray-300'
+                            }`}
+                          >
+                            {on && (
+                              <svg className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                                <path d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-[13.5px] font-bold text-gray-900">{contact.name}</span>
+                            {contact.position && <span className="block truncate text-[11.5px] font-semibold text-gray-400">{contact.position}</span>}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+
           {/* 일정 */}
-          <div className="mb-8">
-            <div className="mb-3 flex items-center gap-2">
-              <h3 className="text-[17px] font-extrabold text-gray-900">일정</h3>
+          <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+            <div className="mb-4 flex items-center gap-2.5">
+              <h2 className="text-[15.5px] font-extrabold tracking-tight text-gray-900">일정</h2>
               {schedules.length > 0 && (
-                <span className="rounded-full bg-primary-50 px-2.5 py-0.5 text-[12px] font-extrabold text-primary-600">
+                <span className="inline-grid h-5 min-w-[20px] place-items-center rounded-full bg-primary-50 px-1.5 text-[11.5px] font-extrabold text-primary-600">
                   {schedules.length}
                 </span>
               )}
@@ -650,42 +624,33 @@ const ProjectCreatePage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowScheduleForm(true)}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-primary-500 px-3.5 py-2 text-[13.5px] font-extrabold text-white shadow-sm shadow-primary-500/25 transition-colors hover:bg-primary-600"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3.5 py-2 text-[13px] font-bold text-white shadow-sm shadow-primary-500/25 transition-colors hover:bg-primary-600"
               >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" viewBox="0 0 24 24">
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" viewBox="0 0 24 24">
                   <path d="M12 5v14M5 12h14" />
                 </svg>
-                추가
+                일정 추가
               </button>
             </div>
 
-            {/* 일정 목록 — 카드 */}
             {schedules.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-gray-300 py-8 text-center text-[13.5px] font-semibold text-gray-400">
-                등록된 일정이 없어요. ‘추가’로 일정을 넣어보세요.
+              <div className="rounded-2xl border border-dashed border-gray-300 py-8 text-center text-[13px] font-semibold text-gray-400">
+                등록된 일정이 없어요. ‘일정 추가’로 넣어보세요.
               </div>
             ) : (
-              <div className="divide-y divide-gray-100 overflow-hidden rounded-2xl border border-gray-200">
+              <div className="space-y-2.5">
                 {schedules.map((schedule) => {
                   const st = scheduleTypeStyle(schedule.type);
                   const members = users.filter((u) => schedule.memberIds.includes(u.id));
                   return (
-                    <div key={schedule.id} className="relative flex gap-3 bg-white px-3.5 py-3.5">
+                    <div key={schedule.id} className="relative flex gap-3 rounded-xl border border-gray-200 bg-white px-3.5 py-3">
                       <span className={`w-1 flex-none rounded ${st.stripe}`} />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 pr-8">
-                          <span className="truncate text-[15px] font-extrabold text-gray-900">
-                            {schedule.title}
-                          </span>
-                          <span className={`flex-none rounded-full px-2 py-0.5 text-[11px] font-extrabold ${st.pill}`}>
-                            {getScheduleTypeLabel(schedule.type)}
-                          </span>
+                      <div className="min-w-0 flex-1 pr-7">
+                        <div className="flex items-center gap-2">
+                          <span className="truncate text-[14px] font-extrabold text-gray-900">{schedule.title}</span>
+                          <span className={`flex-none rounded-full px-2 py-0.5 text-[11px] font-extrabold ${st.pill}`}>{getScheduleTypeLabel(schedule.type)}</span>
                         </div>
-                        <div className="mt-1.5 flex items-center gap-1.5 text-[12.5px] font-semibold text-gray-500">
-                          <svg className="h-3.5 w-3.5 flex-none text-gray-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                            <rect x="3" y="4.5" width="18" height="16" rx="2.5" />
-                            <path d="M8 2.5v4M16 2.5v4M3 10h18" />
-                          </svg>
+                        <div className="mt-1.5 text-[12.5px] font-semibold text-gray-500 tabular-nums">
                           {format(schedule.startDate, 'yyyy.MM.dd')} ~ {format(schedule.endDate, 'yyyy.MM.dd')}
                         </div>
                         {members.length > 0 && (
@@ -695,19 +660,14 @@ const ProjectCreatePage: React.FC = () => {
                                 <span
                                   key={m.id}
                                   className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-white text-[10px] font-extrabold text-white"
-                                  style={{
-                                    backgroundColor: AVATAR_COLORS[idx % AVATAR_COLORS.length],
-                                    marginLeft: idx === 0 ? 0 : -7,
-                                  }}
+                                  style={{ backgroundColor: AVATAR_COLORS[idx % AVATAR_COLORS.length], marginLeft: idx === 0 ? 0 : -7 }}
                                 >
                                   {m.name.charAt(0)}
                                 </span>
                               ))}
                             </div>
                             <span className="text-[12px] font-bold text-gray-600">
-                              {members.length <= 2
-                                ? members.map((m) => m.name).join(', ')
-                                : `${members[0].name} 외 ${members.length - 1}명`}
+                              {members.length <= 2 ? members.map((m) => m.name).join(', ') : `${members[0].name} 외 ${members.length - 1}명`}
                             </span>
                           </div>
                         )}
@@ -716,7 +676,7 @@ const ProjectCreatePage: React.FC = () => {
                         type="button"
                         onClick={() => handleDeleteSchedule(schedule.id)}
                         aria-label="일정 삭제"
-                        className="absolute right-1.5 top-3 flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                        className="absolute right-2 top-2.5 flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600"
                       >
                         <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" viewBox="0 0 24 24">
                           <path d="M6 6l12 12M6 18 18 6" />
@@ -727,21 +687,20 @@ const ProjectCreatePage: React.FC = () => {
                 })}
               </div>
             )}
-          </div>
+          </section>
 
           {/* 파일 */}
-          <div>
-            <div className="mb-3 flex items-center gap-2">
-              <h3 className="text-[17px] font-extrabold text-gray-900">파일</h3>
+          <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+            <div className="mb-4 flex items-center gap-2.5">
+              <h2 className="text-[15.5px] font-extrabold tracking-tight text-gray-900">파일</h2>
               {files.length > 0 && (
-                <span className="rounded-full bg-primary-50 px-2.5 py-0.5 text-[12px] font-extrabold text-primary-600">
+                <span className="inline-grid h-5 min-w-[20px] place-items-center rounded-full bg-primary-50 px-1.5 text-[11.5px] font-extrabold text-primary-600">
                   {files.length}
                 </span>
               )}
             </div>
 
-            {/* 카테고리 탭 — pill */}
-            <div className="-mx-1 mb-3 flex gap-2 overflow-x-auto px-1 pb-1">
+            <div className="mb-3 flex flex-wrap gap-2">
               {fileCategories.map((category) => {
                 const active = activeFileCategory === category;
                 const count = files.filter((f) => f.category === category).length;
@@ -750,23 +709,18 @@ const ProjectCreatePage: React.FC = () => {
                     key={category}
                     type="button"
                     onClick={() => setActiveFileCategory(category)}
-                    className={`flex-none whitespace-nowrap rounded-full border px-3.5 py-2 text-[13px] font-bold transition-colors ${
-                      active
-                        ? 'border-primary-500 bg-primary-500 text-white shadow-sm shadow-primary-500/25'
-                        : 'border-gray-200 bg-white text-gray-500 hover:text-gray-700'
+                    className={`whitespace-nowrap rounded-full border px-3.5 py-2 text-[12.5px] font-bold transition-colors ${
+                      active ? 'border-primary-500 bg-primary-500 text-white shadow-sm shadow-primary-500/25' : 'border-gray-200 bg-white text-gray-500 hover:text-gray-700'
                     }`}
                   >
                     {getFileCategoryLabel(category)}
-                    {count > 0 && (
-                      <span className={`ml-1.5 ${active ? 'text-white/80' : 'text-gray-400'}`}>{count}</span>
-                    )}
+                    {count > 0 && <span className={`ml-1.5 ${active ? 'text-white/80' : 'text-gray-400'}`}>{count}</span>}
                   </button>
                 );
               })}
             </div>
 
-            {/* 업로드 드롭존 */}
-            <label className="mb-3 flex cursor-pointer items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-primary-200 bg-primary-50 px-4 py-4 text-[14px] font-extrabold text-primary-600 transition-colors hover:bg-primary-100">
+            <label className="mb-3 flex cursor-pointer items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-primary-200 bg-primary-50 px-4 py-4 text-[13.5px] font-bold text-primary-600 transition-colors hover:bg-primary-100">
               <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                 <path d="M12 16V4M7 9l5-5 5 5" />
                 <path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" />
@@ -775,28 +729,24 @@ const ProjectCreatePage: React.FC = () => {
               <input type="file" multiple onChange={handleFileAdd} className="hidden" />
             </label>
 
-            {/* 파일 목록 — 카드 */}
             {files.filter((f) => f.category === activeFileCategory).length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-gray-300 py-8 text-center text-[13.5px] font-semibold text-gray-400">
+              <div className="rounded-2xl border border-dashed border-gray-300 py-8 text-center text-[13px] font-semibold text-gray-400">
                 이 카테고리에 담긴 파일이 없어요.
               </div>
             ) : (
-              <div className="divide-y divide-gray-100 overflow-hidden rounded-2xl border border-gray-200">
+              <div className="space-y-2">
                 {files
                   .filter((f) => f.category === activeFileCategory)
                   .map((file) => {
                     const ic = fileIconStyle(file.file.name);
                     return (
-                      <div key={file.id} className="flex items-center gap-3 bg-white px-3.5 py-2.5">
-                        <span
-                          className="flex h-10 w-10 flex-none items-center justify-center rounded-xl text-[10px] font-black text-white"
-                          style={{ backgroundColor: ic.bg }}
-                        >
+                      <div key={file.id} className="flex items-center gap-3 rounded-xl border border-gray-200 px-3 py-2.5">
+                        <span className="flex h-9 w-9 flex-none items-center justify-center rounded-lg text-[10px] font-black text-white" style={{ backgroundColor: ic.bg }}>
                           {ic.label}
                         </span>
                         <div className="min-w-0 flex-1">
-                          <div className="truncate text-[14.5px] font-bold text-gray-900">{file.file.name}</div>
-                          <div className="mt-0.5 text-[12px] font-semibold text-gray-500">
+                          <div className="truncate text-[13.5px] font-bold text-gray-900">{file.file.name}</div>
+                          <div className="mt-0.5 text-[12px] font-semibold text-gray-400 tabular-nums">
                             {formatFileSize(file.file.size)} · {getFileCategoryLabel(file.category)}
                           </div>
                         </div>
@@ -815,186 +765,189 @@ const ProjectCreatePage: React.FC = () => {
                   })}
               </div>
             )}
-          </div>
+          </section>
         </div>
 
-        {/* 일정 추가 — 바텀 시트 */}
-        {showScheduleForm && (
-          <div className="fixed inset-0 z-50 flex flex-col justify-end">
-            <div className="absolute inset-0 bg-gray-900/40" onClick={() => setShowScheduleForm(false)} />
-            <div className="relative max-h-[88vh] overflow-y-auto overscroll-contain rounded-t-3xl bg-white px-5 pb-8 pt-2 shadow-2xl">
-              <div className="mx-auto mb-4 mt-2 h-1.5 w-10 rounded-full bg-gray-300" />
-              <div className="mb-4 flex items-center justify-between">
-                <h3 className="text-[19px] font-extrabold text-gray-900">일정 추가</h3>
-                <button
-                  type="button"
-                  onClick={() => setShowScheduleForm(false)}
-                  aria-label="닫기"
-                  className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100"
-                >
-                  <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" viewBox="0 0 24 24">
-                    <path d="M6 6l12 12M6 18 18 6" />
-                  </svg>
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                {/* 제목 */}
-                <div>
-                  <label className="mb-2 block text-[13px] font-extrabold text-gray-700">
-                    일정 제목 <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={newSchedule.title || ''}
-                    onChange={(e) => setNewSchedule({ ...newSchedule, title: e.target.value })}
-                    className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    placeholder="일정 제목을 입력하세요"
-                  />
+        {/* 우: 요약 + 액션 레일 */}
+        <div className="mt-4 space-y-3.5 lg:sticky lg:top-4 lg:mt-0">
+          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <div className="px-[18px] pt-3.5 text-[11.5px] font-extrabold tracking-wide text-gray-400">미리보기</div>
+            <div className="flex items-center gap-2.5 border-b border-gray-200 px-[18px] pb-3.5 pt-1.5">
+              <span className="h-[11px] w-[11px] flex-none rounded-full" style={{ backgroundColor: colorCode }} />
+              <span className="truncate text-[15px] font-extrabold tracking-tight text-gray-900">{name || '프로젝트 이름'}</span>
+            </div>
+            <div className="flex items-center justify-between gap-3 border-b border-gray-200 px-[18px] py-2.5">
+              <span className="text-[12.5px] font-bold text-gray-400">거래처</span>
+              <span className="truncate text-[13px] font-bold text-gray-800">{clientName || '—'}</span>
+            </div>
+            <div className="flex items-center justify-between gap-3 border-b border-gray-200 px-[18px] py-2.5">
+              <span className="text-[12.5px] font-bold text-gray-400">기간</span>
+              <span className="text-[13px] font-bold text-gray-800 tabular-nums">
+                {startDate && endDate ? `${format(startDate, 'MM.dd')} ~ ${format(endDate, 'MM.dd')}` : '—'}
+              </span>
+            </div>
+            <div className="flex items-center justify-between gap-3 border-b border-gray-200 px-[18px] py-2.5">
+              <span className="text-[12.5px] font-bold text-gray-400">상태</span>
+              <span className={`inline-flex h-[22px] items-center rounded-full px-2.5 text-[12px] font-bold ${statusChip.cls}`}>{statusChip.label}</span>
+            </div>
+            <div className="flex">
+              {[
+                { n: selectedMemberIds.length, l: '멤버' },
+                { n: schedules.length, l: '일정' },
+                { n: files.length, l: '파일' },
+              ].map((c, i) => (
+                <div key={c.l} className={`flex-1 py-3 text-center ${i < 2 ? 'border-r border-gray-200' : ''}`}>
+                  <div className="text-[18px] font-extrabold text-gray-900 tabular-nums">{c.n}</div>
+                  <div className="mt-0.5 text-[11px] font-bold text-gray-400">{c.l}</div>
                 </div>
-
-                {/* 기간 */}
-                <div>
-                  <label className="mb-2 block text-[13px] font-extrabold text-gray-700">
-                    기간 <span className="text-red-500">*</span>
-                  </label>
-                  {!startDate || !endDate ? (
-                    <div className="rounded-xl border border-gray-200 bg-gray-100 px-4 py-3 text-[14px] font-semibold text-gray-500">
-                      프로젝트 기간을 먼저 설정해주세요.
-                    </div>
-                  ) : (
-                    <>
-                      <DatePicker
-                        customInput={<DatePickerInput />}
-                        selected={scheduleDateRange[0]}
-                        onChange={handleScheduleDateRangeChange}
-                        startDate={scheduleDateRange[0]}
-                        endDate={scheduleDateRange[1]}
-                        selectsRange
-                        withPortal
-                        minDate={startDate}
-                        maxDate={endDate}
-                        locale={ko as any}
-                        dateFormat="yyyy-MM-dd"
-                        className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                        placeholderText="시작일 ~ 종료일을 선택하세요"
-                      />
-                      <p className="mt-1.5 text-[12px] font-semibold text-gray-400">
-                        선택 가능한 기간: {format(startDate, 'yyyy-MM-dd')} ~ {format(endDate, 'yyyy-MM-dd')}
-                      </p>
-                    </>
-                  )}
-                </div>
-
-                {/* 타입 — chip */}
-                <div>
-                  <label className="mb-2 block text-[13px] font-extrabold text-gray-700">타입</label>
-                  <div className="flex flex-wrap gap-2">
-                    {[
-                      { value: 'PROJECT', label: '프로젝트' },
-                      { value: 'TEST_RUN', label: '시운전' },
-                      { value: 'WIRING', label: '전기 배선' },
-                      { value: 'DESIGN', label: '설계' },
-                      { value: 'MEETING', label: '미팅' },
-                    ].map((opt) => {
-                      const on = (newSchedule.type || 'PROJECT') === opt.value;
-                      return (
-                        <button
-                          key={opt.value}
-                          type="button"
-                          onClick={() => setNewSchedule({ ...newSchedule, type: opt.value })}
-                          className={`rounded-xl border px-3.5 py-2.5 text-[13.5px] font-bold transition-colors ${
-                            on ? 'border-primary-500 bg-primary-500 text-white' : 'border-gray-200 bg-white text-gray-500'
-                          }`}
-                        >
-                          {opt.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* 참여자 — 체크박스 리스트 */}
-                <div>
-                  <label className="mb-2 block text-[13px] font-extrabold text-gray-700">참여자</label>
-                  {users.length === 0 ? (
-                    <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-[13.5px] font-semibold text-gray-400">
-                      등록된 사원이 없습니다.
-                    </div>
-                  ) : (
-                    <div className="max-h-56 overflow-y-auto overscroll-contain rounded-xl border border-gray-200">
-                      {users.map((user, i) => {
-                        const on = (newSchedule.memberIds || []).includes(user.id);
-                        return (
-                          <label
-                            key={user.id}
-                            className={`flex cursor-pointer items-center gap-3 px-3.5 py-2.5 ${i > 0 ? 'border-t border-gray-100' : ''}`}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={on}
-                              onChange={() => {
-                                const memberIds = newSchedule.memberIds || [];
-                                setNewSchedule({
-                                  ...newSchedule,
-                                  memberIds: on
-                                    ? memberIds.filter((id) => id !== user.id)
-                                    : [...memberIds, user.id],
-                                });
-                              }}
-                              className="h-4 w-4 flex-none rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                            />
-                            <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-primary-500 text-[13px] font-extrabold text-white">
-                              {user.name.charAt(0).toUpperCase()}
-                            </span>
-                            <span className="min-w-0 flex-1">
-                              <span className="block text-[14.5px] font-bold text-gray-900">{user.name}</span>
-                              {user.position && (
-                                <span className="block text-[12px] font-medium text-gray-500">{user.position}</span>
-                              )}
-                            </span>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                {error && <p className="text-[13px] font-semibold text-red-500">{error}</p>}
-
-                <button
-                  type="button"
-                  onClick={handleAddSchedule}
-                  className="mt-1 w-full rounded-xl bg-primary-500 py-3.5 text-[16px] font-extrabold text-white shadow-lg shadow-primary-500/30 transition-transform active:scale-[0.99]"
-                >
-                  일정 추가
-                </button>
-              </div>
+              ))}
             </div>
           </div>
-        )}
 
-        {/* 제출 버튼 */}
-        <div className="flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={() => navigate('/projects')}
-            className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-          >
-            취소
-          </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className="px-6 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-          >
-            {loading ? '등록 중...' : '프로젝트 등록'}
-          </button>
+          <div className="space-y-2.5">
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex h-11 w-full items-center justify-center rounded-xl bg-primary-500 text-[14.5px] font-extrabold text-white shadow-md shadow-primary-500/30 transition-colors hover:bg-primary-600 disabled:cursor-not-allowed disabled:bg-gray-400"
+            >
+              {loading ? '등록 중…' : '프로젝트 등록'}
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/projects')}
+              className="flex h-11 w-full items-center justify-center rounded-xl border border-gray-300 bg-white text-[14px] font-bold text-gray-600 transition-colors hover:bg-gray-50"
+            >
+              취소
+            </button>
+            <p className="text-center text-[11.5px] font-semibold text-gray-400">등록 후 프로젝트 상세로 이동합니다.</p>
+          </div>
         </div>
       </form>
+
+      {/* 일정 추가 — 모달(데스크톱 중앙) / 하단 시트(모바일) */}
+      {showScheduleForm && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-6">
+          <div className="absolute inset-0 bg-gray-900/50" onClick={() => setShowScheduleForm(false)} />
+          <div className="relative flex max-h-[88vh] w-full flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:max-w-[540px] sm:rounded-2xl">
+            <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
+              <h3 className="text-[17px] font-extrabold text-gray-900">일정 추가</h3>
+              <button
+                type="button"
+                onClick={() => setShowScheduleForm(false)}
+                aria-label="닫기"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+              >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" viewBox="0 0 24 24">
+                  <path d="M6 6l12 12M6 18 18 6" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-4 overflow-y-auto overscroll-contain px-5 py-5">
+              <div>
+                <label className={labelCls}>
+                  일정 제목 <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={newSchedule.title || ''}
+                  onChange={(e) => setNewSchedule({ ...newSchedule, title: e.target.value })}
+                  className={inputCls}
+                  placeholder="일정 제목을 입력하세요"
+                />
+              </div>
+
+              <div>
+                <label className={labelCls}>
+                  기간 <span className="text-red-500">*</span>
+                </label>
+                {!startDate || !endDate ? (
+                  <div className="rounded-xl border border-gray-200 bg-gray-100 px-4 py-3 text-[13.5px] font-semibold text-gray-500">
+                    프로젝트 기간을 먼저 설정해주세요.
+                  </div>
+                ) : (
+                  <>
+                    <DatePicker
+                      customInput={<DatePickerInput />}
+                      selected={scheduleDateRange[0]}
+                      onChange={handleScheduleDateRangeChange}
+                      startDate={scheduleDateRange[0]}
+                      endDate={scheduleDateRange[1]}
+                      selectsRange
+                      withPortal
+                      minDate={startDate}
+                      maxDate={endDate}
+                      locale={ko as any}
+                      dateFormat="yyyy-MM-dd"
+                      placeholderText="시작일 ~ 종료일"
+                    />
+                    <p className="mt-1.5 text-[11.5px] font-semibold text-gray-400">
+                      선택 가능한 기간: {format(startDate, 'yyyy-MM-dd')} ~ {format(endDate, 'yyyy-MM-dd')} (프로젝트 기간 내)
+                    </p>
+                  </>
+                )}
+              </div>
+
+              <div>
+                <label className={labelCls}>유형</label>
+                <div className={segWrap}>
+                  {TYPE_OPTS.map((o) => (
+                    <button
+                      key={o.v}
+                      type="button"
+                      onClick={() => setNewSchedule({ ...newSchedule, type: o.v })}
+                      className={segCls((newSchedule.type || 'PROJECT') === o.v)}
+                    >
+                      {o.l}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className={labelCls}>참여자</label>
+                {users.length === 0 ? (
+                  <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-[13.5px] font-semibold text-gray-400">등록된 사원이 없습니다.</div>
+                ) : (
+                  <div className="max-h-56 overflow-y-auto overscroll-contain rounded-xl border border-gray-200">
+                    {users.map((user, i) => {
+                      const on = (newSchedule.memberIds || []).includes(user.id);
+                      return pickRow(user, i, on, () => {
+                        const memberIds = newSchedule.memberIds || [];
+                        setNewSchedule({
+                          ...newSchedule,
+                          memberIds: on ? memberIds.filter((id) => id !== user.id) : [...memberIds, user.id],
+                        });
+                      });
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {error && <p className="text-[13px] font-semibold text-red-500">{error}</p>}
+            </div>
+
+            <div className="flex justify-end gap-2.5 border-t border-gray-200 bg-gray-50 px-5 py-4">
+              <button
+                type="button"
+                onClick={() => setShowScheduleForm(false)}
+                className="flex h-[42px] items-center rounded-xl border border-gray-300 bg-white px-4 text-[14px] font-bold text-gray-600 hover:bg-gray-100"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={handleAddSchedule}
+                className="flex h-[42px] items-center rounded-xl bg-primary-500 px-5 text-[14px] font-extrabold text-white shadow-sm shadow-primary-500/30 hover:bg-primary-600"
+              >
+                일정 추가
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 export default ProjectCreatePage;
-

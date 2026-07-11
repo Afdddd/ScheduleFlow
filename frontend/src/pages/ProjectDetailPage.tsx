@@ -24,6 +24,10 @@ import { useScrollLock } from '../hooks/useScrollLock';
 import { useSmartBack } from '../hooks/useSmartBack';
 import DatePickerInput from '../components/ui/DatePickerInput';
 
+const inputCls =
+  'h-[42px] w-full rounded-xl border border-gray-300 bg-white px-3.5 text-[14px] font-medium text-gray-900 placeholder:text-gray-400 focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-100';
+const labelCls = 'mb-1.5 block text-[12.5px] font-bold text-gray-500';
+
 /**
  * 프로젝트 상세 페이지
  *
@@ -739,375 +743,302 @@ const ProjectDetailPage: React.FC = () => {
     );
   }
 
+  // ── 데스크톱 뷰 (+ 모바일 편집) ──
+  const previewName = isEditing ? name : project.name;
+  const previewClient = isEditing
+    ? partners.find((p) => p.id === clientId)?.companyName ?? project.client.companyName
+    : project.client.companyName;
+  const previewStart = isEditing && startDate ? format(startDate, 'yyyy-MM-dd') : project.startDate;
+  const previewEnd = isEditing && endDate ? format(endDate, 'yyyy-MM-dd') : project.endDate;
+  const previewStatus = isEditing ? status : project.status;
+  const previewColor = isEditing ? colorCode : project.colorCode ?? '#0B4EC4';
+  const memberCount = isEditing ? selectedMemberIds.length : project.members.length;
+  const contactCount = isEditing ? selectedPartnerContactIds.length : project.partnerContacts.length;
+
   return (
-    <div className="p-6">
-      {/* 헤더 */}
-      <div className="flex flex-wrap items-center justify-between gap-2 mb-6">
-        <div className="flex items-center gap-3">
-          {project.colorCode && (
-            <div
-              className="w-4 h-4 rounded-full"
-              style={{ backgroundColor: project.colorCode }}
-            />
-          )}
-          <h1 className="text-2xl font-bold">{project.name}</h1>
-          <span
-            className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
-              project.status
-            )}`}
-          >
-            {getStatusLabel(project.status)}
-          </span>
-        </div>
-        {/* 뷰 모드 액션은 상단, 편집 모드 액션(목록으로·취소·저장)은 페이지 맨 밑으로 */}
-        {!isEditing && (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => navigate('/projects')}
-              className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
-            >
-              목록으로
-            </button>
-            {isAdmin && (
-              <>
-                <button
-                  onClick={handleEdit}
-                  className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
-                >
-                  수정
-                </button>
-                <button
-                  onClick={handleDelete}
-                  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-                >
-                  삭제
-                </button>
-              </>
-            )}
-          </div>
-        )}
+    <div className="mx-auto max-w-[1080px] px-5 py-6 sm:px-6">
+      <button
+        onClick={() => navigate('/projects')}
+        className="mb-4 inline-flex items-center gap-1.5 text-[13px] font-bold text-gray-500 transition-colors hover:text-gray-800"
+      >
+        <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+          <path d="M15 18l-6-6 6-6" />
+        </svg>
+        프로젝트 목록으로
+      </button>
+
+      <div className="mb-5 flex flex-wrap items-center gap-2.5">
+        <span className="h-3.5 w-3.5 flex-none rounded-[5px]" style={{ backgroundColor: previewColor }} />
+        <h1 className="text-[22px] font-extrabold tracking-tight text-gray-900">{previewName || '프로젝트'}</h1>
+        <span className={`rounded-full px-2.5 py-1 text-[11.5px] font-bold ${getStatusColor(previewStatus)}`}>
+          {getStatusLabel(previewStatus)}
+        </span>
+        {isEditing && <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-[11.5px] font-bold text-amber-700">편집 중</span>}
       </div>
 
-      {error && (
-        <Alert
-          type="error"
-          message={error}
-          dismissible
-          onClose={() => setError(null)}
-          style={{ marginBottom: '1.5rem' }}
-        />
-      )}
+      {error && <Alert type="error" message={error} dismissible onClose={() => setError(null)} style={{ marginBottom: '1.25rem' }} />}
 
-      {/* 상단 섹션: 기본 정보 및 메타 정보 (좌우 배치) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        {/* 좌측: 기본 정보 카드 */}
-        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-bold mb-4">기본 정보</h2>
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start lg:gap-5">
+        {/* 좌: 정보 */}
+        <div className="min-w-0 space-y-4 lg:space-y-5">
 
-          <div className="space-y-4">
-            {/* 프로젝트 이름 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">프로젝트 이름</label>
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  placeholder="프로젝트 이름을 입력하세요"
-                />
-              ) : (
-                <div className="px-4 py-2 text-gray-900">{project.name}</div>
-              )}
-            </div>
-
-            {/* 거래처 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">거래처</label>
-              {isEditing ? (
-                <select
-                  value={clientId || ''}
-                  onChange={(e) => setClientId(e.target.value ? Number(e.target.value) : null)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  disabled={loadingPartners}
-                >
-                  <option value="">거래처를 선택하세요</option>
-                  {partners.map((partner) => (
-                    <option key={partner.id} value={partner.id}>
-                      {partner.companyName}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <div className="px-4 py-2 text-gray-900">{project.client.companyName}</div>
-              )}
-            </div>
-
-            {/* 설명 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">설명</label>
-              {isEditing ? (
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  rows={8}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  placeholder="프로젝트 설명을 입력하세요"
-                />
-              ) : (
-                <div className="px-4 py-2 text-gray-900 whitespace-pre-wrap min-h-[120px]">
-                  {project.description || '-'}
+          {/* 기본 정보 */}
+          <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+            <h2 className="mb-5 text-[15.5px] font-extrabold tracking-tight text-gray-900">기본 정보</h2>
+            {isEditing ? (
+              <div className="space-y-4">
+                <div>
+                  <label className={labelCls}>
+                    프로젝트 이름 <span className="text-red-500">*</span>
+                  </label>
+                  <input type="text" value={name} onChange={(e) => setName(e.target.value)} className={inputCls} placeholder="프로젝트 이름을 입력하세요" />
                 </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* 우측: 메타 정보 카드 */}
-        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-bold mb-4">메타 정보</h2>
-
-          <div className="space-y-4">
-            {/* 기간 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">기간</label>
-              {isEditing ? (
-                <DatePicker
-                  customInput={<DatePickerInput />}
-                  selected={dateRange[0]}
-                  onChange={handleDateRangeChange}
-                  startDate={dateRange[0]}
-                  endDate={dateRange[1]}
-                  selectsRange
-                  locale={ko as any}
-                  dateFormat="yyyy-MM-dd"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  placeholderText="시작일 ~ 종료일을 선택하세요"
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className={labelCls}>
+                      거래처 <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={clientId || ''}
+                      onChange={(e) => setClientId(e.target.value ? Number(e.target.value) : null)}
+                      className={inputCls}
+                      disabled={loadingPartners}
+                    >
+                      <option value="">거래처를 선택하세요</option>
+                      {partners.map((partner) => (
+                        <option key={partner.id} value={partner.id}>
+                          {partner.companyName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelCls}>
+                      기간 <span className="text-red-500">*</span>
+                    </label>
+                    <DatePicker
+                      customInput={<DatePickerInput />}
+                      selected={dateRange[0]}
+                      onChange={handleDateRangeChange}
+                      startDate={dateRange[0]}
+                      endDate={dateRange[1]}
+                      selectsRange
+                      locale={ko as any}
+                      dateFormat="yyyy-MM-dd"
+                      placeholderText="시작일 ~ 종료일"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className={labelCls}>상태</label>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { v: 'IN_PROGRESS', l: '진행 중' },
+                      { v: 'ON_HOLD', l: '보류' },
+                      { v: 'COMPLETE', l: '완료' },
+                    ].map((o) => {
+                      const on = status === o.v;
+                      return (
+                        <button
+                          key={o.v}
+                          type="button"
+                          onClick={() => setStatus(o.v)}
+                          className={`rounded-xl border px-3.5 py-2.5 text-[13.5px] font-bold transition-colors ${
+                            on ? 'border-primary-500 bg-primary-500 text-white' : 'border-gray-200 bg-white text-gray-500 hover:text-gray-700'
+                          }`}
+                        >
+                          {o.l}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div>
+                  <label className={labelCls}>색상</label>
+                  <ColorPicker value={colorCode} onChange={setColorCode} />
+                </div>
+                <div>
+                  <label className={labelCls}>설명</label>
+                  <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    rows={5}
+                    className={`${inputCls} h-auto py-2.5 leading-relaxed`}
+                    placeholder="프로젝트 설명을 입력하세요"
+                  />
+                </div>
+              </div>
+            ) : (
+              <dl className="divide-y divide-gray-100">
+                <DRow label="거래처" value={project.client.companyName} />
+                <DRow label="기간" value={`${project.startDate} ~ ${project.endDate}`} mono />
+                <DRow
+                  label="상태"
+                  value={
+                    <span className={`inline-block rounded-full px-2.5 py-0.5 text-[12px] font-bold ${getStatusColor(project.status)}`}>
+                      {getStatusLabel(project.status)}
+                    </span>
+                  }
                 />
-              ) : (
-                <div className="px-4 py-2 text-gray-900">
-                  {project.startDate} ~ {project.endDate}
-                </div>
-              )}
-            </div>
+                <DRow
+                  label="색상"
+                  value={
+                    project.colorCode ? (
+                      <span className="flex items-center gap-2">
+                        <span className="h-4 w-4 rounded" style={{ backgroundColor: project.colorCode }} />
+                        <span className="tabular-nums text-gray-600">{project.colorCode}</span>
+                      </span>
+                    ) : (
+                      '-'
+                    )
+                  }
+                />
+                <DRow label="설명" value={project.description || '-'} preLine />
+              </dl>
+            )}
+          </section>
 
-            {/* 상태 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">상태</label>
-              {isEditing ? (
-                <select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                >
-                  <option value="IN_PROGRESS">진행 중</option>
-                  <option value="ON_HOLD">보류</option>
-                  <option value="COMPLETE">완료</option>
-                </select>
-              ) : (
-                <div className="px-4 py-2">
-                  <span
-                    className={`px-3 py-1 text-sm font-semibold rounded-full ${getStatusColor(
-                      project.status
-                    )}`}
-                  >
-                    {getStatusLabel(project.status)}
-                  </span>
+          {/* 팀 구성 */}
+          <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+            <h2 className="mb-4 text-[15.5px] font-extrabold tracking-tight text-gray-900">팀 구성</h2>
+            <div className="grid gap-5 sm:grid-cols-2">
+              {/* 담당자(사원) */}
+              <div>
+                <div className="mb-2 flex items-center gap-2">
+                  <span className="text-[13px] font-bold text-gray-500">담당자</span>
+                  {memberCount > 0 && <span className="text-[12px] font-bold text-gray-400">{memberCount}</span>}
                 </div>
-              )}
-            </div>
-
-            {/* 색상 코드 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">색상 코드</label>
-              {isEditing ? (
-                <ColorPicker value={colorCode} onChange={setColorCode} />
-              ) : (
-                <div className="flex flex-col gap-3">
-                  {project.colorCode && (
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="w-16 h-16 rounded-lg border-2 border-gray-300 shadow-sm"
-                        style={{ backgroundColor: project.colorCode }}
-                      />
-                      <div className="flex flex-col">
-                        <span className="text-sm font-medium text-gray-900">프로젝트 색상</span>
-                        <span className="text-xs text-gray-500 font-mono">
-                          {project.colorCode}
-                        </span>
-                      </div>
+                {isEditing ? (
+                  loadingUsers ? (
+                    <div className="rounded-xl border border-gray-200 px-4 py-3 text-[13px] font-semibold text-gray-400">로딩 중…</div>
+                  ) : users.length === 0 ? (
+                    <div className="rounded-xl border border-gray-200 px-4 py-3 text-[13px] font-semibold text-gray-400">등록된 사원이 없습니다.</div>
+                  ) : (
+                    <div className="max-h-64 overflow-y-auto overscroll-contain rounded-xl border border-gray-200">
+                      {users.map((u, i) => {
+                        const on = selectedMemberIds.includes(u.id);
+                        return (
+                          <label key={u.id} className={`flex cursor-pointer items-center gap-3 px-3.5 py-2.5 ${i > 0 ? 'border-t border-gray-100' : ''}`}>
+                            <input
+                              type="checkbox"
+                              checked={on}
+                              onChange={() => handleMemberToggle(u.id)}
+                              className="h-4 w-4 flex-none rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                            />
+                            <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-primary-500 text-[13px] font-extrabold text-white">
+                              {u.name.charAt(0).toUpperCase()}
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-[14px] font-bold text-gray-900">{u.name}</span>
+                              {u.position && <span className="block text-[12px] font-medium text-gray-500">{u.position}</span>}
+                            </span>
+                          </label>
+                        );
+                      })}
                     </div>
-                  )}
-                  {!project.colorCode && (
-                    <div className="text-sm text-gray-500">색상이 지정되지 않았습니다.</div>
-                  )}
+                  )
+                ) : project.members.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-gray-300 px-4 py-6 text-center text-[13px] font-semibold text-gray-400">할당된 멤버가 없어요.</div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {project.members.map((member, i) => (
+                      <div key={member.id} className="flex items-center gap-3 rounded-xl border border-gray-200 px-3.5 py-2.5">
+                        <span
+                          className="flex h-8 w-8 flex-none items-center justify-center rounded-full text-[13px] font-bold text-white"
+                          style={{ backgroundColor: AVATAR_COLORS[i % AVATAR_COLORS.length] }}
+                        >
+                          {member.name.charAt(0).toUpperCase()}
+                        </span>
+                        <div className="min-w-0">
+                          <div className="truncate text-[14px] font-extrabold text-gray-900">{member.name}</div>
+                          {member.position && <div className="text-[12px] font-semibold text-gray-500">{member.position}</div>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* 거래처 담당자 */}
+              <div>
+                <div className="mb-2 flex items-center gap-2">
+                  <span className="text-[13px] font-bold text-gray-500">거래처 담당자</span>
+                  {contactCount > 0 && <span className="text-[12px] font-bold text-gray-400">{contactCount}</span>}
                 </div>
+                {isEditing ? (
+                  !clientId ? (
+                    <div className="rounded-xl border border-gray-200 px-4 py-3 text-[13px] font-semibold text-gray-400">거래처를 먼저 선택해주세요.</div>
+                  ) : loadingContacts ? (
+                    <div className="rounded-xl border border-gray-200 px-4 py-3 text-[13px] font-semibold text-gray-400">로딩 중…</div>
+                  ) : partnerContacts.length === 0 ? (
+                    <div className="rounded-xl border border-gray-200 px-4 py-3 text-[13px] font-semibold text-gray-400">등록된 연락처가 없습니다.</div>
+                  ) : (
+                    <div className="max-h-64 overflow-y-auto overscroll-contain rounded-xl border border-gray-200">
+                      {partnerContacts.map((contact, i) => {
+                        const on = selectedPartnerContactIds.includes(contact.id);
+                        return (
+                          <label key={contact.id} className={`flex cursor-pointer items-center gap-3 px-3.5 py-2.5 ${i > 0 ? 'border-t border-gray-100' : ''}`}>
+                            <input
+                              type="checkbox"
+                              checked={on}
+                              onChange={() => handlePartnerContactToggle(contact.id)}
+                              className="h-4 w-4 flex-none rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                            />
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-[14px] font-bold text-gray-900">{contact.name}</span>
+                              {contact.position && <span className="block text-[12px] font-medium text-gray-500">{contact.position}</span>}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )
+                ) : project.partnerContacts.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-gray-300 px-4 py-6 text-center text-[13px] font-semibold text-gray-400">할당된 연락처가 없어요.</div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {project.partnerContacts.map((contact) => (
+                      <div key={contact.partnerContactId} className="rounded-xl border border-gray-200 px-3.5 py-2.5">
+                        <div className="flex items-center gap-2">
+                          <span className="truncate text-[14px] font-extrabold text-gray-900">{contact.name}</span>
+                          {contact.position && <span className="flex-none rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-bold text-gray-600">{contact.position}</span>}
+                        </div>
+                        <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[12.5px] font-semibold text-gray-500">
+                          {contact.companyName && <span>{contact.companyName}</span>}
+                          {contact.phone && <span className="tabular-nums">{contact.phone}</span>}
+                          {contact.email && <span className="truncate">{contact.email}</span>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+
+          {/* 일정 */}
+          <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+            <div className="mb-4 flex items-center gap-2.5">
+              <h2 className="text-[15.5px] font-extrabold tracking-tight text-gray-900">일정</h2>
+              {project.schedules.length > 0 && (
+                <span className="inline-grid h-5 min-w-[20px] place-items-center rounded-full bg-primary-50 px-1.5 text-[11.5px] font-extrabold text-primary-600">
+                  {project.schedules.length}
+                </span>
+              )}
+              <div className="flex-1" />
+              {isEditing && (
+                <button
+                  type="button"
+                  onClick={() => setShowScheduleForm(true)}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-3.5 py-2 text-[13px] font-bold text-white shadow-sm shadow-primary-500/25 transition-colors hover:bg-primary-600"
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" viewBox="0 0 24 24">
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+                  일정 추가
+                </button>
               )}
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 중간 섹션: 팀 멤버 할당 */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm mb-6">
-        <h2 className="text-xl font-bold mb-4">팀 멤버 할당</h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* 사원(멤버) 선택 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">사원(멤버)</label>
-            {isEditing ? (
-              loadingUsers ? (
-                <div className="text-sm text-gray-500 p-4 border border-gray-200 rounded-lg">
-                  로딩 중...
-                </div>
-              ) : users.length === 0 ? (
-                <div className="text-sm text-gray-500 p-4 border border-gray-200 rounded-lg">
-                  등록된 사원이 없습니다.
-                </div>
-              ) : (
-                <div className="border border-gray-200 rounded-lg p-4 max-h-64 overflow-y-auto">
-                  {users.map((user) => (
-                    <label
-                      key={user.id}
-                      className="flex items-center space-x-3 py-2 hover:bg-gray-50 cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedMemberIds.includes(user.id)}
-                        onChange={() => handleMemberToggle(user.id)}
-                        className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-                      />
-                      <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
-                        {user.name.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="flex-1">
-                        <div className="text-sm font-medium text-gray-900">{user.name}</div>
-                        {user.position && (
-                          <div className="text-xs text-gray-500">{user.position}</div>
-                        )}
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              )
-            ) : (
-              <div className="border border-gray-200 rounded-lg p-4">
-                {project.members.length === 0 ? (
-                  <div className="text-sm text-gray-500">할당된 멤버가 없습니다.</div>
-                ) : (
-                  <div className="space-y-2">
-                    {project.members.map((member) => (
-                      <div key={member.id} className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
-                          {member.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">{member.name}</div>
-                          {member.position && (
-                            <div className="text-xs text-gray-500">{member.position}</div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* 거래처 연락처 선택 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">거래처 연락처</label>
-            {isEditing ? (
-              !clientId ? (
-                <div className="text-sm text-gray-500 p-4 border border-gray-200 rounded-lg">
-                  거래처를 먼저 선택해주세요.
-                </div>
-              ) : loadingContacts ? (
-                <div className="text-sm text-gray-500 p-4 border border-gray-200 rounded-lg">
-                  로딩 중...
-                </div>
-              ) : partnerContacts.length === 0 ? (
-                <div className="text-sm text-gray-500 p-4 border border-gray-200 rounded-lg">
-                  등록된 연락처가 없습니다.
-                </div>
-              ) : (
-                <div className="border border-gray-200 rounded-lg p-4 max-h-64 overflow-y-auto">
-                  {partnerContacts.map((contact) => (
-                    <label
-                      key={contact.id}
-                      className="flex items-center space-x-2 py-2 hover:bg-gray-50 cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedPartnerContactIds.includes(contact.id)}
-                        onChange={() => handlePartnerContactToggle(contact.id)}
-                        className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-                      />
-                      <div className="flex-1">
-                        <div className="text-sm font-medium text-gray-900">{contact.name}</div>
-                        {contact.position && (
-                          <div className="text-xs text-gray-500">{contact.position}</div>
-                        )}
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              )
-            ) : (
-              <div className="border border-gray-200 rounded-lg p-4">
-                {project.partnerContacts.length === 0 ? (
-                  <div className="text-sm text-gray-500">할당된 연락처가 없습니다.</div>
-                ) : (
-                  <div className="space-y-2">
-                    {project.partnerContacts.map((contact) => (
-                      <div key={contact.partnerContactId}>
-                        <div className="text-sm font-medium text-gray-900">{contact.name}</div>
-                        {contact.position && (
-                          <div className="text-xs text-gray-500">{contact.position}</div>
-                        )}
-                        {contact.phone && (
-                          <div className="text-xs text-gray-500">전화: {contact.phone}</div>
-                        )}
-                        {contact.email && (
-                          <div className="text-xs text-gray-500">이메일: {contact.email}</div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* 하단 섹션: 일정 및 파일 */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-5 sm:p-6 shadow-sm mb-6">
-        {/* 일정 */}
-        <div className="mb-8">
-          <div className="mb-3 flex items-center gap-2">
-            <h3 className="text-[17px] font-extrabold text-gray-900">일정</h3>
-            {project.schedules.length > 0 && (
-              <span className="rounded-full bg-primary-50 px-2.5 py-0.5 text-[12px] font-extrabold text-primary-600">
-                {project.schedules.length}
-              </span>
-            )}
-            <div className="flex-1" />
-            {isEditing && (
-              <button
-                type="button"
-                onClick={() => setShowScheduleForm(true)}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-primary-500 px-3.5 py-2 text-[13.5px] font-extrabold text-white shadow-sm shadow-primary-500/25 transition-colors hover:bg-primary-600"
-              >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" viewBox="0 0 24 24">
-                  <path d="M12 5v14M5 12h14" />
-                </svg>
-                추가
-              </button>
-            )}
-          </div>
 
           {project.schedules.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-gray-300 py-8 text-center text-[13.5px] font-semibold text-gray-400">
@@ -1172,18 +1103,18 @@ const ProjectDetailPage: React.FC = () => {
               })}
             </div>
           )}
-        </div>
+          </section>
 
-        {/* 파일 */}
-        <div>
-          <div className="mb-3 flex items-center gap-2">
-            <h3 className="text-[17px] font-extrabold text-gray-900">파일</h3>
-            {files.length > 0 && (
-              <span className="rounded-full bg-primary-50 px-2.5 py-0.5 text-[12px] font-extrabold text-primary-600">
-                {files.length}
-              </span>
-            )}
-          </div>
+          {/* 파일 */}
+          <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+            <div className="mb-4 flex items-center gap-2.5">
+              <h2 className="text-[15.5px] font-extrabold tracking-tight text-gray-900">파일</h2>
+              {files.length > 0 && (
+                <span className="inline-grid h-5 min-w-[20px] place-items-center rounded-full bg-primary-50 px-1.5 text-[11.5px] font-extrabold text-primary-600">
+                  {files.length}
+                </span>
+              )}
+            </div>
 
           {/* 카테고리 탭 — pill */}
           <div className="-mx-1 mb-3 flex gap-2 overflow-x-auto px-1 pb-1">
@@ -1276,40 +1207,74 @@ const ProjectDetailPage: React.FC = () => {
                 })}
             </div>
           )}
+          </section>
+        </div>
+
+        {/* 우: 요약 + 액션 레일 */}
+        <div className="mt-4 space-y-3.5 lg:sticky lg:top-4 lg:mt-0">
+          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <div className="px-[18px] pt-3.5 text-[11.5px] font-extrabold tracking-wide text-gray-400">프로젝트</div>
+            <div className="flex items-center gap-2.5 border-b border-gray-200 px-[18px] pb-3.5 pt-1.5">
+              <span className="h-3.5 w-3.5 flex-none rounded-[5px]" style={{ backgroundColor: previewColor }} />
+              <span className="truncate text-[15px] font-extrabold tracking-tight text-gray-900">{previewName || '프로젝트명'}</span>
+            </div>
+            <RailRow label="거래처" value={previewClient || '—'} />
+            <RailRow label="기간" value={`${previewStart} ~ ${previewEnd}`} mono />
+            <RailRow label="상태" value={getStatusLabel(previewStatus)} />
+            <RailRow label="담당자" value={`${memberCount}명`} />
+            <RailRow label="일정" value={`${project.schedules.length}개`} />
+            <RailRow label="파일" value={`${files.length}개`} last />
+          </div>
+
+          {isAdmin && (
+            <div className="space-y-2.5">
+              {isEditing ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleSave}
+                    disabled={loading}
+                    className="flex h-11 w-full items-center justify-center rounded-xl bg-primary-500 text-[14.5px] font-extrabold text-white shadow-md shadow-primary-500/30 transition-colors hover:bg-primary-600 disabled:cursor-not-allowed disabled:bg-gray-400"
+                  >
+                    {loading ? '저장 중…' : '저장'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCancel}
+                    className="flex h-11 w-full items-center justify-center rounded-xl border border-gray-300 bg-white text-[14px] font-bold text-gray-600 transition-colors hover:bg-gray-50"
+                  >
+                    취소
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleEdit}
+                    className="flex h-11 w-full items-center justify-center rounded-xl bg-primary-500 text-[14.5px] font-extrabold text-white shadow-md shadow-primary-500/30 transition-colors hover:bg-primary-600"
+                  >
+                    수정
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    className="flex h-11 w-full items-center justify-center rounded-xl border border-red-200 bg-white text-[14px] font-bold text-red-500 transition-colors hover:bg-red-50"
+                  >
+                    삭제
+                  </button>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* 편집 모드 하단 액션: 목록으로 · 취소 · 저장 */}
-      {isEditing && (
-        <div className="mt-2 flex justify-end gap-3">
-          <button
-            onClick={() => navigate('/projects')}
-            className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
-          >
-            목록으로
-          </button>
-          <button
-            onClick={handleCancel}
-            className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-          >
-            취소
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={loading}
-            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-          >
-            {loading ? '저장 중...' : '저장'}
-          </button>
-        </div>
-      )}
-
       {/* 일정 추가 — 바텀 시트 */}
       {isEditing && showScheduleForm && (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end">
-          <div className="absolute inset-0 bg-gray-900/40" onClick={() => setShowScheduleForm(false)} />
-          <div className="relative max-h-[88vh] overflow-y-auto overscroll-contain rounded-t-3xl bg-white px-5 pb-8 pt-2 shadow-2xl">
-            <div className="mx-auto mb-4 mt-2 h-1.5 w-10 rounded-full bg-gray-300" />
+        <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-6">
+          <div className="absolute inset-0 bg-gray-900/50" onClick={() => setShowScheduleForm(false)} />
+          <div className="relative max-h-[88vh] w-full overflow-y-auto overscroll-contain rounded-t-3xl bg-white px-5 pb-8 pt-2 shadow-2xl sm:max-w-[560px] sm:rounded-2xl">
+            <div className="mx-auto mb-4 mt-2 h-1.5 w-10 rounded-full bg-gray-300 sm:hidden" />
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-[19px] font-extrabold text-gray-900">일정 추가</h3>
               <button
@@ -1456,6 +1421,23 @@ const MSection: React.FC<{ title: string; count?: number }> = ({ title, count })
 const MEmpty: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <div className="rounded-2xl border border-dashed border-gray-300 py-8 text-center text-[13.5px] font-semibold text-gray-400">
     {children}
+  </div>
+);
+
+/* ---- 데스크톱 조각 ---- */
+/** 데스크톱 읽기 모드 정보 행. */
+const DRow: React.FC<{ label: string; value: React.ReactNode; mono?: boolean; preLine?: boolean }> = ({ label, value, mono, preLine }) => (
+  <div className="flex gap-4 py-3">
+    <span className="w-20 flex-none text-[13px] font-bold text-gray-400">{label}</span>
+    <span className={`min-w-0 flex-1 text-[14px] font-semibold text-gray-800 ${mono ? 'tabular-nums' : ''} ${preLine ? 'whitespace-pre-wrap' : ''}`}>{value}</span>
+  </div>
+);
+
+/** 우측 요약 레일 행. */
+const RailRow: React.FC<{ label: string; value: string; mono?: boolean; last?: boolean }> = ({ label, value, mono, last }) => (
+  <div className={`flex items-center justify-between gap-3 px-[18px] py-2.5 ${last ? '' : 'border-b border-gray-200'}`}>
+    <span className="flex-none text-[12.5px] font-bold text-gray-400">{label}</span>
+    <span className={`truncate text-[13px] font-bold text-gray-800 ${mono ? 'tabular-nums' : ''}`}>{value}</span>
   </div>
 );
 

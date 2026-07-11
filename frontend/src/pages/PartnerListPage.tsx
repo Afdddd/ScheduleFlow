@@ -1,145 +1,95 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import SearchBar from '../components/SearchBar';
-import Pagination from '../components/Pagination';
-import { useAuthStore } from '../stores/authStore';
-import { getPartnerList, PartnerListResponse, PageResponse } from '../api/list';
+import ListView, { ListColumn } from '../components/list/ListView';
+import { GLYPH_TONES } from '../components/list/Badge';
+import { NameCell, Glyph, Num, Muted } from '../components/list/cells';
 import MobilePartnerList from './MobilePartnerList';
 import { useIsMobile } from '../hooks/useMediaQuery';
+import { useAuthStore } from '../stores/authStore';
+import { getPartnerList, PartnerListResponse, PageResponse } from '../api/list';
 
 /**
- * 거래처 목록 페이지
- * 
- * 기능:
- * 1. 거래처 목록 조회 (검색, 페이징)
- * 2. 거래처 상세 보기 (추후 구현)
+ * 거래처 목록 페이지 — 데스크톱은 공통 `ListView`(컬럼형), 모바일은 전용 화면.
  */
 const PartnerListPage: React.FC = () => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
+  const isAdmin = useAuthStore((state) => state.user?.role === 'ADMIN');
+
   const [data, setData] = useState<PageResponse<PartnerListResponse> | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [currentPage, setCurrentPage] = useState<number>(0);
-  const pageSize = 8;
+  const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(0);
+  const pageSize = 10;
 
   useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      try {
-        const result = await getPartnerList(searchQuery, currentPage, pageSize);
-        setData(result);
-      } catch (error) {
-        console.error('거래처 목록 로딩 실패:', error);
-      } finally {
-        setLoading(false);
-      }
+    if (isMobile) return;
+    let alive = true;
+    setLoading(true);
+    getPartnerList(searchQuery, currentPage, pageSize)
+      .then((res) => alive && setData(res))
+      .catch((e) => console.error('거래처 목록 로딩 실패:', e))
+      .finally(() => alive && setLoading(false));
+    return () => {
+      alive = false;
     };
+  }, [searchQuery, currentPage, isMobile]);
 
-    loadData();
-  }, [searchQuery, currentPage]);
+  if (isMobile) return <MobilePartnerList />;
 
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    setCurrentPage(0);
-  };
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-
-  const { user } = useAuthStore();
-  const isAdmin = user?.role === 'ADMIN';
-  const isMobile = useIsMobile();
-
-  if (isMobile) {
-    return <MobilePartnerList />;
-  }
+  const columns: ListColumn<PartnerListResponse>[] = [
+    {
+      key: 'company',
+      header: '회사명',
+      width: 'minmax(0,1.6fr)',
+      render: (p) => (
+        <NameCell lead={<Glyph text={p.companyName.charAt(0)} tone={GLYPH_TONES.blue} />}>{p.companyName}</NameCell>
+      ),
+    },
+    {
+      key: 'phone',
+      header: '대표 전화',
+      width: '190px',
+      render: (p) => <Num>{p.mainPhone || '-'}</Num>,
+    },
+    {
+      key: 'address',
+      header: '주소',
+      width: 'minmax(0,1.8fr)',
+      render: (p) => <Muted>{p.address || '-'}</Muted>,
+    },
+  ];
 
   return (
-    <div className="p-6">
-      <div className="mb-6 flex items-center gap-3">
-        <div className="flex-1">
-          <SearchBar
-            className=""
-            placeholder="회사명으로 검색"
-            onSearch={handleSearch}
-          />
-        </div>
-        {isAdmin && (
-          <button
-            onClick={() => navigate('/partners/new')}
-            className="flex-none whitespace-nowrap rounded-lg bg-primary-500 px-4 py-2 text-white transition-colors hover:bg-primary-600"
-          >
-            등록
-          </button>
-        )}
-      </div>
-
-      {loading && (
-        <div className="text-center py-8 text-gray-500">로딩 중...</div>
-      )}
-
-      {!loading && data && (
-        <>
-          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    회사명
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    대표 전화번호
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    주소
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {data.content.length === 0 ? (
-                  <tr>
-                    <td colSpan={3} className="px-6 py-4 text-center text-gray-500">
-                      거래처가 없습니다.
-                    </td>
-                  </tr>
-                ) : (
-                  data.content.map((partner) => (
-                    <tr
-                      key={partner.id}
-                      className="hover:bg-gray-50 transition-colors cursor-pointer"
-                      onClick={() => navigate(`/partners/${partner.id}`)}
-                    >
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm font-medium text-gray-900">
-                          {partner.companyName}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {partner.mainPhone || '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {partner.address || '-'}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {data && (
-            <Pagination
-              currentPage={data.currentPage}
-              totalPages={data.totalPages}
-              pageSize={data.pageSize}
-              totalElements={data.totalElements}
-              onPageChange={handlePageChange}
-            />
-          )}
-        </>
-      )}
-    </div>
+    <ListView<PartnerListResponse>
+      columns={columns}
+      items={data?.content ?? []}
+      rowKey={(p) => p.id}
+      loading={loading}
+      onRowClick={(p) => navigate(`/partners/${p.id}`)}
+      searchPlaceholder="회사명으로 검색"
+      searchInitial={searchQuery}
+      onSearch={(q) => {
+        setSearchQuery(q);
+        setCurrentPage(0);
+      }}
+      createButton={isAdmin ? { label: '새 거래처', onClick: () => navigate('/partners/new') } : undefined}
+      totalLabel={data ? <><b className="font-extrabold text-gray-900">{data.totalElements}개</b> 거래처</> : null}
+      empty={{
+        icon: (
+          <svg className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+            <path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M9 13h.01M9 17h.01M15 9h.01M15 13h.01M15 17h.01" />
+          </svg>
+        ),
+        title: searchQuery ? '검색 결과가 없어요' : '아직 거래처가 없어요',
+        description: searchQuery ? '다른 검색어로 찾아보세요.' : '거래처를 등록하면 프로젝트에 연결할 수 있어요.',
+        action: isAdmin && !searchQuery ? { label: '새 거래처', onClick: () => navigate('/partners/new') } : undefined,
+      }}
+      currentPage={data?.currentPage ?? 0}
+      totalPages={data?.totalPages ?? 0}
+      totalElements={data?.totalElements ?? 0}
+      onPageChange={setCurrentPage}
+    />
   );
 };
 

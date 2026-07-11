@@ -8,7 +8,7 @@ spring:
     active: local
 
   datasource:
-    url: jdbc:mysql://localhost:3306/scheduleflow?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    url: jdbc:mysql://localhost:3307/scheduleflow?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
     username: ${MYSQL_USER}
     password: ${MYSQL_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -41,3 +41,9 @@ springdoc:
     path: /swagger-ui.html
     tags-sorter: alpha
     operations-sorter: alpha
+
+app:
+  cors:
+    # 기본값은 로컬 개발용(localhost·사설/테일스케일 IP). prod는 배포 시
+    # APP_CORS_ALLOWED_ORIGINS 환경변수로 실도메인을 주입한다(예: https://<서브도메인>.duckdns.org).
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost,http://localhost:*,http://192.168.0.49,http://192.168.0.49:*,http://100.83.84.21,http://100.83.84.21:*}
