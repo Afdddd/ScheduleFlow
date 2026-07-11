@@ -63,6 +63,13 @@ resource "aws_iam_role_policy_attachment" "s3" {
   policy_arn = aws_iam_policy.s3_access.arn
 }
 
+# ECR pull — EC2가 이미지를 내려받을 권한 (읽기 전용 관리형 정책)
+#   GetAuthorizationToken(도커 로그인) + 이미지 레이어 다운로드만 허용. push는 불가.
+resource "aws_iam_role_policy_attachment" "ecr_pull" {
+  role       = aws_iam_role.ec2.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+}
+
 resource "aws_iam_instance_profile" "ec2" {
   name = "scheduleflow-ec2-profile"
   role = aws_iam_role.ec2.name
