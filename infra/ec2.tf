@@ -36,6 +36,11 @@ locals {
     curl -sSL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-aarch64 \
       -o /usr/local/lib/docker/cli-plugins/docker-compose
     chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+    # dnf update가 ssm-agent를 갱신하다 죽여도 마지막에 확실히 살려둔다
+    # (SSM이 유일한 접속 경로라 이게 죽으면 서버에 못 들어감)
+    dnf install -y amazon-ssm-agent
+    systemctl enable amazon-ssm-agent
+    systemctl restart amazon-ssm-agent
   EOF
 }
 
@@ -63,5 +68,19 @@ resource "aws_instance" "app" {
 
   tags = {
     Name = "scheduleflow-app"
+  }
+}
+
+# ────────────────────────────────────────────────
+# ⑤ EIP — 고정 퍼블릭 IP
+#   인스턴스를 교체(재생성)해도 IP가 유지됨 → DuckDNS 재설정 불필요.
+#   2024-02부터 일반 퍼블릭 IP도 동일 과금이라 EIP 추가 비용 없음.
+# ────────────────────────────────────────────────
+resource "aws_eip" "app" {
+  instance = aws_instance.app.id
+  domain   = "vpc"
+
+  tags = {
+    Name = "scheduleflow-eip"
   }
 }
