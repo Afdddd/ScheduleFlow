@@ -1,0 +1,19 @@
+# SITE_ADDRESS가 ":80"이면 HTTP만, "xxx.duckdns.org"면 Let's Encrypt 자동 HTTPS
+{$SITE_ADDRESS} {
+	encode gzip
+
+	# 헬스체크 (기존 엣지 nginx의 /health 유지)
+	handle /health {
+		respond "OK" 200
+	}
+
+	# API → 백엔드 (컨텍스트 패스가 /api라 경로 그대로 전달)
+	handle /api/* {
+		reverse_proxy backend:8080
+	}
+
+	# 나머지 전부 → 프론트 정적 서빙 (SPA 라우팅은 프론트 nginx가 처리)
+	handle {
+		reverse_proxy frontend:80
+	}
+}

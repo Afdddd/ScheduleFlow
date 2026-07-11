@@ -1,0 +1,55 @@
+# AWS EC2용 compose — 로컬(docker-compose.yml)과 차이:
+#   mysql 컨테이너 없음(RDS 사용), 이미지는 ECR 참조, 엣지는 nginx 대신 Caddy(자동 HTTPS)
+# 변수들은 같은 디렉토리의 .env에서 주입된다 (fetch-env.sh가 SSM에서 생성)
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: scheduleflow-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      # 첫 배포(IP)는 ":80", 도메인 연결 후 "xxx.duckdns.org"로 바꾸면 자동 HTTPS
+      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data      # 인증서 보관 — 지우면 Let's Encrypt 재발급
+      - caddy_config:/config
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - scheduleflow-network
+
+  frontend:
+    image: ${ECR}/scheduleflow-frontend:latest
+    container_name: scheduleflow-frontend
+    restart: unless-stopped
+    networks:
+      - scheduleflow-network
+
+  backend:
+    image: ${ECR}/scheduleflow-backend:latest
+    container_name: scheduleflow-backend
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:mysql://${RDS_ENDPOINT}:3306/scheduleflow?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION}
+      APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS}
+      # prod 기본은 validate(fail-fast). RDS가 빈 상태인 첫 부팅만 update로 스키마 생성
+      SPRING_JPA_HIBERNATE_DDL_AUTO: ${DDL_AUTO:-validate}
+    networks:
+      - scheduleflow-network
+
+volumes:
+  caddy_data:
+  caddy_config:
+
+networks:
+  scheduleflow-network:
+    driver: bridge
