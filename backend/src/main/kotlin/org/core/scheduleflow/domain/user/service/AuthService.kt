@@ -60,7 +60,10 @@ class AuthService(
     fun refresh(request: TokenRefreshRequest): TokenResponse {
         val claims = jwtProvider.parseRefreshClaims(request.refreshToken)
             ?: throw CustomException(ErrorCode.INVALID_REFRESH_TOKEN)
-        val user = userRepository.findByUsername(claims.subject)
+        // claims.subject는 플랫폼 타입(String!) — subject 없는 토큰이면 null이므로 방어
+        val username = claims.subject
+            ?: throw CustomException(ErrorCode.INVALID_REFRESH_TOKEN)
+        val user = userRepository.findByUsername(username)
             ?: throw CustomException(ErrorCode.INVALID_REFRESH_TOKEN)
         val userId = checkNotNull(user.id) {
             "findByUsername() 후에는 userId가 DB에 존재해야한다."

@@ -59,37 +59,23 @@ class JwtProvider(
     }
 
     /**
-     * 액세스 토큰으로부터 Authentication을 만든다.
-     * 리프레시 토큰(type=refresh)은 API 인증 수단으로 쓸 수 없으므로 null을 반환한다.
+     * 액세스 토큰으로부터 Authentication을 만든다. 검증·파싱은 여기서 1회만 수행한다.
+     *
+     * 다음 경우 예외 대신 null을 반환한다:
+     * - 서명/만료가 유효하지 않은 토큰
+     * - 리프레시 토큰(type=refresh) — API 인증 수단으로 쓸 수 없다
+     *
+     * null이면 필터가 인증을 세팅하지 않고, 이후 authenticated() 단계에서
+     * JwtAuthenticationEntryPoint가 일관된 401을 반환한다(→ 프론트 로그인 리다이렉트).
+     * (예외를 던지면 필터 밖으로 새어나가 @RestControllerAdvice가 못 잡고 500성 응답이 됨)
      */
     fun getAuthentication(token: String): Authentication? {
-        val claims = Jwts.parser()
-            .verifyWith(getSecurityKey(secretKey))
-            .build()
-            .parseSignedClaims(token)
-            .payload
-
+        val claims = parseClaims(token) ?: return null
         if (claims[CLAIM_TYPE] == TYPE_REFRESH) return null
 
         val role = claims.get("role", String::class.java)
         val authorities = listOf(SimpleGrantedAuthority("ROLE_$role"))
         return UsernamePasswordAuthenticationToken(claims, null, authorities)
-    }
-
-    fun validateToken(token: String): Result<Boolean> {
-        // 검증 실패 시 예외를 던지지 않고 Result.failure로 돌려준다.
-        // 필터가 이 실패를 삼키고 인증을 세팅하지 않으면, 이후 authenticated() 단계에서
-        // JwtAuthenticationEntryPoint가 일관된 401을 반환한다(→ 프론트 로그인 리다이렉트).
-        // (예외를 던지면 필터 밖으로 새어나가 @RestControllerAdvice가 못 잡고 500성 응답이 됨)
-        return try {
-            Jwts.parser()
-                .verifyWith(getSecurityKey(secretKey))
-                .build()
-                .parseSignedClaims(token)
-            Result.success(true)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
     }
 
     private fun buildToken(claims: Map<String, Any>, subject: String, ttlMillis: Long): String {
