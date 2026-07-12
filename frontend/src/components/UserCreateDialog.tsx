@@ -46,6 +46,8 @@ const UserCreateDialog: React.FC<Props> = ({ open, onClose, onCreated }) => {
     if (!username.trim()) return setError('아이디를 입력해 주세요.');
     if (password.length < 8 || password.length > 20) return setError('비밀번호는 8~20자로 입력해 주세요.');
     if (!phone.trim()) return setError('전화번호를 입력해 주세요.');
+    if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))
+      return setError('올바른 이메일 형식이 아니에요.');
 
     setSaving(true);
     try {
