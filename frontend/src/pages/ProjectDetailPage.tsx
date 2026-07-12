@@ -51,7 +51,6 @@ const ProjectDetailPage: React.FC = () => {
   const [project, setProject] = useState<ProjectDetailResponse | null>(null);
   const [files, setFiles] = useState<FileResponse[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const [loadingFiles, setLoadingFiles] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   // 편집 모드
