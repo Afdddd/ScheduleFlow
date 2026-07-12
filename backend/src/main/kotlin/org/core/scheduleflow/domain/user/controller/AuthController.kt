@@ -1,6 +1,8 @@
 package org.core.scheduleflow.domain.user.controller
 
 import jakarta.validation.Valid
+import org.core.scheduleflow.domain.user.dto.TokenRefreshRequest
+import org.core.scheduleflow.domain.user.dto.TokenResponse
 import org.core.scheduleflow.domain.user.dto.UserSignInRequest
 import org.core.scheduleflow.domain.user.dto.UserSignUpRequest
 import org.core.scheduleflow.domain.user.service.AuthService
@@ -28,8 +30,14 @@ class AuthController(
     }
 
     @PostMapping("/sign-in")
-    fun signIn(@RequestBody request: UserSignInRequest): ResponseEntity<String> {
+    fun signIn(@RequestBody request: UserSignInRequest): ResponseEntity<TokenResponse> {
         return ResponseEntity.ok(authService.signIn(request))
+    }
+
+    // 액세스 토큰 만료 시 리프레시 토큰으로 새 토큰 쌍을 발급받는다(자동 로그인).
+    @PostMapping("/refresh")
+    fun refresh(@RequestBody @Valid request: TokenRefreshRequest): ResponseEntity<TokenResponse> {
+        return ResponseEntity.ok(authService.refresh(request))
     }
 
 

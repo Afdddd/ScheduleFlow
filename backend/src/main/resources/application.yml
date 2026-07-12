@@ -33,6 +33,8 @@ spring:
 jwt:
   secret-key: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION}
+  # 리프레시 토큰 만료(ms). 기본 14일 — env 미설정 환경에서도 동작하도록 기본값을 둔다.
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION:1209600000}
 
 springdoc:
   api-docs:

@@ -11,10 +11,11 @@ class JwtProviderTest {
     private lateinit var jwtProvider: JwtProvider
     private val secretKey = "dGVzdC1zZWNyZXQta2V5LXRlc3Qtc2VjcmV0LWtleS10ZXN0LXNlY3JldC1rZXk="
     private val expiration = 60_000L
+    private val refreshExpiration = 120_000L
 
     @BeforeEach
     fun setUp() {
-        jwtProvider = JwtProvider(secretKey, expiration)
+        jwtProvider = JwtProvider(secretKey, expiration, refreshExpiration)
     }
 
     @Test
@@ -44,4 +45,37 @@ class JwtProviderTest {
         assertTrue(result.isFailure)
     }
 
+    @Test
+    @DisplayName("리프레시 토큰은 parseRefreshClaims로 클레임을 얻을 수 있다")
+    fun parseRefreshClaims_refreshToken_returnsClaims() {
+        // given
+        val refreshToken = jwtProvider.generateRefreshToken(1L, "testUser", Role.STAFF)
+
+        // when
+        val claims = jwtProvider.parseRefreshClaims(refreshToken)
+
+        // then
+        assertNotNull(claims)
+        assertEquals("testUser", claims!!.subject)
+    }
+
+    @Test
+    @DisplayName("액세스 토큰은 parseRefreshClaims에서 거부된다(null)")
+    fun parseRefreshClaims_accessToken_returnsNull() {
+        // given
+        val accessToken = jwtProvider.generateAccessToken(1L, "testUser", Role.STAFF)
+
+        // when & then: 액세스 토큰으로 refresh 엔드포인트를 두드려도 통하지 않아야 한다
+        assertNull(jwtProvider.parseRefreshClaims(accessToken))
+    }
+
+    @Test
+    @DisplayName("리프레시 토큰은 API 인증 수단으로 쓸 수 없다(getAuthentication null)")
+    fun getAuthentication_refreshToken_returnsNull() {
+        // given
+        val refreshToken = jwtProvider.generateRefreshToken(1L, "testUser", Role.STAFF)
+
+        // when & then
+        assertNull(jwtProvider.getAuthentication(refreshToken))
+    }
 }

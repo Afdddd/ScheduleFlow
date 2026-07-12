@@ -40,6 +40,7 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRATION: ${JWT_EXPIRATION}
+      JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION:-1209600000}  # 리프레시 토큰 14일
       APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS}
       # prod 기본은 validate(fail-fast). RDS가 빈 상태인 첫 부팅만 update로 스키마 생성
       SPRING_JPA_HIBERNATE_DDL_AUTO: ${DDL_AUTO:-validate}

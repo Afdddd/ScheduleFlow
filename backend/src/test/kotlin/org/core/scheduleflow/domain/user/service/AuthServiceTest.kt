@@ -8,7 +8,9 @@ import io.mockk.every
 import io.mockk.slot
 import io.mockk.mockk
 import io.mockk.verify
+import io.jsonwebtoken.Claims
 import org.core.scheduleflow.domain.user.constant.Role
+import org.core.scheduleflow.domain.user.dto.TokenRefreshRequest
 import org.core.scheduleflow.domain.user.dto.UserSignInRequest
 import org.core.scheduleflow.domain.user.dto.UserSignUpRequest
 import org.core.scheduleflow.domain.user.entity.User
@@ -99,16 +101,77 @@ class AuthServiceTest : BehaviorSpec({
 
         every { authenticationManager.authenticate(any()) } returns mockk()
         every { userRepository.findByUsername("loginuser") } returns user
-        every { jwtProvider.generateAccessToken(1L, "loginuser", Role.STAFF, any()) } returns "jwt-token-value"
+        every { jwtProvider.generateAccessToken(1L, "loginuser", Role.STAFF, any()) } returns "access-token-value"
+        every { jwtProvider.generateRefreshToken(1L, "loginuser", Role.STAFF) } returns "refresh-token-value"
 
         When("로그인을 하면") {
-            val token = authService.signIn(request)
+            val tokens = authService.signIn(request)
 
-            Then("JWT 토큰이 발급된다") {
-                token shouldBe "jwt-token-value"
+            Then("액세스·리프레시 토큰 쌍이 발급된다") {
+                tokens.accessToken shouldBe "access-token-value"
+                tokens.refreshToken shouldBe "refresh-token-value"
                 verify(exactly = 1) { authenticationManager.authenticate(any()) }
                 verify(exactly = 1) { userRepository.findByUsername("loginuser") }
                 verify(exactly = 1) { jwtProvider.generateAccessToken(1L, "loginuser", Role.STAFF, any()) }
+                verify(exactly = 1) { jwtProvider.generateRefreshToken(1L, "loginuser", Role.STAFF) }
+            }
+        }
+    }
+
+    Given("유효한 리프레시 토큰이 주어지고") {
+        val user = User(
+            id = 1L,
+            username = "loginuser",
+            password = "encoded",
+            name = "Login User",
+            phone = "010-2222-2222"
+        )
+        val claims = mockk<Claims>()
+
+        every { claims.subject } returns "loginuser"
+        every { jwtProvider.parseRefreshClaims("valid-refresh") } returns claims
+        every { userRepository.findByUsername("loginuser") } returns user
+        every { jwtProvider.generateAccessToken(1L, "loginuser", Role.STAFF, any()) } returns "new-access"
+        every { jwtProvider.generateRefreshToken(1L, "loginuser", Role.STAFF) } returns "new-refresh"
+
+        When("토큰을 갱신하면") {
+            val tokens = authService.refresh(TokenRefreshRequest("valid-refresh"))
+
+            Then("새 토큰 쌍이 발급된다(로테이션)") {
+                tokens.accessToken shouldBe "new-access"
+                tokens.refreshToken shouldBe "new-refresh"
+                verify(exactly = 1) { jwtProvider.generateRefreshToken(1L, "loginuser", Role.STAFF) }
+            }
+        }
+    }
+
+    Given("유효하지 않은 리프레시 토큰이 주어지고") {
+        every { jwtProvider.parseRefreshClaims("bad-refresh") } returns null
+
+        When("토큰을 갱신하면") {
+            val exception = shouldThrow<CustomException> {
+                authService.refresh(TokenRefreshRequest("bad-refresh"))
+            }
+
+            Then("INVALID_REFRESH_TOKEN 예외가 발생한다") {
+                exception.errorCode shouldBe ErrorCode.INVALID_REFRESH_TOKEN
+            }
+        }
+    }
+
+    Given("탈퇴한 사용자의 리프레시 토큰이 주어지고") {
+        val claims = mockk<Claims>()
+        every { claims.subject } returns "ghost"
+        every { jwtProvider.parseRefreshClaims("ghost-refresh") } returns claims
+        every { userRepository.findByUsername("ghost") } returns null
+
+        When("토큰을 갱신하면") {
+            val exception = shouldThrow<CustomException> {
+                authService.refresh(TokenRefreshRequest("ghost-refresh"))
+            }
+
+            Then("INVALID_REFRESH_TOKEN 예외가 발생한다") {
+                exception.errorCode shouldBe ErrorCode.INVALID_REFRESH_TOKEN
             }
         }
     }

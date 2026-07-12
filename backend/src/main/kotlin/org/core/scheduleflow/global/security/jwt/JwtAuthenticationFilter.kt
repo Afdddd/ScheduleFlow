@@ -20,8 +20,10 @@ class JwtAuthenticationFilter(
         if(token != null) {
             jwtProvider.validateToken(token)
                 .onSuccess {
-                    val authentication = jwtProvider.getAuthentication(token)
-                    SecurityContextHolder.getContext().authentication = authentication
+                    // 리프레시 토큰이면 null — 인증을 세팅하지 않아 401로 떨어진다.
+                    jwtProvider.getAuthentication(token)?.let { authentication ->
+                        SecurityContextHolder.getContext().authentication = authentication
+                    }
                 }
         }
         filterChain.doFilter(request, response)
