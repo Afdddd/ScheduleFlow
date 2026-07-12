@@ -22,3 +22,4 @@ storage:
 jwt:
   secret-key: dGVzdC1zZWNyZXQta2V5LXRlc3Qtc2VjcmV0LWtleS10ZXN0LXNlY3JldC1rZXk=
   expiration: 3600000
+  refresh-expiration: 1209600000

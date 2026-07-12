@@ -65,7 +65,7 @@ class UserControllerTest @Autowired constructor(
     @DisplayName("ADMIN 토큰으로 삭제 API 호출 시 성공")
     fun deleteUser_withAdminToken_success() {
         // given
-        val token = authService.signIn(UserSignInRequest("admin", "password"))
+        val token = authService.signIn(UserSignInRequest("admin", "password")).accessToken
 
         // when & then
         mockMvc.delete("/users/$targetUserId") {
@@ -79,7 +79,7 @@ class UserControllerTest @Autowired constructor(
     @DisplayName("403 - STAFF 토큰으로 ADMIN 전용 API 호출 시 403")
     fun deleteUser_withStaffToken_fail() {
         // given
-        val token = authService.signIn(UserSignInRequest("staff", "password"))
+        val token = authService.signIn(UserSignInRequest("staff", "password")).accessToken
 
         // when & then
         mockMvc.delete("/users/$targetUserId") {
@@ -102,7 +102,7 @@ class UserControllerTest @Autowired constructor(
     @Test
     @DisplayName("403 - 다른 사용자 계정 조회 시 403 반환")
     fun getUser_whenAccessingOtherUserAccount_thenForbidden() {
-        val token = authService.signIn(UserSignInRequest("staff", "password"))
+        val token = authService.signIn(UserSignInRequest("staff", "password")).accessToken
 
         mockMvc.get("/users/$targetUserId") {
             header("Authorization", "Bearer $token")
@@ -114,7 +114,7 @@ class UserControllerTest @Autowired constructor(
     @Test
     @DisplayName("200 - 본인 계정 정보 조회 성공")
     fun getUser_whenAccessingOwnAccount_thenSuccess() {
-        val token = authService.signIn(UserSignInRequest("target", "password"))
+        val token = authService.signIn(UserSignInRequest("target", "password")).accessToken
 
         mockMvc.get("/users/$targetUserId") {
             header("Authorization", "Bearer $token")
@@ -126,7 +126,7 @@ class UserControllerTest @Autowired constructor(
     @Test
     @DisplayName("200 - ADMIN이 다른 사용자 정보 조회 성공")
     fun getUser_whenAdminAccessesOtherUserAccount_thenSuccess() {
-        val token = authService.signIn(UserSignInRequest("admin", "password"))
+        val token = authService.signIn(UserSignInRequest("admin", "password")).accessToken
         mockMvc.get("/users/$targetUserId") {
             header("Authorization", "Bearer $token")
         }.andExpect {
