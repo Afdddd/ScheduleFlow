@@ -1,94 +1,128 @@
-name: Build and Deploy
+# Deploy — 수동 트리거(Actions 탭 버튼)로 AWS EC2에 배포한다.
+#
+# 수동 배포 절차를 그대로 자동화:
+#   ① OIDC로 임시 자격증명 (액세스 키 없음 — infra/github-oidc.tf)
+#   ② arm64 이미지 빌드 → ECR 푸시 (EC2가 t4g/Graviton이라 arm64)
+#   ③ 배포 번들(compose·Caddyfile·fetch-env.sh) S3 업로드
+#   ④ SSM Run Command로 EC2에서 pull + up (SSH 불필요)
+#   ⑤ 명령 exit code 폴링 — 실패 시 워크플로 빨간불
+#
+# 신뢰가 쌓이면 on: push(main)로 전환 예정 (#107)
+name: Deploy
 
 on:
-  # AWS 이전 완료 전까지 자동 배포 중단 (self-hosted Windows 러너 배포 방지).
-  # 수동 실행만 허용. AWS CI/CD 전환(REVAMP-PLAN Phase 4)에서 재작성 예정.
   workflow_dispatch:
-  # push:
-  #   branches:
-  #     - main
-  #   paths-ignore:
-  #     - 'docs/**'
-  #     - '*.md'
+
+permissions:
+  id-token: write   # OIDC 토큰 발급 허용 — 이게 있어야 role assume 가능
+  contents: read
 
 env:
-  DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-  BACKEND_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/scheduleflow-backend
-  FRONTEND_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/scheduleflow-frontend
+  AWS_REGION: ap-northeast-2
+  ECR: 606531136262.dkr.ecr.ap-northeast-2.amazonaws.com
+  INSTANCE_ID: i-06558e1c30417fe0f
+  DEPLOY_BUCKET: scheduleflow-files-606531136262
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  build-push:
+    name: 이미지 빌드 → ECR
+    # EC2(t4g)와 같은 arm64 네이티브 러너 — QEMU 에뮬레이션 없이 빌드 (public repo 무료)
+    runs-on: ubuntu-24.04-arm
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
+      - name: AWS 임시 자격증명 (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
 
-      - name: Build and push Backend image
-        uses: docker/build-push-action@v5
+      - name: ECR 로그인
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: 백엔드 이미지 빌드·푸시
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
+          platforms: linux/arm64
           push: true
           tags: |
-            ${{ env.BACKEND_IMAGE }}:latest
-            ${{ env.BACKEND_IMAGE }}:${{ github.sha }}
+            ${{ env.ECR }}/scheduleflow-backend:latest
+            ${{ env.ECR }}/scheduleflow-backend:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Build and push Frontend image
-        uses: docker/build-push-action@v5
+      - name: 프론트 이미지 빌드·푸시
+        uses: docker/build-push-action@v6
         with:
           context: ./frontend
           file: ./frontend/Dockerfile
+          platforms: linux/arm64
           push: true
           tags: |
-            ${{ env.FRONTEND_IMAGE }}:latest
-            ${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
+            ${{ env.ECR }}/scheduleflow-frontend:latest
+            ${{ env.ECR }}/scheduleflow-frontend:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
   deploy:
-    runs-on: self-hosted
-    needs: build
+    name: EC2 배포 (SSM)
+    needs: build-push
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Create .env file
-        shell: powershell
+      - name: AWS 임시 자격증명 (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: 배포 번들 S3 업로드
+        run: aws s3 sync deploy/aws/ "s3://${DEPLOY_BUCKET}/deploy/"
+
+      - name: EC2 배포 명령 실행 + 결과 대기
         run: |
-          @"
-          DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
-          MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
-          MYSQL_USER=${{ secrets.MYSQL_USER }}
-          MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
-          MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}
-          JWT_SECRET=${{ secrets.JWT_SECRET }}
-          JWT_EXPIRATION=${{ secrets.JWT_EXPIRATION }}
-          "@ | Out-File -FilePath .env -Encoding UTF8
+          # 수동 SSM 세션에서 치던 명령을 send-command로 원격 실행 (root로 실행됨)
+          CMD_ID=$(aws ssm send-command \
+            --instance-ids "$INSTANCE_ID" \
+            --document-name AWS-RunShellScript \
+            --comment "deploy ${GITHUB_SHA::8} by ${GITHUB_ACTOR}" \
+            --parameters 'commands=[
+              "set -euo pipefail",
+              "cd /home/ec2-user/app",
+              "aws s3 sync s3://scheduleflow-files-606531136262/deploy/ .",
+              "bash fetch-env.sh",
+              "aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin 606531136262.dkr.ecr.ap-northeast-2.amazonaws.com",
+              "docker compose pull",
+              "docker compose up -d",
+              "docker image prune -f"
+            ]' \
+            --query 'Command.CommandId' --output text)
+          echo "SSM CommandId: $CMD_ID"
 
-      - name: Pull latest images
-        shell: powershell
+          # exit code 폴링 — 최대 5분
+          for i in $(seq 1 30); do
+            sleep 10
+            STATUS=$(aws ssm get-command-invocation \
+              --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" \
+              --query Status --output text)
+            echo "[$i] $STATUS"
+            case "$STATUS" in
+              Success) break ;;
+              Failed|Cancelled|TimedOut)
+                echo "── EC2 stderr ──"
+                aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" \
+                  --query StandardErrorContent --output text
+                exit 1 ;;
+            esac
+            [ "$i" = 30 ] && { echo "폴링 타임아웃(5분)"; exit 1; }
+          done
+
+      - name: 헬스체크
         run: |
-          docker pull ${{ env.BACKEND_IMAGE }}:latest
-          docker pull ${{ env.FRONTEND_IMAGE }}:latest
-
-      - name: Deploy
-        shell: powershell
-        run: |
-          docker compose down --remove-orphans
-          docker compose up -d
-
-      - name: Clean up
-        shell: powershell
-        run: docker image prune -af --filter "until=24h"
-        continue-on-error: true
+          sleep 15
+          curl -fsS -o /dev/null -w "HTTP %{http_code}\n" https://scheduleflow-app.duckdns.org/
