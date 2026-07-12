@@ -43,7 +43,6 @@ const PartnerDetailPage: React.FC = () => {
   const [partner, setPartner] = useState<PartnerResponse | null>(null);
   const [contacts, setContacts] = useState<PartnerContactResponse[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const [loadingContacts, setLoadingContacts] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   // 편집 모드

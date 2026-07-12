@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { decodeJwtPayload, JwtPayload } from '../utils/jwt';
+import { decodeJwtPayload } from '../utils/jwt';
 import { getAuthToken, setAuthToken, removeAuthToken } from '../api/client';
 
 /**
