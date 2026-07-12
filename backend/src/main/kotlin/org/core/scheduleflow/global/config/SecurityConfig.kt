@@ -45,8 +45,10 @@ class SecurityConfig(
             .authorizeHttpRequests { auth ->
                 auth
                     .requestMatchers(
-                        // 로그인만 공개. 회원가입(/auth/sign-up)은 ADMIN 전용이라 인증 대상에 남긴다.
+                        // 로그인·토큰 갱신만 공개. 회원가입(/auth/sign-up)은 ADMIN 전용이라 인증 대상에 남긴다.
+                        // refresh는 만료된 액세스 토큰으로 호출되므로 공개여야 한다(리프레시 토큰 자체를 검증).
                         "/auth/sign-in",
+                        "/auth/refresh",
                         "/swagger-ui/**",
                         "/swagger-ui.html",
                         "/v3/api-docs/**",

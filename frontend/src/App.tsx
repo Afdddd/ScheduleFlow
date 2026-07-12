@@ -5,7 +5,6 @@ import { useAuthStore } from './stores/authStore';
 
 // Pages
 import LoginPage from './pages/LoginPage';
-import SignUpPage from './pages/SignUpPage';
 import DashboardPage from './pages/DashboardPage';
 import ProjectListPage from './pages/ProjectListPage';
 import ProjectDetailPage from './pages/ProjectDetailPage';
@@ -34,9 +33,8 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* 공개 라우트 */}
+        {/* 공개 라우트 — 회원가입은 없다. 계정은 ADMIN이 사원관리에서 발급 */}
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignUpPage />} />
         {/* 개발용 공통 컴포넌트 갤러리 (인증 없이 확인) */}
         <Route path="/ui-preview" element={<UiPreviewPage />} />
 

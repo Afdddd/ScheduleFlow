@@ -1,5 +1,8 @@
 package org.core.scheduleflow.domain.user.service
 
+import org.core.scheduleflow.domain.user.constant.Role
+import org.core.scheduleflow.domain.user.dto.TokenRefreshRequest
+import org.core.scheduleflow.domain.user.dto.TokenResponse
 import org.core.scheduleflow.domain.user.dto.UserSignInRequest
 import org.core.scheduleflow.domain.user.dto.UserSignUpRequest
 import org.core.scheduleflow.domain.user.entity.User
@@ -39,14 +42,40 @@ class AuthService(
 
 
     @Transactional(readOnly = true)
-    fun signIn(request: UserSignInRequest): String {
+    fun signIn(request: UserSignInRequest): TokenResponse {
         authenticateUser(request)
         val user = userRepository.findByUsername(request.username)
             ?: throw CustomException(ErrorCode.NOT_FOUND_USER)
         val userId = checkNotNull(user.id) {
             "findByUsername() 후에는 userId가 DB에 존재해야한다."
         }
-        return jwtProvider.generateAccessToken(userId, user.username, user.userRole )
+        return issueTokens(userId, user.username, user.userRole)
+    }
+
+    /**
+     * 리프레시 토큰으로 새 토큰 쌍을 발급한다(로테이션 — 리프레시도 매번 새로 발급해 만료를 연장).
+     * 사용자 존재 여부를 다시 확인하므로 삭제된 계정의 리프레시 토큰은 여기서 걸러진다.
+     */
+    @Transactional(readOnly = true)
+    fun refresh(request: TokenRefreshRequest): TokenResponse {
+        val claims = jwtProvider.parseRefreshClaims(request.refreshToken)
+            ?: throw CustomException(ErrorCode.INVALID_REFRESH_TOKEN)
+        // claims.subject는 플랫폼 타입(String!) — subject 없는 토큰이면 null이므로 방어
+        val username = claims.subject
+            ?: throw CustomException(ErrorCode.INVALID_REFRESH_TOKEN)
+        val user = userRepository.findByUsername(username)
+            ?: throw CustomException(ErrorCode.INVALID_REFRESH_TOKEN)
+        val userId = checkNotNull(user.id) {
+            "findByUsername() 후에는 userId가 DB에 존재해야한다."
+        }
+        return issueTokens(userId, user.username, user.userRole)
+    }
+
+    private fun issueTokens(userId: Long, username: String, role: Role): TokenResponse {
+        return TokenResponse(
+            accessToken = jwtProvider.generateAccessToken(userId, username, role),
+            refreshToken = jwtProvider.generateRefreshToken(userId, username, role)
+        )
     }
 
     private fun authenticateUser(request: UserSignInRequest) {

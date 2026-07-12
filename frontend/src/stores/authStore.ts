@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { decodeJwtPayload } from '../utils/jwt';
-import { getAuthToken, setAuthToken, removeAuthToken } from '../api/client';
+import { getAuthToken, setAuthToken, removeAuthToken, removeRefreshToken } from '../api/client';
 
 /**
  * 사용자 정보 인터페이스
@@ -77,9 +77,10 @@ export const useAuthStore = create<AuthState>()(
 
       // 로그아웃
       logout: () => {
-        // 토큰 삭제
+        // 토큰 삭제 (액세스 + 리프레시)
         removeAuthToken();
-        
+        removeRefreshToken();
+
         // 상태 초기화
         set({
           isAuthenticated: false,

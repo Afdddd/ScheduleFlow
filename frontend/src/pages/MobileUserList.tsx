@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getUserList, UserListResponse } from '../api/list';
 import MobileSearchInput from '../components/mobile/MobileSearchInput';
+import UserCreateDialog from '../components/UserCreateDialog';
 
 /**
  * MobileUserList — 모바일 '사원 관리' (더보기 → 사원 관리, ADMIN).
@@ -13,6 +14,8 @@ const MobileUserList: React.FC = () => {
   const [items, setItems] = useState<UserListResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [keyword, setKeyword] = useState('');
+  const [createOpen, setCreateOpen] = useState(false);
+  const [reload, setReload] = useState(0);
 
   useEffect(() => {
     let alive = true;
@@ -30,12 +33,22 @@ const MobileUserList: React.FC = () => {
     return () => {
       alive = false;
     };
-  }, [keyword]);
+  }, [keyword, reload]);
 
   return (
     <div className="min-h-full bg-gray-50 pb-24">
       <div className="flex items-center px-[18px] pb-2 pt-3">
         <h1 className="flex-1 text-[25px] font-extrabold tracking-tight text-gray-900">사원 관리</h1>
+        <button
+          type="button"
+          onClick={() => setCreateOpen(true)}
+          className="flex items-center gap-1 rounded-xl bg-primary-500 px-3.5 py-2 text-sm font-bold text-white shadow-sm shadow-primary-500/25 active:scale-[0.98]"
+        >
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" viewBox="0 0 24 24">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+          사원 등록
+        </button>
       </div>
       <div className="px-[18px] pb-3">
         <MobileSearchInput onSearch={setKeyword} placeholder="사원 이름으로 검색" />
@@ -83,6 +96,8 @@ const MobileUserList: React.FC = () => {
           </div>
         )}
       </div>
+
+      <UserCreateDialog open={createOpen} onClose={() => setCreateOpen(false)} onCreated={() => setReload((n) => n + 1)} />
     </div>
   );
 };

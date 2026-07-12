@@ -18,6 +18,8 @@ MYSQL_USER=admin
 MYSQL_PASSWORD='$(get /scheduleflow/prod/DB_PASSWORD)'
 JWT_SECRET='$(get /scheduleflow/prod/JWT_SECRET)'
 JWT_EXPIRATION=3600000
+# 자동 로그인용 리프레시 토큰 만료(14일)
+JWT_REFRESH_EXPIRATION=1209600000
 # 도메인 연결됨(E단계) — Caddy가 이 도메인으로 Let's Encrypt 자동 HTTPS
 SITE_ADDRESS=scheduleflow-app.duckdns.org
 APP_CORS_ALLOWED_ORIGINS=https://scheduleflow-app.duckdns.org
