@@ -4,6 +4,7 @@ import Badge, { BadgeTone } from '../components/list/Badge';
 import { NameCell, Avatar, Sub, Muted, Num } from '../components/list/cells';
 import { getUserList, UserListResponse, PageResponse } from '../api/list';
 import MobileUserList from './MobileUserList';
+import UserCreateDialog from '../components/UserCreateDialog';
 import { useIsMobile } from '../hooks/useMediaQuery';
 
 /**
@@ -27,6 +28,8 @@ const UserManagementPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [reload, setReload] = useState(0);
   const pageSize = 10;
 
   useEffect(() => {
@@ -40,7 +43,7 @@ const UserManagementPage: React.FC = () => {
     return () => {
       alive = false;
     };
-  }, [searchQuery, currentPage, isMobile]);
+  }, [searchQuery, currentPage, isMobile, reload]);
 
   if (isMobile) return <MobileUserList />;
 
@@ -87,6 +90,7 @@ const UserManagementPage: React.FC = () => {
   ];
 
   return (
+    <>
     <ListView<UserListResponse>
       columns={columns}
       items={data?.content ?? []}
@@ -98,6 +102,7 @@ const UserManagementPage: React.FC = () => {
         setSearchQuery(q);
         setCurrentPage(0);
       }}
+      createButton={{ label: '사원 등록', onClick: () => setCreateOpen(true) }}
       totalLabel={data ? <><b className="font-extrabold text-gray-900">{data.totalElements}명</b> 사원</> : null}
       empty={{
         icon: (
@@ -113,6 +118,8 @@ const UserManagementPage: React.FC = () => {
       totalElements={data?.totalElements ?? 0}
       onPageChange={setCurrentPage}
     />
+    <UserCreateDialog open={createOpen} onClose={() => setCreateOpen(false)} onCreated={() => setReload((n) => n + 1)} />
+    </>
   );
 };
 
