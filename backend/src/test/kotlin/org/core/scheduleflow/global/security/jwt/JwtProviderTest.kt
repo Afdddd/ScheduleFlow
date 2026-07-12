@@ -19,30 +19,27 @@ class JwtProviderTest {
     }
 
     @Test
-    @DisplayName("정상 토큰을 반환한다.")
-    fun validateToken_validToken_success() {
+    @DisplayName("정상 액세스 토큰은 Authentication을 반환한다")
+    fun getAuthentication_validToken_returnsAuthentication() {
         // given
         val token = jwtProvider.generateAccessToken(1L, "testUser", Role.STAFF)
 
         // when
-        val result = jwtProvider.validateToken(token)
+        val authentication = jwtProvider.getAuthentication(token)
 
         // then
-        assertTrue(result.isSuccess)
-        assertTrue(result.getOrThrow())
+        assertNotNull(authentication)
+        assertTrue(authentication!!.authorities.any { it.authority == "ROLE_STAFF" })
     }
 
     @Test
-    @DisplayName("위조된 토큰은 검증 실패(Result.failure)를 반환한다")
-    fun validateToken_invalidToken_fail() {
+    @DisplayName("위조된 토큰은 예외 대신 null을 반환한다")
+    fun getAuthentication_invalidToken_returnsNull() {
         // given
         val invalidToken = "this.is.invalid.token"
 
-        // when
-        val result = jwtProvider.validateToken(invalidToken)
-
-        // then: 예외를 던지지 않고 실패 Result를 돌려준다(필터가 삼키고 401로 이어짐)
-        assertTrue(result.isFailure)
+        // when & then: 예외를 던지지 않고 null — 필터가 인증을 세팅하지 않아 401로 이어짐
+        assertNull(jwtProvider.getAuthentication(invalidToken))
     }
 
     @Test
