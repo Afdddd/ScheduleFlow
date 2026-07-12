@@ -76,8 +76,9 @@ const isActive = (path: string, pathname: string): boolean =>
 const BottomTabBar: React.FC = () => {
   const { pathname } = useLocation();
 
+  // 하단 패딩: 홈 인디케이터가 있는 기기는 safe-area 값, 없는 기기는 최소 1.25rem
   return (
-    <nav className="flex-none flex border-t border-gray-200 bg-white pt-2 pb-5">
+    <nav className="flex-none flex border-t border-gray-200 bg-white pt-2 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
       {tabs.map((tab) => {
         const active = isActive(tab.path, pathname);
         return (

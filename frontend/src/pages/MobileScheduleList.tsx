@@ -39,7 +39,7 @@ const MobileScheduleList: React.FC = () => {
   const [items, setItems] = useState<ScheduleListResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [keyword, setKeyword] = useState('');
-  const [view, setView] = useState<'list' | 'cal'>('list');
+  const [view, setView] = useState<'list' | 'cal'>('cal');
   const [sheetOpen, setSheetOpen] = useState(false);
   const [reload, setReload] = useState(0);
 
@@ -97,8 +97,8 @@ const MobileScheduleList: React.FC = () => {
       <div className="px-[18px] pb-3">
         <SegmentedControl
           options={[
-            { value: 'list', label: '리스트' },
             { value: 'cal', label: '캘린더' },
+            { value: 'list', label: '리스트' },
           ]}
           value={view}
           onChange={setView}

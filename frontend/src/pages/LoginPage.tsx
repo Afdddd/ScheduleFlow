@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { AxiosError } from 'axios';
 import { ErrorResponse } from '../api/types';
 import { useAuthStore } from '../stores/authStore';
@@ -152,10 +152,7 @@ const LoginPage: React.FC = () => {
         </form>
 
         <div className="mt-5 text-center text-[13.5px] font-semibold text-gray-500">
-          계정이 없나요?{' '}
-          <Link to="/signup" className="font-bold text-primary-600">
-            회원가입
-          </Link>
+          계정이 없다면 관리자에게 발급을 요청하세요.
         </div>
       </div>
     </div>
