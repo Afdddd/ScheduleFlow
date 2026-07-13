@@ -19,6 +19,12 @@ spring:
       max-file-size: 1GB
       max-request-size: 1GB
 
+  flyway:
+    enabled: true
+    # 이미 데이터가 있는 DB(로컬·운영 RDS)는 baseline(0)만 찍고 그 이후 버전부터 적용한다.
+    baseline-on-migrate: true
+    baseline-version: 0
+
   jpa:
     show-sql: true
     open-in-view: false
