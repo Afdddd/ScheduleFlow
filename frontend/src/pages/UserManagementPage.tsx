@@ -5,6 +5,7 @@ import { NameCell, Avatar, Sub, Muted, Num } from '../components/list/cells';
 import { getUserList, UserListResponse, PageResponse } from '../api/list';
 import MobileUserList from './MobileUserList';
 import UserCreateDialog from '../components/UserCreateDialog';
+import UserEditDialog from '../components/UserEditDialog';
 import { useIsMobile } from '../hooks/useMediaQuery';
 
 /**
@@ -29,6 +30,7 @@ const UserManagementPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
   const [createOpen, setCreateOpen] = useState(false);
+  const [editUser, setEditUser] = useState<UserListResponse | null>(null);
   const [reload, setReload] = useState(0);
   const pageSize = 10;
 
@@ -102,6 +104,7 @@ const UserManagementPage: React.FC = () => {
         setSearchQuery(q);
         setCurrentPage(0);
       }}
+      onRowClick={(u) => setEditUser(u)}
       createButton={{ label: '사원 등록', onClick: () => setCreateOpen(true) }}
       totalLabel={data ? <><b className="font-extrabold text-gray-900">{data.totalElements}명</b> 사원</> : null}
       empty={{
@@ -119,6 +122,7 @@ const UserManagementPage: React.FC = () => {
       onPageChange={setCurrentPage}
     />
     <UserCreateDialog open={createOpen} onClose={() => setCreateOpen(false)} onCreated={() => setReload((n) => n + 1)} />
+    <UserEditDialog open={editUser !== null} user={editUser} onClose={() => setEditUser(null)} onSaved={() => setReload((n) => n + 1)} />
     </>
   );
 };

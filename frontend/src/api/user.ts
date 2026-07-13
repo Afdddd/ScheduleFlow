@@ -17,5 +17,26 @@ export const getAllUsers = async (): Promise<UserListResponse[]> => {
   return response.data.content;
 };
 
+/**
+ * 사원 정보 수정 요청 (PATCH /users/{id}) — ADMIN 또는 본인
+ */
+export interface UserUpdateRequest {
+  name?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  position?: string | null;
+}
+
+export const updateUser = async (userId: number, request: UserUpdateRequest): Promise<void> => {
+  await apiClient.patch(`/users/${userId}`, request);
+};
+
+/**
+ * 사원 삭제 (DELETE /users/{id}) — ADMIN 전용
+ */
+export const deleteUser = async (userId: number): Promise<void> => {
+  await apiClient.delete(`/users/${userId}`);
+};
+
 export type { UserListResponse };
 
