@@ -9,6 +9,7 @@ import { createSchedule, ScheduleCreateRequest } from '../api/schedule';
 import { getAllProjects } from '../api/project';
 import { getAllUsers, UserListResponse } from '../api/user';
 import { ProjectListResponse } from '../api/list';
+import { SCHEDULE_TYPES } from '../constants/scheduleTypes';
 
 /**
  * MobileScheduleCreateSheet — 새 일정 바텀시트.
@@ -17,13 +18,7 @@ import { ProjectListResponse } from '../api/list';
  * 새 API 없이 기존 `createSchedule`/`getAllProjects`/`getAllUsers`를 그대로 사용.
  */
 
-const TYPES: { value: string; label: string }[] = [
-  { value: 'PROJECT', label: '프로젝트 일정' },
-  { value: 'TEST_RUN', label: '시운전' },
-  { value: 'WIRING', label: '전기 배선' },
-  { value: 'DESIGN', label: '설계' },
-  { value: 'MEETING', label: '미팅' },
-];
+const TYPES = SCHEDULE_TYPES;
 
 interface Props {
   open: boolean;

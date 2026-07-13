@@ -5,5 +5,7 @@ enum class ScheduleType(val description: String) {
     TEST_RUN("시운전"),
     WIRING("전기 배선"),
     DESIGN("설계"),
-    MEETING("미팅")
+    MEETING("미팅"),
+    VACATION("휴가"),
+    ETC("기타")
 }

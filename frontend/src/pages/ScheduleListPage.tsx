@@ -7,19 +7,13 @@ import MobileScheduleList from './MobileScheduleList';
 import { useIsMobile } from '../hooks/useMediaQuery';
 import { useAuthStore } from '../stores/authStore';
 import { getScheduleList, ScheduleListResponse, PageResponse } from '../api/list';
+import { scheduleTypeLabel } from '../constants/scheduleTypes';
 
 /**
  * 일정 목록 페이지 — 데스크톱은 공통 `ListView`(컬럼형), 모바일은 전용 화면.
  */
 
-const TYPE_LABEL: Record<string, string> = {
-  PROJECT: '프로젝트 일정',
-  TEST_RUN: '시운전',
-  WIRING: '전기 배선',
-  DESIGN: '설계',
-  MEETING: '미팅',
-};
-const typeLabelOf = (t: string) => TYPE_LABEL[t] ?? t;
+const typeLabelOf = scheduleTypeLabel;
 const fmtDate = (s: string) => s.replace(/-/g, '.');
 // 참여자 없음/undefined 방어 처리.
 const membersLabel = (names?: string[]) =>

@@ -10,21 +10,9 @@ import { createSchedule, ScheduleCreateRequest } from '../api/schedule';
 import { getAllProjects } from '../api/project';
 import { ProjectListResponse } from '../api/list';
 import { getAllUsers, UserListResponse } from '../api/user';
+import { SCHEDULE_TYPES, scheduleTypeChipCls } from '../constants/scheduleTypes';
 
-const TYPE_OPTS = [
-  { v: 'PROJECT', l: '프로젝트' },
-  { v: 'TEST_RUN', l: '시운전' },
-  { v: 'WIRING', l: '전기 배선' },
-  { v: 'DESIGN', l: '설계' },
-  { v: 'MEETING', l: '미팅' },
-];
-const TYPE_CHIP: Record<string, string> = {
-  PROJECT: 'text-primary-600 bg-primary-50',
-  TEST_RUN: 'text-green-700 bg-green-50',
-  WIRING: 'text-amber-700 bg-amber-50',
-  DESIGN: 'text-purple-700 bg-purple-50',
-  MEETING: 'text-red-700 bg-red-50',
-};
+const TYPE_OPTS = SCHEDULE_TYPES.map((t) => ({ v: t.value, l: t.shortLabel }));
 const AVATAR_COLORS = ['#0B4EC4', '#1B9E5A', '#8B5CF6', '#C6771A', '#E5484D', '#0EA5E9'];
 
 const inputCls =
@@ -281,7 +269,7 @@ const ScheduleCreatePage: React.FC = () => {
             </div>
             <div className="flex items-center justify-between gap-3 border-b border-gray-200 px-[18px] py-2.5">
               <span className="text-[12.5px] font-bold text-gray-400">유형</span>
-              <span className={`inline-flex h-[22px] items-center rounded-full px-2.5 text-[12px] font-bold ${TYPE_CHIP[scheduleType] ?? 'text-gray-600 bg-gray-100'}`}>{typeLabel}</span>
+              <span className={`inline-flex h-[22px] items-center rounded-full px-2.5 text-[12px] font-bold ${scheduleTypeChipCls(scheduleType)}`}>{typeLabel}</span>
             </div>
             <div className="flex items-center justify-between gap-3 border-b border-gray-200 px-[18px] py-2.5">
               <span className="text-[12.5px] font-bold text-gray-400">기간</span>

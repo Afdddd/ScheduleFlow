@@ -1,4 +1,5 @@
 import apiClient from './client';
+import { ScheduleTypeValue } from '../constants/scheduleTypes';
 
 /**
  * 일정 생성 요청 타입
@@ -7,7 +8,7 @@ export interface ScheduleCreateRequest {
   title: string;
   startDate: string; // yyyy-MM-dd
   endDate: string; // yyyy-MM-dd
-  scheduleType?: string; // PROJECT, TEST_RUN, WIRING, DESIGN, MEETING
+  scheduleType?: string; // ScheduleTypeValue (constants/scheduleTypes.ts) 참조
   projectId?: number | null;
   memberIds?: number[] | null;
 }
@@ -19,7 +20,7 @@ export interface ScheduleUpdateRequest {
   title?: string;
   startDate?: string; // yyyy-MM-dd
   endDate?: string; // yyyy-MM-dd
-  scheduleType?: string; // PROJECT, TEST_RUN, WIRING, DESIGN, MEETING
+  scheduleType?: string; // ScheduleTypeValue (constants/scheduleTypes.ts) 참조
   projectId?: number | null;
   memberIds?: number[] | null;
 }
@@ -32,7 +33,7 @@ export interface ScheduleDetailResponse {
   title: string;
   startDate: string; // yyyy-MM-dd
   endDate: string; // yyyy-MM-dd
-  type: 'PROJECT' | 'TEST_RUN' | 'WIRING' | 'DESIGN' | 'MEETING';
+  type: ScheduleTypeValue;
   projectId: number | null;
   members: Array<{
     id: number;

@@ -11,6 +11,7 @@ import {
 } from 'date-fns';
 import SegmentedControl from '../components/ui/SegmentedControl';
 import MobileScheduleCreateSheet from './MobileScheduleCreateSheet';
+import { scheduleTypeLabel } from '../constants/scheduleTypes';
 import { useAuthStore } from '../stores/authStore';
 import { getScheduleList, ScheduleListResponse } from '../api/list';
 
@@ -22,13 +23,6 @@ import { getScheduleList, ScheduleListResponse } from '../api/list';
  * ISO 날짜 문자열(yyyy-MM-dd) 비교로 구간 판정.
  */
 
-const TYPE_LABEL: Record<string, string> = {
-  PROJECT: '프로젝트 일정',
-  TEST_RUN: '시운전',
-  WIRING: '전기 배선',
-  DESIGN: '설계',
-  MEETING: '미팅',
-};
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
@@ -78,7 +72,7 @@ const MobileScheduleList: React.FC = () => {
             </span>
           )}
           <span className="rounded-full bg-primary-50 px-2.5 py-1 text-[12.5px] font-bold text-primary-700">
-            {TYPE_LABEL[s.type] ?? s.type}
+            {scheduleTypeLabel(s.type)}
           </span>
         </span>
         <span className="mt-2 block text-[13px] font-semibold text-gray-400 tabular-nums">
