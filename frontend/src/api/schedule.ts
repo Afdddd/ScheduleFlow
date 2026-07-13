@@ -35,6 +35,7 @@ export interface ScheduleDetailResponse {
   endDate: string; // yyyy-MM-dd
   type: ScheduleTypeValue;
   projectId: number | null;
+  createdBy: string; // 작성자 username — 본인 일정 여부 판단용 (#110)
   members: Array<{
     id: number;
     name: string;

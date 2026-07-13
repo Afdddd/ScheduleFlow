@@ -6,6 +6,7 @@ import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.shouldBe
 import io.mockk.every
+import io.mockk.justRun
 import io.mockk.mockk
 import io.mockk.verify
 import org.core.scheduleflow.domain.partner.entity.Partner
@@ -21,9 +22,11 @@ import org.core.scheduleflow.domain.schedule.entity.ScheduleMember
 import org.core.scheduleflow.domain.schedule.repository.ScheduleMemberRepository
 import org.core.scheduleflow.domain.schedule.repository.ScheduleRepository
 import org.core.scheduleflow.domain.user.entity.User
+import org.core.scheduleflow.domain.user.constant.Role
 import org.core.scheduleflow.domain.user.repository.UserRepository
 import org.core.scheduleflow.global.exception.CustomException
 import org.core.scheduleflow.global.exception.ErrorCode
+import org.core.scheduleflow.global.security.CurrentUser
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.repository.findByIdOrNull
@@ -58,6 +61,9 @@ class ScheduleServiceTest : BehaviorSpec({
         position = "developer"
     )
 
+    val admin = CurrentUser(userId = 1L, username = "admin", role = Role.ADMIN)
+    val staff = CurrentUser(userId = 10L, username = "user10", role = Role.STAFF)
+
     Given("일정 생성 요청이 주어지고") {
 
         val request = ScheduleCreateRequest(
@@ -80,7 +86,7 @@ class ScheduleServiceTest : BehaviorSpec({
 
             Then("NOT_FOUND_PROJECT 예외가 발생한다") {
                 shouldThrow<CustomException> {
-                    service.createSchedule(request)
+                    service.createSchedule(request, admin)
                 }.errorCode shouldBe ErrorCode.NOT_FOUND_PROJECT
             }
         }
@@ -92,7 +98,7 @@ class ScheduleServiceTest : BehaviorSpec({
             every { userRepository.findAllById(listOf(10L, 20L)) } returns listOf(mockUser)
 
             val exception = shouldThrow<CustomException>{
-                service.createSchedule(request)
+                service.createSchedule(request, admin)
             }
 
             Then("NOT_FOUND_USER 예외가 발생한다.") {
@@ -110,7 +116,7 @@ class ScheduleServiceTest : BehaviorSpec({
             startDate = LocalDate.now(),
             endDate = LocalDate.now().plusDays(10),
             project = mockProject
-        )
+        ).apply { createdBy = "admin" }
 
         When("주어진 ID에 해당하는 일정이 존재하면") {
             every { scheduleRepository.findByIdWithAll(requestId) } returns mockSchedule
@@ -212,7 +218,7 @@ class ScheduleServiceTest : BehaviorSpec({
             startDate = LocalDate.now(),
             endDate = LocalDate.now().plusDays(1),
             type = ScheduleType.PROJECT
-        )
+        ).apply { createdBy = "admin" }
 
         val updateRequest = ScheduleUpdateRequest(
             title = "수정된 제목",
@@ -228,7 +234,7 @@ class ScheduleServiceTest : BehaviorSpec({
             every { projectRepository.findByIdOrNull(100L) } returns mockProject
             every { userRepository.findAllById(listOf(10L)) } returns listOf(mockUser)
 
-            val result = service.updateSchedule(scheduleId, updateRequest)
+            val result = service.updateSchedule(scheduleId, updateRequest, admin)
 
             Then("요청된 필드만 수정되고 상세 정보가 반환된다") {
                 result.title shouldBe "수정된 제목"
@@ -249,7 +255,7 @@ class ScheduleServiceTest : BehaviorSpec({
             every { projectRepository.findByIdOrNull(100L) } returns null
 
             val exception = shouldThrow<CustomException> {
-                service.updateSchedule(scheduleId, updateRequest)
+                service.updateSchedule(scheduleId, updateRequest, admin)
             }
 
             Then("NOT_FOUND_PROJECT 예외가 발생한다") {
@@ -370,6 +376,194 @@ class ScheduleServiceTest : BehaviorSpec({
                 result.first().tasks.size shouldBe 2
                 result.first().tasks[0].scheduleId shouldBe 1L
                 result.first().tasks[1].scheduleId shouldBe 2L
+            }
+        }
+    }
+
+    // #110 — STAFF 일정 생성 권한
+    Given("STAFF의 일정 생성 요청이 주어질 때") {
+
+        val savedSchedule = Schedule(
+            id = 1L,
+            title = "개인 일정",
+            startDate = LocalDate.now(),
+            endDate = LocalDate.now().plusDays(1),
+        )
+
+        When("프로젝트 없이 참여자를 비워 독립 일정을 생성하면") {
+            val request = ScheduleCreateRequest(
+                title = "개인 일정",
+                startDate = LocalDate.now(),
+                endDate = LocalDate.now().plusDays(1),
+                scheduleType = ScheduleType.VACATION
+            )
+            every { scheduleRepository.save(any()) } returns savedSchedule
+            every { userRepository.findAllById(listOf(10L)) } returns listOf(mockUser)
+
+            val result = service.createSchedule(request, staff)
+
+            Then("생성에 성공하고 참여자는 본인으로 자동 지정된다") {
+                result shouldBe 1L
+                savedSchedule.members.size shouldBe 1
+                savedSchedule.members[0].user.id shouldBe 10L
+            }
+        }
+
+        When("참여자를 본인만 지정해 생성하면") {
+            val request = ScheduleCreateRequest(
+                title = "개인 일정",
+                startDate = LocalDate.now(),
+                endDate = LocalDate.now().plusDays(1),
+                memberIds = listOf(10L)
+            )
+            every { scheduleRepository.save(any()) } returns savedSchedule
+            every { userRepository.findAllById(listOf(10L)) } returns listOf(mockUser)
+
+            val result = service.createSchedule(request, staff)
+
+            Then("생성에 성공한다") {
+                result shouldBe 1L
+            }
+        }
+
+        When("projectId를 지정하면") {
+            val request = ScheduleCreateRequest(
+                title = "프로젝트 일정",
+                startDate = LocalDate.now(),
+                endDate = LocalDate.now().plusDays(1),
+                projectId = 1L
+            )
+
+            val exception = shouldThrow<CustomException> {
+                service.createSchedule(request, staff)
+            }
+
+            Then("PERMISSION_DENIED 예외가 발생하고 저장되지 않는다") {
+                exception.errorCode shouldBe ErrorCode.PERMISSION_DENIED
+                verify(exactly = 0) { scheduleRepository.save(any()) }
+            }
+        }
+
+        When("본인 외 참여자를 지정하면") {
+            val request = ScheduleCreateRequest(
+                title = "개인 일정",
+                startDate = LocalDate.now(),
+                endDate = LocalDate.now().plusDays(1),
+                memberIds = listOf(10L, 20L)
+            )
+
+            val exception = shouldThrow<CustomException> {
+                service.createSchedule(request, staff)
+            }
+
+            Then("PERMISSION_DENIED 예외가 발생하고 저장되지 않는다") {
+                exception.errorCode shouldBe ErrorCode.PERMISSION_DENIED
+                verify(exactly = 0) { scheduleRepository.save(any()) }
+            }
+        }
+    }
+
+    // #110 — STAFF 일정 수정/삭제 권한 (ADMIN 또는 본인이 만든 독립 일정의 작성자)
+    Given("STAFF의 일정 수정/삭제 요청이 주어질 때") {
+
+        val ownSchedule = Schedule(
+            id = 1L,
+            title = "내 일정",
+            startDate = LocalDate.now(),
+            endDate = LocalDate.now().plusDays(1),
+        ).apply { createdBy = "user10" }
+
+        val othersSchedule = Schedule(
+            id = 2L,
+            title = "남의 일정",
+            startDate = LocalDate.now(),
+            endDate = LocalDate.now().plusDays(1),
+        ).apply { createdBy = "someone-else" }
+
+        val projectLinkedSchedule = Schedule(
+            id = 3L,
+            title = "프로젝트 연결 일정",
+            startDate = LocalDate.now(),
+            endDate = LocalDate.now().plusDays(1),
+            project = mockProject
+        ).apply { createdBy = "user10" }
+
+        val updateRequest = ScheduleUpdateRequest(
+            title = "수정된 제목",
+            startDate = null,
+            endDate = null,
+            scheduleType = null,
+            projectId = null,
+            memberIds = null
+        )
+
+        When("본인이 만든 독립 일정을 수정하면") {
+            every { scheduleRepository.findByIdOrNull(1L) } returns ownSchedule
+
+            val result = service.updateSchedule(1L, updateRequest, staff)
+
+            Then("수정에 성공한다") {
+                result.title shouldBe "수정된 제목"
+                result.createdBy shouldBe "user10"
+            }
+        }
+
+        When("타인이 만든 일정을 수정하면") {
+            every { scheduleRepository.findByIdOrNull(2L) } returns othersSchedule
+
+            val exception = shouldThrow<CustomException> {
+                service.updateSchedule(2L, updateRequest, staff)
+            }
+
+            Then("PERMISSION_DENIED 예외가 발생한다") {
+                exception.errorCode shouldBe ErrorCode.PERMISSION_DENIED
+            }
+        }
+
+        When("본인이 만들었어도 프로젝트에 연결된 일정을 수정하면") {
+            every { scheduleRepository.findByIdOrNull(3L) } returns projectLinkedSchedule
+
+            val exception = shouldThrow<CustomException> {
+                service.updateSchedule(3L, updateRequest, staff)
+            }
+
+            Then("PERMISSION_DENIED 예외가 발생한다") {
+                exception.errorCode shouldBe ErrorCode.PERMISSION_DENIED
+            }
+        }
+
+        When("본인이 만든 독립 일정을 삭제하면") {
+            every { scheduleRepository.findByIdOrNull(1L) } returns ownSchedule
+            justRun { scheduleRepository.delete(ownSchedule) }
+
+            service.deleteSchedule(1L, staff)
+
+            Then("삭제가 수행된다") {
+                verify(exactly = 1) { scheduleRepository.delete(ownSchedule) }
+            }
+        }
+
+        When("타인이 만든 일정을 삭제하면") {
+            every { scheduleRepository.findByIdOrNull(2L) } returns othersSchedule
+
+            val exception = shouldThrow<CustomException> {
+                service.deleteSchedule(2L, staff)
+            }
+
+            Then("PERMISSION_DENIED 예외가 발생하고 삭제되지 않는다") {
+                exception.errorCode shouldBe ErrorCode.PERMISSION_DENIED
+                verify(exactly = 0) { scheduleRepository.delete(any()) }
+            }
+        }
+
+        When("ADMIN이 타인이 만든 일정을 삭제하면") {
+            every { scheduleRepository.findByIdOrNull(2L) } returns othersSchedule
+            justRun { scheduleRepository.delete(othersSchedule) }
+
+            service.deleteSchedule(2L, admin)
+
+            Then("삭제가 수행된다") {
+                verify(exactly = 1) { scheduleRepository.delete(othersSchedule) }
             }
         }
     }

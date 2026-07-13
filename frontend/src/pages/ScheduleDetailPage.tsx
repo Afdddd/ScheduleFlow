@@ -38,8 +38,8 @@ const segCls = (on: boolean) =>
  *
  * 기능:
  * 1. 일정 상세 정보 조회
- * 2. 일정 수정 (ADMIN 권한)
- * 3. 일정 삭제 (ADMIN 권한)
+ * 2. 일정 수정 (ADMIN 또는 본인이 만든 독립 일정의 작성자)
+ * 3. 일정 삭제 (ADMIN 또는 본인이 만든 독립 일정의 작성자)
  */
 const ScheduleDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -112,7 +112,7 @@ const ScheduleDetailPage: React.FC = () => {
 
   // 편집 모드 진입 시 추가 데이터 로딩
   useEffect(() => {
-    if (!isEditing) return;
+    if (!isEditing || !isAdmin) return; // STAFF는 프로젝트·참여자 선택지가 없다 (/users는 ADMIN 전용)
 
     const loadEditData = async () => {
       setLoadingProjects(true);
@@ -134,7 +134,7 @@ const ScheduleDetailPage: React.FC = () => {
     };
 
     loadEditData();
-  }, [isEditing]);
+  }, [isEditing, isAdmin]);
 
   // 일정 데이터를 편집 모드 상태로 복사
   useEffect(() => {
@@ -166,6 +166,10 @@ const ScheduleDetailPage: React.FC = () => {
       prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
     );
   };
+
+  // ADMIN이거나 본인이 만든 독립(프로젝트 미연결) 일정의 작성자만 수정/삭제 가능 (#110)
+  const canManage =
+    isAdmin || (schedule != null && schedule.projectId == null && schedule.createdBy === user?.username);
 
   // 편집 모드 진입
   const handleEdit = () => {
@@ -213,8 +217,8 @@ const ScheduleDetailPage: React.FC = () => {
         startDate: format(startDate, 'yyyy-MM-dd'),
         endDate: format(endDate, 'yyyy-MM-dd'),
         scheduleType: scheduleType || 'PROJECT',
-        projectId: projectId || null,
-        memberIds: selectedMemberIds.length > 0 ? selectedMemberIds : null,
+        projectId: isAdmin ? projectId || null : null,
+        memberIds: isAdmin ? (selectedMemberIds.length > 0 ? selectedMemberIds : null) : null,
       };
 
       const updatedSchedule = await updateSchedule(scheduleId, updateRequest);
@@ -349,7 +353,7 @@ const ScheduleDetailPage: React.FC = () => {
           </div>
 
           {/* 관리자 액션 */}
-          {isAdmin && (
+          {canManage && (
             <div className="mt-6 flex gap-2.5">
               <button
                 onClick={handleEdit}
@@ -445,6 +449,7 @@ const ScheduleDetailPage: React.FC = () => {
                       placeholderText="시작일 ~ 종료일"
                     />
                   </div>
+                  {isAdmin && (
                   <div>
                     <label className={labelCls}>프로젝트</label>
                     <div className="relative">
@@ -466,6 +471,7 @@ const ScheduleDetailPage: React.FC = () => {
                       </svg>
                     </div>
                   </div>
+                  )}
                 </div>
               </div>
             ) : (
@@ -493,7 +499,11 @@ const ScheduleDetailPage: React.FC = () => {
             </div>
 
             {isEditing ? (
-              loadingUsers ? (
+              !isAdmin ? (
+                <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm font-semibold text-gray-500">
+                  참여자는 본인으로 유지됩니다.
+                </div>
+              ) : loadingUsers ? (
                 <div className="rounded-xl border border-gray-200 p-4 text-sm font-semibold text-gray-400">로딩 중…</div>
               ) : users.length === 0 ? (
                 <div className="rounded-xl border border-gray-200 p-4 text-sm font-semibold text-gray-400">등록된 사원이 없습니다.</div>
@@ -583,7 +593,7 @@ const ScheduleDetailPage: React.FC = () => {
             </div>
           </div>
 
-          {isAdmin && (
+          {canManage && (
             <div className="space-y-2.5">
               {isEditing ? (
                 <>

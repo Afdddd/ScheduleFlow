@@ -11,7 +11,8 @@ data class ScheduleDetailResponse(
     val endDate: LocalDate,
     val type: ScheduleType,
     val projectId: Long?,
-    val members: List<ScheduleMemberDto>
+    val members: List<ScheduleMemberDto>,
+    val createdBy: String
 ) {
     companion object {
         fun from(schedule: Schedule): ScheduleDetailResponse {
@@ -22,7 +23,8 @@ data class ScheduleDetailResponse(
                 schedule.endDate,
                 schedule.type,
                 schedule.project?.id,
-                schedule.members.map { ScheduleMemberDto.from(it) }
+                schedule.members.map { ScheduleMemberDto.from(it) },
+                schedule.createdBy
             )
         }
     }

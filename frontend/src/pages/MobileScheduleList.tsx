@@ -12,7 +12,6 @@ import {
 import SegmentedControl from '../components/ui/SegmentedControl';
 import MobileScheduleCreateSheet from './MobileScheduleCreateSheet';
 import { scheduleTypeLabel } from '../constants/scheduleTypes';
-import { useAuthStore } from '../stores/authStore';
 import { getScheduleList, ScheduleListResponse } from '../api/list';
 
 /**
@@ -28,7 +27,6 @@ const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
 const MobileScheduleList: React.FC = () => {
   const navigate = useNavigate();
-  const isAdmin = useAuthStore((s) => s.user?.role === 'ADMIN');
 
   const [items, setItems] = useState<ScheduleListResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -118,8 +116,7 @@ const MobileScheduleList: React.FC = () => {
         <CalendarView items={items} loading={loading} renderCard={renderCard} />
       )}
 
-      {isAdmin && (
-        <button
+      <button
           onClick={() => setSheetOpen(true)}
           className="fixed bottom-24 right-5 z-40 flex items-center gap-2 rounded-full bg-gradient-to-br from-primary-500 to-primary-700 py-[15px] pl-[18px] pr-[22px] text-[16px] font-extrabold text-white shadow-xl shadow-primary-500/40 transition-transform active:scale-95"
         >
@@ -128,7 +125,6 @@ const MobileScheduleList: React.FC = () => {
           </svg>
           새 일정
         </button>
-      )}
 
       <MobileScheduleCreateSheet
         open={sheetOpen}
