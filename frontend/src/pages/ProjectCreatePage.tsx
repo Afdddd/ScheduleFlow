@@ -11,6 +11,7 @@ import { createSchedule, ScheduleCreateRequest } from '../api/schedule';
 import { uploadFile } from '../api/file';
 import { PartnerListResponse } from '../api/list';
 import { format } from 'date-fns';
+import { SCHEDULE_TYPES, scheduleTypeAccent } from '../constants/scheduleTypes';
 import { useScrollLock } from '../hooks/useScrollLock';
 import DatePickerInput from '../components/ui/DatePickerInput';
 
@@ -42,13 +43,7 @@ const STATUS_OPTS = [
   { v: 'ON_HOLD', l: '보류' },
   { v: 'COMPLETE', l: '완료' },
 ];
-const TYPE_OPTS = [
-  { v: 'PROJECT', l: '프로젝트' },
-  { v: 'TEST_RUN', l: '시운전' },
-  { v: 'WIRING', l: '전기 배선' },
-  { v: 'DESIGN', l: '설계' },
-  { v: 'MEETING', l: '미팅' },
-];
+const TYPE_OPTS = SCHEDULE_TYPES.map((t) => ({ v: t.value, l: t.shortLabel }));
 const STATUS_CHIP: Record<string, { label: string; cls: string }> = {
   IN_PROGRESS: { label: '진행 중', cls: 'text-primary-600 bg-primary-50' },
   ON_HOLD: { label: '보류', cls: 'text-amber-700 bg-amber-50' },
@@ -345,22 +340,7 @@ const ProjectCreatePage: React.FC = () => {
   const fileCategories = ['QUOTATION', 'DRAWING', 'PLC_PROGRAM', 'BOM', 'HMI_DESIGN'];
 
   // 일정 타입별 색상 (좌측 스트라이프 / 배지)
-  const scheduleTypeStyle = (type: string): { stripe: string; pill: string } => {
-    switch (type) {
-      case 'PROJECT':
-        return { stripe: 'bg-primary-500', pill: 'bg-primary-50 text-primary-700' };
-      case 'TEST_RUN':
-        return { stripe: 'bg-emerald-500', pill: 'bg-emerald-50 text-emerald-700' };
-      case 'WIRING':
-        return { stripe: 'bg-amber-500', pill: 'bg-amber-50 text-amber-700' };
-      case 'DESIGN':
-        return { stripe: 'bg-violet-500', pill: 'bg-violet-50 text-violet-700' };
-      case 'MEETING':
-        return { stripe: 'bg-rose-500', pill: 'bg-rose-50 text-rose-700' };
-      default:
-        return { stripe: 'bg-gray-400', pill: 'bg-gray-100 text-gray-600' };
-    }
-  };
+  const scheduleTypeStyle = scheduleTypeAccent;
 
   // 참여자 아바타 색상 팔레트
   const AVATAR_COLORS = ['#0B4EC4', '#1B9E5A', '#8B5CF6', '#C6771A', '#E5484D', '#0EA5E9'];

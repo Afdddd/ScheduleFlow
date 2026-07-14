@@ -1,4 +1,9 @@
 spring:
+  # 마이그레이션 SQL이 MySQL 전용(PREPARE/information_schema)이라 H2 테스트에선 끈다.
+  # 테스트 스키마는 ddl-auto: update가 엔티티 기준으로 생성한다.
+  flyway:
+    enabled: false
+
   datasource:
     url: jdbc:h2:mem:testdb
     driver-class-name: org.h2.Driver

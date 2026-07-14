@@ -7,6 +7,7 @@ import { ko } from 'date-fns/locale';
 import { format } from 'date-fns';
 import Alert from '../components/Alert';
 import { useAuthStore } from '../stores/authStore';
+import { SCHEDULE_TYPES, scheduleTypeLabel, scheduleTypeChipCls } from '../constants/scheduleTypes';
 import {
   getScheduleDetail,
   updateSchedule,
@@ -20,20 +21,7 @@ import { getAllUsers, UserListResponse } from '../api/user';
 import { useIsMobile } from '../hooks/useMediaQuery';
 import { useSmartBack } from '../hooks/useSmartBack';
 
-const TYPE_OPTS = [
-  { v: 'PROJECT', l: '프로젝트' },
-  { v: 'TEST_RUN', l: '시운전' },
-  { v: 'WIRING', l: '전기 배선' },
-  { v: 'DESIGN', l: '설계' },
-  { v: 'MEETING', l: '미팅' },
-];
-const TYPE_CHIP: Record<string, string> = {
-  PROJECT: 'text-primary-600 bg-primary-50',
-  TEST_RUN: 'text-green-700 bg-green-50',
-  WIRING: 'text-amber-700 bg-amber-50',
-  DESIGN: 'text-purple-700 bg-purple-50',
-  MEETING: 'text-red-700 bg-red-50',
-};
+const TYPE_OPTS = SCHEDULE_TYPES.map((t) => ({ v: t.value, l: t.shortLabel }));
 const AVATAR_COLORS = ['#0B4EC4', '#1B9E5A', '#8B5CF6', '#C6771A', '#E5484D', '#0EA5E9'];
 
 const inputCls =
@@ -50,8 +38,8 @@ const segCls = (on: boolean) =>
  *
  * 기능:
  * 1. 일정 상세 정보 조회
- * 2. 일정 수정 (ADMIN 권한)
- * 3. 일정 삭제 (ADMIN 권한)
+ * 2. 일정 수정 (ADMIN 또는 본인이 만든 독립 일정의 작성자)
+ * 3. 일정 삭제 (ADMIN 또는 본인이 만든 독립 일정의 작성자)
  */
 const ScheduleDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -124,7 +112,7 @@ const ScheduleDetailPage: React.FC = () => {
 
   // 편집 모드 진입 시 추가 데이터 로딩
   useEffect(() => {
-    if (!isEditing) return;
+    if (!isEditing || !isAdmin) return; // STAFF는 프로젝트·참여자 선택지가 없다 (/users는 ADMIN 전용)
 
     const loadEditData = async () => {
       setLoadingProjects(true);
@@ -146,7 +134,7 @@ const ScheduleDetailPage: React.FC = () => {
     };
 
     loadEditData();
-  }, [isEditing]);
+  }, [isEditing, isAdmin]);
 
   // 일정 데이터를 편집 모드 상태로 복사
   useEffect(() => {
@@ -178,6 +166,10 @@ const ScheduleDetailPage: React.FC = () => {
       prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
     );
   };
+
+  // ADMIN이거나 본인이 만든 독립(프로젝트 미연결) 일정의 작성자만 수정/삭제 가능 (#110)
+  const canManage =
+    isAdmin || (schedule != null && schedule.projectId == null && schedule.createdBy === user?.username);
 
   // 편집 모드 진입
   const handleEdit = () => {
@@ -225,8 +217,8 @@ const ScheduleDetailPage: React.FC = () => {
         startDate: format(startDate, 'yyyy-MM-dd'),
         endDate: format(endDate, 'yyyy-MM-dd'),
         scheduleType: scheduleType || 'PROJECT',
-        projectId: projectId || null,
-        memberIds: selectedMemberIds.length > 0 ? selectedMemberIds : null,
+        projectId: isAdmin ? projectId || null : null,
+        memberIds: isAdmin ? (selectedMemberIds.length > 0 ? selectedMemberIds : null) : null,
       };
 
       const updatedSchedule = await updateSchedule(scheduleId, updateRequest);
@@ -276,41 +268,8 @@ const ScheduleDetailPage: React.FC = () => {
     }
   };
 
-  // 타입 라벨 변환
-  const getTypeLabel = (type: string): string => {
-    switch (type) {
-      case 'PROJECT':
-        return '프로젝트 일정';
-      case 'TEST_RUN':
-        return '시운전';
-      case 'WIRING':
-        return '전기 배선';
-      case 'DESIGN':
-        return '설계';
-      case 'MEETING':
-        return '미팅';
-      default:
-        return type;
-    }
-  };
-
-  // 타입 색상
-  const getTypeColor = (type: string): string => {
-    switch (type) {
-      case 'PROJECT':
-        return 'bg-blue-100 text-blue-800';
-      case 'TEST_RUN':
-        return 'bg-green-100 text-green-800';
-      case 'WIRING':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'DESIGN':
-        return 'bg-purple-100 text-purple-800';
-      case 'MEETING':
-        return 'bg-pink-100 text-pink-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
+  const getTypeLabel = (type: string): string => scheduleTypeLabel(type);
+  const getTypeColor = (type: string): string => scheduleTypeChipCls(type);
 
   if (loading && !schedule) {
     return (
@@ -394,7 +353,7 @@ const ScheduleDetailPage: React.FC = () => {
           </div>
 
           {/* 관리자 액션 */}
-          {isAdmin && (
+          {canManage && (
             <div className="mt-6 flex gap-2.5">
               <button
                 onClick={handleEdit}
@@ -490,6 +449,7 @@ const ScheduleDetailPage: React.FC = () => {
                       placeholderText="시작일 ~ 종료일"
                     />
                   </div>
+                  {isAdmin && (
                   <div>
                     <label className={labelCls}>프로젝트</label>
                     <div className="relative">
@@ -511,12 +471,13 @@ const ScheduleDetailPage: React.FC = () => {
                       </svg>
                     </div>
                   </div>
+                  )}
                 </div>
               </div>
             ) : (
               <dl className="divide-y divide-gray-100">
                 <DRow label="유형">
-                  <span className={`inline-flex h-[22px] items-center rounded-full px-2.5 text-[12px] font-bold ${TYPE_CHIP[schedule.type] ?? 'text-gray-600 bg-gray-100'}`}>
+                  <span className={`inline-flex h-[22px] items-center rounded-full px-2.5 text-[12px] font-bold ${scheduleTypeChipCls(schedule.type)}`}>
                     {getTypeLabel(schedule.type)}
                   </span>
                 </DRow>
@@ -538,7 +499,11 @@ const ScheduleDetailPage: React.FC = () => {
             </div>
 
             {isEditing ? (
-              loadingUsers ? (
+              !isAdmin ? (
+                <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm font-semibold text-gray-500">
+                  참여자는 본인으로 유지됩니다.
+                </div>
+              ) : loadingUsers ? (
                 <div className="rounded-xl border border-gray-200 p-4 text-sm font-semibold text-gray-400">로딩 중…</div>
               ) : users.length === 0 ? (
                 <div className="rounded-xl border border-gray-200 p-4 text-sm font-semibold text-gray-400">등록된 사원이 없습니다.</div>
@@ -612,7 +577,7 @@ const ScheduleDetailPage: React.FC = () => {
             </div>
             <div className="flex items-center justify-between gap-3 border-b border-gray-200 px-[18px] py-2.5">
               <span className="text-[12.5px] font-bold text-gray-400">유형</span>
-              <span className={`inline-flex h-[22px] items-center rounded-full px-2.5 text-[12px] font-bold ${TYPE_CHIP[previewType] ?? 'text-gray-600 bg-gray-100'}`}>{getTypeLabel(previewType)}</span>
+              <span className={`inline-flex h-[22px] items-center rounded-full px-2.5 text-[12px] font-bold ${scheduleTypeChipCls(previewType)}`}>{getTypeLabel(previewType)}</span>
             </div>
             <div className="flex items-center justify-between gap-3 border-b border-gray-200 px-[18px] py-2.5">
               <span className="text-[12.5px] font-bold text-gray-400">기간</span>
@@ -628,7 +593,7 @@ const ScheduleDetailPage: React.FC = () => {
             </div>
           </div>
 
-          {isAdmin && (
+          {canManage && (
             <div className="space-y-2.5">
               {isEditing ? (
                 <>

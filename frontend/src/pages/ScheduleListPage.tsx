@@ -5,21 +5,14 @@ import Badge from '../components/list/Badge';
 import { NameCell, Sub, Num, Muted } from '../components/list/cells';
 import MobileScheduleList from './MobileScheduleList';
 import { useIsMobile } from '../hooks/useMediaQuery';
-import { useAuthStore } from '../stores/authStore';
 import { getScheduleList, ScheduleListResponse, PageResponse } from '../api/list';
+import { scheduleTypeLabel } from '../constants/scheduleTypes';
 
 /**
  * 일정 목록 페이지 — 데스크톱은 공통 `ListView`(컬럼형), 모바일은 전용 화면.
  */
 
-const TYPE_LABEL: Record<string, string> = {
-  PROJECT: '프로젝트 일정',
-  TEST_RUN: '시운전',
-  WIRING: '전기 배선',
-  DESIGN: '설계',
-  MEETING: '미팅',
-};
-const typeLabelOf = (t: string) => TYPE_LABEL[t] ?? t;
+const typeLabelOf = scheduleTypeLabel;
 const fmtDate = (s: string) => s.replace(/-/g, '.');
 // 참여자 없음/undefined 방어 처리.
 const membersLabel = (names?: string[]) =>
@@ -28,7 +21,6 @@ const membersLabel = (names?: string[]) =>
 const ScheduleListPage: React.FC = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const isAdmin = useAuthStore((state) => state.user?.role === 'ADMIN');
 
   const [data, setData] = useState<PageResponse<ScheduleListResponse> | null>(null);
   const [loading, setLoading] = useState(false);
@@ -101,7 +93,7 @@ const ScheduleListPage: React.FC = () => {
         setSearchQuery(q);
         setCurrentPage(0);
       }}
-      createButton={isAdmin ? { label: '새 일정', onClick: () => navigate('/schedules/new') } : undefined}
+      createButton={{ label: '새 일정', onClick: () => navigate('/schedules/new') }}
       totalLabel={data ? <><b className="font-extrabold text-gray-900">{data.totalElements}개</b> 일정</> : null}
       empty={{
         icon: (
@@ -111,7 +103,7 @@ const ScheduleListPage: React.FC = () => {
         ),
         title: searchQuery ? '검색 결과가 없어요' : '아직 일정이 없어요',
         description: searchQuery ? '다른 검색어로 찾아보세요.' : '새 일정을 만들어 팀원에게 배정해 보세요.',
-        action: isAdmin && !searchQuery ? { label: '새 일정', onClick: () => navigate('/schedules/new') } : undefined,
+        action: !searchQuery ? { label: '새 일정', onClick: () => navigate('/schedules/new') } : undefined,
       }}
       currentPage={data?.currentPage ?? 0}
       totalPages={data?.totalPages ?? 0}

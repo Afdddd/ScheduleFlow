@@ -90,7 +90,7 @@ function App() {
         <Route
           path="/schedules/new"
           element={
-            <ProtectedRoute requireAdmin>
+            <ProtectedRoute>
               <ScheduleCreatePage />
             </ProtectedRoute>
           }

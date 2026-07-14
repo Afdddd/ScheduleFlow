@@ -9,12 +9,12 @@ import org.core.scheduleflow.domain.schedule.dto.ScheduleUpdateRequest
 import org.core.scheduleflow.domain.schedule.service.ScheduleService
 import org.core.scheduleflow.global.dto.PageResponse
 import org.core.scheduleflow.global.exception.CustomException
+import org.core.scheduleflow.global.security.CurrentUser
 import org.core.scheduleflow.global.exception.ErrorCode
 import org.springframework.data.domain.PageRequest
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
-import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -73,27 +73,31 @@ class ScheduleController(
         )
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    // 생성은 인증 사용자 전체 허용 — STAFF의 독립 일정 제한은 서비스에서 강제한다 (#110)
     @PostMapping
     fun createSchedule(
-        @RequestBody request: ScheduleCreateRequest
+        @RequestBody request: ScheduleCreateRequest,
+        @AuthenticationPrincipal claims: io.jsonwebtoken.Claims
     ): ResponseEntity<Long> = ResponseEntity.status(HttpStatus.CREATED).body(
-        service.createSchedule(request)
+        service.createSchedule(request, CurrentUser.from(claims))
     )
 
-    @PreAuthorize("hasRole('ADMIN')")
+    // ADMIN 또는 본인이 만든 독립 일정의 작성자만 — 서비스에서 검증
     @PatchMapping("/{scheduleId}")
     fun updateSchedule(
         @PathVariable scheduleId: Long,
-        @RequestBody request: ScheduleUpdateRequest
+        @RequestBody request: ScheduleUpdateRequest,
+        @AuthenticationPrincipal claims: io.jsonwebtoken.Claims
     ): ResponseEntity<ScheduleDetailResponse> {
-        return ResponseEntity.ok(service.updateSchedule(scheduleId, request))
+        return ResponseEntity.ok(service.updateSchedule(scheduleId, request, CurrentUser.from(claims)))
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{scheduleId}")
-    fun deleteSchedule(@PathVariable scheduleId: Long): ResponseEntity<Void> {
-        service.deleteSchedule(scheduleId)
+    fun deleteSchedule(
+        @PathVariable scheduleId: Long,
+        @AuthenticationPrincipal claims: io.jsonwebtoken.Claims
+    ): ResponseEntity<Void> {
+        service.deleteSchedule(scheduleId, CurrentUser.from(claims))
         return ResponseEntity.noContent().build()
     }
 }

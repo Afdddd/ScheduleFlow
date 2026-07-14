@@ -9,6 +9,8 @@ import { createSchedule, ScheduleCreateRequest } from '../api/schedule';
 import { getAllProjects } from '../api/project';
 import { getAllUsers, UserListResponse } from '../api/user';
 import { ProjectListResponse } from '../api/list';
+import { useAuthStore } from '../stores/authStore';
+import { SCHEDULE_TYPES } from '../constants/scheduleTypes';
 
 /**
  * MobileScheduleCreateSheet — 새 일정 바텀시트.
@@ -17,13 +19,7 @@ import { ProjectListResponse } from '../api/list';
  * 새 API 없이 기존 `createSchedule`/`getAllProjects`/`getAllUsers`를 그대로 사용.
  */
 
-const TYPES: { value: string; label: string }[] = [
-  { value: 'PROJECT', label: '프로젝트 일정' },
-  { value: 'TEST_RUN', label: '시운전' },
-  { value: 'WIRING', label: '전기 배선' },
-  { value: 'DESIGN', label: '설계' },
-  { value: 'MEETING', label: '미팅' },
-];
+const TYPES = SCHEDULE_TYPES;
 
 interface Props {
   open: boolean;
@@ -32,6 +28,9 @@ interface Props {
 }
 
 const MobileScheduleCreateSheet: React.FC<Props> = ({ open, onClose, onCreated }) => {
+  // STAFF는 독립(개인) 일정만 생성 가능 — 프로젝트 선택 숨김, 참여자는 본인 고정 (#110)
+  const isAdmin = useAuthStore((s) => s.user?.role === 'ADMIN');
+
   const [title, setTitle] = useState('');
   const [type, setType] = useState('PROJECT');
   const [range, setRange] = useState<[Date | null, Date | null]>([null, null]);
@@ -52,6 +51,7 @@ const MobileScheduleCreateSheet: React.FC<Props> = ({ open, onClose, onCreated }
     setProjectId(null);
     setMemberIds([]);
     setError(null);
+    if (!isAdmin) return; // STAFF: 선택지 필요 없음(/users는 ADMIN 전용이기도 하다)
     (async () => {
       try {
         const [ps, us] = await Promise.all([getAllProjects(), getAllUsers()]);
@@ -61,7 +61,7 @@ const MobileScheduleCreateSheet: React.FC<Props> = ({ open, onClose, onCreated }
         console.error('선택지 로딩 실패:', e);
       }
     })();
-  }, [open]);
+  }, [open, isAdmin]);
 
   const toggleMember = (id: number) =>
     setMemberIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -80,8 +80,8 @@ const MobileScheduleCreateSheet: React.FC<Props> = ({ open, onClose, onCreated }
         startDate: format(start, 'yyyy-MM-dd'),
         endDate: format(end, 'yyyy-MM-dd'),
         scheduleType: type,
-        projectId: projectId || null,
-        memberIds: memberIds.length > 0 ? memberIds : null,
+        projectId: isAdmin ? projectId || null : null,
+        memberIds: isAdmin && memberIds.length > 0 ? memberIds : null,
       };
       await createSchedule(req);
       onCreated();
@@ -144,7 +144,8 @@ const MobileScheduleCreateSheet: React.FC<Props> = ({ open, onClose, onCreated }
           />
         </Field>
 
-        {/* 프로젝트 */}
+        {/* 프로젝트 — STAFF는 독립 일정만 가능 */}
+        {isAdmin && (
         <Field label="프로젝트">
           <select
             value={projectId ?? ''}
@@ -159,10 +160,15 @@ const MobileScheduleCreateSheet: React.FC<Props> = ({ open, onClose, onCreated }
             ))}
           </select>
         </Field>
+        )}
 
-        {/* 참여자 */}
+        {/* 참여자 — STAFF는 본인 고정 */}
         <Field label="참여자">
-          {users.length === 0 ? (
+          {!isAdmin ? (
+            <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-[14px] font-semibold text-gray-500">
+              본인 일정으로 등록돼요
+            </div>
+          ) : users.length === 0 ? (
             <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 text-[14px] font-semibold text-gray-400">
               사원이 없어요
             </div>

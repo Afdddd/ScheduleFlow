@@ -15,6 +15,7 @@ import org.core.scheduleflow.domain.schedule.repository.ScheduleRepository
 import org.core.scheduleflow.domain.user.repository.UserRepository
 import org.core.scheduleflow.global.exception.CustomException
 import org.core.scheduleflow.global.exception.ErrorCode
+import org.core.scheduleflow.global.security.CurrentUser
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
@@ -32,7 +33,9 @@ class ScheduleService(
     private val userRepository: UserRepository,
 ) {
 
-    fun createSchedule(request: ScheduleCreateRequest): Long {
+    fun createSchedule(request: ScheduleCreateRequest, currentUser: CurrentUser): Long {
+        validateWritableFields(request.projectId, request.memberIds, currentUser)
+
         val schedule = Schedule(
             type = request.scheduleType ?: ScheduleType.PROJECT,
             title = request.title,
@@ -48,7 +51,12 @@ class ScheduleService(
             savedSchedule.updateProject(project)
         }
 
-        request.memberIds
+        // STAFF가 참여자를 비우면 본인 일정이므로 본인으로 자동 지정
+        val effectiveMemberIds =
+            if (!currentUser.isAdmin && request.memberIds.isNullOrEmpty()) listOf(currentUser.userId)
+            else request.memberIds
+
+        effectiveMemberIds
             ?.takeIf { it.isNotEmpty() }
             ?.let { memberIds ->
                 val users = userRepository.findAllById(memberIds)
@@ -124,9 +132,12 @@ class ScheduleService(
             }
     }
 
-    fun updateSchedule(id: Long, request: ScheduleUpdateRequest): ScheduleDetailResponse {
+    fun updateSchedule(id: Long, request: ScheduleUpdateRequest, currentUser: CurrentUser): ScheduleDetailResponse {
         val schedule = scheduleRepository.findByIdOrNull(id)
             ?: throw CustomException(ErrorCode.NOT_FOUND_SCHEDULE)
+
+        validateManageable(schedule, currentUser)
+        validateWritableFields(request.projectId, request.memberIds, currentUser)
 
         // 필드 업데이트
         request.title?.let { schedule.title = it }
@@ -154,8 +165,32 @@ class ScheduleService(
         return ScheduleDetailResponse.from(schedule)
     }
 
-    fun deleteSchedule(id: Long) {
-        scheduleRepository.deleteById(id)
+    fun deleteSchedule(id: Long, currentUser: CurrentUser) {
+        val schedule = scheduleRepository.findByIdOrNull(id)
+            ?: throw CustomException(ErrorCode.NOT_FOUND_SCHEDULE)
+        validateManageable(schedule, currentUser)
+        scheduleRepository.delete(schedule)
+    }
+
+    /**
+     * 일정 수정/삭제 권한: ADMIN 전체, STAFF는 본인이 만든 독립 일정(프로젝트 미연결)만. (#110)
+     */
+    private fun validateManageable(schedule: Schedule, currentUser: CurrentUser) {
+        if (currentUser.isAdmin) return
+        if (schedule.createdBy != currentUser.username || schedule.project != null) {
+            throw CustomException(ErrorCode.PERMISSION_DENIED)
+        }
+    }
+
+    /**
+     * 생성/수정 요청 필드 권한: STAFF는 프로젝트 연결 불가, 참여자는 본인만 지정 가능. (#110)
+     */
+    private fun validateWritableFields(projectId: Long?, memberIds: List<Long>?, currentUser: CurrentUser) {
+        if (currentUser.isAdmin) return
+        if (projectId != null) throw CustomException(ErrorCode.PERMISSION_DENIED)
+        if (memberIds?.any { it != currentUser.userId } == true) {
+            throw CustomException(ErrorCode.PERMISSION_DENIED)
+        }
     }
 
     private fun validatePeriod(startDate: LocalDate, endDate: LocalDate) {

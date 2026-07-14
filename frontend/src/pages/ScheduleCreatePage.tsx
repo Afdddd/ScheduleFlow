@@ -10,21 +10,10 @@ import { createSchedule, ScheduleCreateRequest } from '../api/schedule';
 import { getAllProjects } from '../api/project';
 import { ProjectListResponse } from '../api/list';
 import { getAllUsers, UserListResponse } from '../api/user';
+import { useAuthStore } from '../stores/authStore';
+import { SCHEDULE_TYPES, scheduleTypeChipCls } from '../constants/scheduleTypes';
 
-const TYPE_OPTS = [
-  { v: 'PROJECT', l: '프로젝트' },
-  { v: 'TEST_RUN', l: '시운전' },
-  { v: 'WIRING', l: '전기 배선' },
-  { v: 'DESIGN', l: '설계' },
-  { v: 'MEETING', l: '미팅' },
-];
-const TYPE_CHIP: Record<string, string> = {
-  PROJECT: 'text-primary-600 bg-primary-50',
-  TEST_RUN: 'text-green-700 bg-green-50',
-  WIRING: 'text-amber-700 bg-amber-50',
-  DESIGN: 'text-purple-700 bg-purple-50',
-  MEETING: 'text-red-700 bg-red-50',
-};
+const TYPE_OPTS = SCHEDULE_TYPES.map((t) => ({ v: t.value, l: t.shortLabel }));
 const AVATAR_COLORS = ['#0B4EC4', '#1B9E5A', '#8B5CF6', '#C6771A', '#E5484D', '#0EA5E9'];
 
 const inputCls =
@@ -41,6 +30,8 @@ const segCls = (on: boolean) =>
  */
 const ScheduleCreatePage: React.FC = () => {
   const navigate = useNavigate();
+  // STAFF는 독립(개인) 일정만 생성 가능 — 프로젝트 선택 숨김, 참여자는 본인 고정 (#110)
+  const isAdmin = useAuthStore((s) => s.user?.role === 'ADMIN');
 
   // 기본 정보
   const [title, setTitle] = useState<string>('');
@@ -63,8 +54,9 @@ const ScheduleCreatePage: React.FC = () => {
   const [loadingUsers, setLoadingUsers] = useState<boolean>(false);
   const [loadingProjects, setLoadingProjects] = useState<boolean>(false);
 
-  // 프로젝트 및 사원 목록 로딩
+  // 프로젝트 및 사원 목록 로딩 (STAFF는 선택지가 없으므로 생략 — /users는 ADMIN 전용)
   useEffect(() => {
+    if (!isAdmin) return;
     const loadData = async () => {
       setLoadingProjects(true);
       setLoadingUsers(true);
@@ -81,7 +73,7 @@ const ScheduleCreatePage: React.FC = () => {
       }
     };
     loadData();
-  }, []);
+  }, [isAdmin]);
 
   // 날짜 범위 선택 핸들러
   const handleDateRangeChange = (dates: [Date | null, Date | null]) => {
@@ -121,8 +113,8 @@ const ScheduleCreatePage: React.FC = () => {
         startDate: format(startDate, 'yyyy-MM-dd'),
         endDate: format(endDate, 'yyyy-MM-dd'),
         scheduleType: scheduleType || 'PROJECT',
-        projectId: projectId || null,
-        memberIds: selectedMemberIds.length > 0 ? selectedMemberIds : null,
+        projectId: isAdmin ? projectId || null : null,
+        memberIds: isAdmin && selectedMemberIds.length > 0 ? selectedMemberIds : null,
       };
 
       await createSchedule(scheduleRequest);
@@ -199,6 +191,7 @@ const ScheduleCreatePage: React.FC = () => {
                     required
                   />
                 </div>
+                {isAdmin && (
                 <div>
                   <label className={labelCls}>프로젝트</label>
                   <div className="relative">
@@ -220,14 +213,21 @@ const ScheduleCreatePage: React.FC = () => {
                     </svg>
                   </div>
                 </div>
+                )}
               </div>
             </div>
           </section>
 
           <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
             <h2 className="text-[15.5px] font-extrabold tracking-tight text-gray-900">참여자</h2>
-            <p className="mb-5 mt-0.5 text-[12.5px] font-semibold text-gray-400">이 일정에 참여할 사원을 선택합니다.</p>
-            {loadingUsers ? (
+            <p className="mb-5 mt-0.5 text-[12.5px] font-semibold text-gray-400">
+              {isAdmin ? '이 일정에 참여할 사원을 선택합니다.' : '본인 일정으로 등록됩니다.'}
+            </p>
+            {!isAdmin ? (
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm font-semibold text-gray-500">
+                참여자는 본인으로 자동 지정됩니다.
+              </div>
+            ) : loadingUsers ? (
               <div className="rounded-xl border border-gray-200 p-4 text-sm font-semibold text-gray-400">로딩 중…</div>
             ) : users.length === 0 ? (
               <div className="rounded-xl border border-gray-200 p-4 text-sm font-semibold text-gray-400">등록된 사원이 없습니다.</div>
@@ -281,7 +281,7 @@ const ScheduleCreatePage: React.FC = () => {
             </div>
             <div className="flex items-center justify-between gap-3 border-b border-gray-200 px-[18px] py-2.5">
               <span className="text-[12.5px] font-bold text-gray-400">유형</span>
-              <span className={`inline-flex h-[22px] items-center rounded-full px-2.5 text-[12px] font-bold ${TYPE_CHIP[scheduleType] ?? 'text-gray-600 bg-gray-100'}`}>{typeLabel}</span>
+              <span className={`inline-flex h-[22px] items-center rounded-full px-2.5 text-[12px] font-bold ${scheduleTypeChipCls(scheduleType)}`}>{typeLabel}</span>
             </div>
             <div className="flex items-center justify-between gap-3 border-b border-gray-200 px-[18px] py-2.5">
               <span className="text-[12.5px] font-bold text-gray-400">기간</span>
@@ -295,7 +295,7 @@ const ScheduleCreatePage: React.FC = () => {
             </div>
             <div className="flex items-center justify-between gap-3 px-[18px] py-2.5">
               <span className="text-[12.5px] font-bold text-gray-400">참여자</span>
-              <span className="text-[13px] font-bold text-gray-800 tabular-nums">{selectedMemberIds.length}명</span>
+              <span className="text-[13px] font-bold text-gray-800 tabular-nums">{isAdmin ? `${selectedMemberIds.length}명` : '본인'}</span>
             </div>
           </div>
 

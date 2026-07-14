@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 import ColorPicker from '../components/ColorPicker';
 import Alert from '../components/Alert';
 import { useAuthStore } from '../stores/authStore';
+import { SCHEDULE_TYPES, scheduleTypeLabel, scheduleTypeAccent } from '../constants/scheduleTypes';
 import {
   getProjectDetail,
   updateProject,
@@ -481,22 +482,7 @@ const ProjectDetailPage: React.FC = () => {
   };
 
   // 일정 타입 라벨
-  const getScheduleTypeLabel = (type: string): string => {
-    switch (type) {
-      case 'PROJECT':
-        return '프로젝트 일정';
-      case 'TEST_RUN':
-        return '시운전';
-      case 'WIRING':
-        return '전기 배선';
-      case 'DESIGN':
-        return '설계';
-      case 'MEETING':
-        return '미팅';
-      default:
-        return type;
-    }
-  };
+  const getScheduleTypeLabel = (type: string): string => scheduleTypeLabel(type);
 
   // 파일 카테고리 라벨
   const getFileCategoryLabel = (category: string): string => {
@@ -526,22 +512,7 @@ const ProjectDetailPage: React.FC = () => {
   const fileCategories = ['QUOTATION', 'DRAWING', 'PLC_PROGRAM', 'BOM', 'HMI_DESIGN'];
 
   // 일정 타입별 색상 (좌측 스트라이프 / 배지)
-  const scheduleTypeStyle = (type: string): { stripe: string; pill: string } => {
-    switch (type) {
-      case 'PROJECT':
-        return { stripe: 'bg-primary-500', pill: 'bg-primary-50 text-primary-700' };
-      case 'TEST_RUN':
-        return { stripe: 'bg-emerald-500', pill: 'bg-emerald-50 text-emerald-700' };
-      case 'WIRING':
-        return { stripe: 'bg-amber-500', pill: 'bg-amber-50 text-amber-700' };
-      case 'DESIGN':
-        return { stripe: 'bg-violet-500', pill: 'bg-violet-50 text-violet-700' };
-      case 'MEETING':
-        return { stripe: 'bg-rose-500', pill: 'bg-rose-50 text-rose-700' };
-      default:
-        return { stripe: 'bg-gray-400', pill: 'bg-gray-100 text-gray-600' };
-    }
-  };
+  const scheduleTypeStyle = scheduleTypeAccent;
 
   // 참여자 아바타 색상 팔레트
   const AVATAR_COLORS = ['#0B4EC4', '#1B9E5A', '#8B5CF6', '#C6771A', '#E5484D', '#0EA5E9'];
@@ -1324,13 +1295,7 @@ const ProjectDetailPage: React.FC = () => {
               <div>
                 <label className="mb-2 block text-[13px] font-extrabold text-gray-700">타입</label>
                 <div className="flex flex-wrap gap-2">
-                  {[
-                    { value: 'PROJECT', label: '프로젝트' },
-                    { value: 'TEST_RUN', label: '시운전' },
-                    { value: 'WIRING', label: '전기 배선' },
-                    { value: 'DESIGN', label: '설계' },
-                    { value: 'MEETING', label: '미팅' },
-                  ].map((opt) => {
+                  {SCHEDULE_TYPES.map((t) => ({ value: t.value, label: t.shortLabel })).map((opt) => {
                     const on = newScheduleType === opt.value;
                     return (
                       <button

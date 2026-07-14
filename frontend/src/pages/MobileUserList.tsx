@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { getUserList, UserListResponse } from '../api/list';
 import MobileSearchInput from '../components/mobile/MobileSearchInput';
 import UserCreateDialog from '../components/UserCreateDialog';
+import UserEditDialog from '../components/UserEditDialog';
 
 /**
  * MobileUserList — 모바일 '사원 관리' (더보기 → 사원 관리, ADMIN).
@@ -15,6 +16,7 @@ const MobileUserList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [keyword, setKeyword] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
+  const [editUser, setEditUser] = useState<UserListResponse | null>(null);
   const [reload, setReload] = useState(0);
 
   useEffect(() => {
@@ -68,7 +70,12 @@ const MobileUserList: React.FC = () => {
             {items.map((u, i) => {
               const isAdmin = u.role === 'ADMIN';
               return (
-                <div key={u.id} className={`flex items-center gap-3 px-4 py-3.5 ${i > 0 ? 'border-t border-gray-100' : ''}`}>
+                <button
+                  type="button"
+                  key={u.id}
+                  onClick={() => setEditUser(u)}
+                  className={`flex w-full items-center gap-3 px-4 py-3.5 text-left active:bg-gray-50 ${i > 0 ? 'border-t border-gray-100' : ''}`}
+                >
                   <span
                     className="flex h-10 w-10 flex-none items-center justify-center rounded-full text-[15px] font-extrabold text-white"
                     style={{ backgroundColor: COLORS[i % COLORS.length] }}
@@ -90,7 +97,10 @@ const MobileUserList: React.FC = () => {
                       {[u.position, u.phone].filter(Boolean).join(' · ') || u.username}
                     </div>
                   </div>
-                </div>
+                  <svg className="h-4 w-4 flex-none text-gray-300" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                    <path d="M9 18l6-6-6-6" />
+                  </svg>
+                </button>
               );
             })}
           </div>
@@ -98,6 +108,7 @@ const MobileUserList: React.FC = () => {
       </div>
 
       <UserCreateDialog open={createOpen} onClose={() => setCreateOpen(false)} onCreated={() => setReload((n) => n + 1)} />
+      <UserEditDialog open={editUser !== null} user={editUser} onClose={() => setEditUser(null)} onSaved={() => setReload((n) => n + 1)} />
     </div>
   );
 };
