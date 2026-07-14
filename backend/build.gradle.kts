@@ -22,6 +22,9 @@ dependencies {
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.4")
 
     // DB Migration
+    // Spring Boot 4.0은 자동설정을 모듈로 분리 — flyway-core만으론 FlywayAutoConfiguration이
+    // 클래스패스에 없어 Flyway가 아예 실행되지 않는다. 통합 모듈을 반드시 함께 넣어야 한다.
+    implementation("org.springframework.boot:spring-boot-flyway")
     implementation("org.flywaydb:flyway-core")
     implementation("org.flywaydb:flyway-mysql")
 
