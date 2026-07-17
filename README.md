@@ -59,7 +59,7 @@ docker-compose.yml   배포 스택 (mysql · backend · frontend · nginx)
 
 ```bash
 # 백엔드
-./gradlew :backend:bootRun
+cd backend && ./gradlew bootRun
 
 # 프론트엔드
 cd frontend && npm install && npm start
