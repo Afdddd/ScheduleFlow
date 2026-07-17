@@ -24,7 +24,11 @@ class GlobalExceptionHandler {
         ex: CustomException,
         request: HttpServletRequest
     ): ResponseEntity<ErrorResponse> {
-        log.warn { "CustomException 발생 - ErrorCode: ${ex.errorCode}, URI: ${request.requestURI}, Message: ${ex.errorCode.message}" }
+        if(ex.errorCode.httpStatus.is5xxServerError) {
+            log.error(ex) { "CustomException(서버오류) - URI: ${request.requestURI}, ErrorCode: ${ex.errorCode}" }
+        } else {
+            log.warn { "CustomException 발생 - URI: ${request.requestURI}, Message: ${ex.errorCode.message}, ErrorCode: ${ex.errorCode}" }
+        }
 
         val errorResponse = ErrorResponse(
             status = ex.errorCode.httpStatus.value(),
@@ -45,7 +49,7 @@ class GlobalExceptionHandler {
         val errors = ex.bindingResult.fieldErrors
             .joinToString(", ") { "${it.field}: ${it.defaultMessage}" }
 
-        log.error { "BindException 발생 - URI: ${request.requestURI}, Errors: $errors"}
+        log.warn { "BindException 발생 - URI: ${request.requestURI}, Errors: $errors"}
 
         val errorResponse = ErrorResponse(
             status = HttpStatus.BAD_REQUEST.value(),
@@ -63,7 +67,7 @@ class GlobalExceptionHandler {
         ex: HttpMessageNotReadableException,
         request: HttpServletRequest
     ): ResponseEntity<ErrorResponse> {
-        log.error {"HttpMessageNotReadableException 발생 - URI: ${request.requestURI}, Message: ${ex.message}"}
+        log.warn {"HttpMessageNotReadableException 발생 - URI: ${request.requestURI}, Message: ${ex.message}"}
 
         val errorResponse = ErrorResponse(
             status = HttpStatus.BAD_REQUEST.value(),
@@ -81,7 +85,7 @@ class GlobalExceptionHandler {
         ex: MethodArgumentTypeMismatchException,
         request: HttpServletRequest
     ): ResponseEntity<ErrorResponse> {
-        log.error { "MethodArgumentTypeMismatchException 발생 - URI: ${request.requestURI}, Parameter: ${ex.name}, Message: ${ex.message}" }
+        log.warn { "MethodArgumentTypeMismatchException 발생 - URI: ${request.requestURI}, Parameter: ${ex.name}, Message: ${ex.message}" }
 
         val errorResponse = ErrorResponse(
             status = HttpStatus.BAD_REQUEST.value(),
@@ -96,7 +100,7 @@ class GlobalExceptionHandler {
         ex: IllegalArgumentException,
         request: HttpServletRequest
     ): ResponseEntity<ErrorResponse> {
-        log.error { "잘못된 인자 값 - URI: ${request.requestURI}, Message: ${ex.message}" }
+        log.warn { "잘못된 인자 값 - URI: ${request.requestURI}, Message: ${ex.message}" }
 
         val errorResponse = ErrorResponse(
             status = HttpStatus.BAD_REQUEST.value(),
@@ -111,7 +115,7 @@ class GlobalExceptionHandler {
         ex: IllegalStateException,
         request: HttpServletRequest
     ): ResponseEntity<ErrorResponse> {
-        log.error { "Precondition 실패 - URI: ${request.requestURI}, Message: ${ex.message}" }
+        log.error(ex) { "Precondition 실패 - URI: ${request.requestURI}, Message: ${ex.message}" }
 
         val errorResponse = ErrorResponse(
             status = HttpStatus.INTERNAL_SERVER_ERROR.value(),
@@ -134,7 +138,7 @@ class GlobalExceptionHandler {
             throw ex
         }
 
-        log.error { "예상하지 못한 예외 발생 - URI: ${request.requestURI}, Exception: ${ex.javaClass.simpleName}, Message: ${ex.message}" }
+        log.error(ex) { "예상하지 못한 예외 발생 - URI: ${request.requestURI}, Exception: ${ex.javaClass.simpleName}, Message: ${ex.message}" }
 
         val errorResponse = ErrorResponse(
             status = HttpStatus.INTERNAL_SERVER_ERROR.value(),

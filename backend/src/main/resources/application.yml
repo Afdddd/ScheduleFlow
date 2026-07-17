@@ -50,6 +50,21 @@ springdoc:
     tags-sorter: alpha
     operations-sorter: alpha
 
+# Actuator — 헬스체크만 최소 노출. context-path가 /api라 실제 경로는 /api/actuator/*.
+#   /api/actuator/health           : DB 포함 종합 상태(DB 다운 시 503) — "서비스 가능한가"
+#   /api/actuator/health/liveness  : 프로세스 생존만(DB 무관) — UptimeRobot 죽음 감지용
+# show-details=never: 공개 엔드포인트라 내부 상태(DB·디스크 등) 세부는 숨긴다.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+
 app:
   cors:
     # 기본값은 로컬 개발용(localhost·사설/테일스케일 IP). prod는 배포 시

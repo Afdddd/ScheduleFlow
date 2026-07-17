@@ -25,6 +25,7 @@ SITE_ADDRESS=scheduleflow-app.duckdns.org
 APP_CORS_ALLOWED_ORIGINS=https://scheduleflow-app.duckdns.org
 # 첫 부팅 때 update로 스키마 생성 완료(2026-07-12) → 이후 validate 고정
 DDL_AUTO=validate
+SENTRY_DSN='$(get /scheduleflow/prod/SENTRY_DSN)'
 EOF
 
 chmod 600 .env

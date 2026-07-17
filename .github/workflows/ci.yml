@@ -23,7 +23,8 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
 
       - name: 테스트 실행
-        run: ./gradlew :backend:test
+        working-directory: backend
+        run: ./gradlew test
 
   frontend-check:
     name: 프론트 lint + 빌드

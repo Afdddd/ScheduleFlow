@@ -24,3 +24,9 @@ springdoc:
     enabled: false
   swagger-ui:
     enabled: false
+
+sentry:
+  dsn: ${SENTRY_DSN:}         # 예외를 전달할 Sentry 서버
+  environment: prod
+  release: ${SENTRY_RELEASE:} # 어떤 버전에서 발생했는지 표시하는 식별자. 여기선 git sha가 들어감.
+  traces-sample-rate: 0.0     # 성능 추적 off
