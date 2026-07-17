@@ -23,7 +23,7 @@ repositories {
 }
 
 sentry {
-    includeSourceContext = System.getenv("SENTRY_AUTH_TOKEN") != null
+    includeSourceContext = !System.getenv("SENTRY_AUTH_TOKEN").isNullOrEmpty()
 
     org = "scheduleflow"
     projectName = "scheduleflow"

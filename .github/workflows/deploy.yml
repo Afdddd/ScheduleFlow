@@ -50,6 +50,8 @@ jobs:
           platforms: linux/arm64
           build-args: |
             SENTRY_RELEASE=${{ github.sha }}
+          secrets: |
+            sentry_auth_token=${{ secrets.SENTRY_AUTH_TOKEN }}
           push: true
           tags: |
             ${{ env.ECR }}/scheduleflow-backend:latest

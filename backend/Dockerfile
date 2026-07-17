@@ -18,8 +18,13 @@ RUN ./gradlew dependencies --no-daemon || true
 # Copy source code
 COPY src src
 
+ARG SENTRY_RELEASE
+ENV SENTRY_RELEASE=${SENTRY_RELEASE}
+
 # Build the application
-RUN ./gradlew bootJar --no-daemon -x test
+RUN --mount=type=secret,id=sentry_auth_token \
+    SENTRY_AUTH_TOKEN="$(cat /run/secrets/sentry_auth_token 2>/dev/null || true)" \
+    ./gradlew bootJar --no-daemon -x test
 
 # ===== Runtime Stage =====
 FROM eclipse-temurin:21-jre
