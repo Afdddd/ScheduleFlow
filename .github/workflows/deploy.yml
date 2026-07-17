@@ -48,6 +48,8 @@ jobs:
           context: ./backend
           file: ./backend/Dockerfile
           platforms: linux/arm64
+          build-args: |
+            SENTRY_RELEASE=${{ github.sha }}
           push: true
           tags: |
             ${{ env.ECR }}/scheduleflow-backend:latest
@@ -97,7 +99,7 @@ jobs:
               "aws s3 sync s3://scheduleflow-files-606531136262/deploy/ .",
               "bash fetch-env.sh",
               "aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin 606531136262.dkr.ecr.ap-northeast-2.amazonaws.com",
-              "docker compose pull",g
+              "docker compose pull",
               "docker compose up -d",
               "docker image prune -f"
             ]' \

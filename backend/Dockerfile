@@ -24,6 +24,9 @@ RUN ./gradlew bootJar --no-daemon -x test
 # ===== Runtime Stage =====
 FROM eclipse-temurin:21-jre
 
+ARG SENTRY_RELEASE
+ENV SENTRY_RELEASE=${SENTRY_RELEASE}
+
 WORKDIR /app
 
 # Set timezone

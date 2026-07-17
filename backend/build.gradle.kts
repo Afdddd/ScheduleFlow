@@ -5,6 +5,7 @@ plugins {
     kotlin("kapt") version "2.2.21"
     id("org.springframework.boot") version "4.0.0"
     id("io.spring.dependency-management") version "1.1.7"
+    id("io.sentry.jvm.gradle") version "6.15.0"
 }
 
 group = "org.core"
@@ -19,6 +20,13 @@ java {
 
 repositories {
     mavenCentral()
+}
+
+sentry {
+    includeSourceContext = System.getenv("SENTRY_AUTH_TOKEN") != null
+
+    org = "scheduleflow"
+    projectName = "scheduleflow"
 }
 
 dependencies {
