@@ -1,21 +1,14 @@
 # ────────────────────────────────────────────────
-# ② AMI 자동 선택 — 최신 Amazon Linux 2023 (ARM64)
-#   data 소스로 "최신 이미지"를 매번 찾아옴 → ID 하드코딩 안 함.
-#   t4g/t3 계열에 맞춰 arm64 선택 (t4g=ARM, 저렴).
+# ② AMI — 최초 생성 시점의 Amazon Linux 2023 (ARM64)에 고정
+#   과거엔 data.aws_ami(most_recent=true)로 "최신"을 매번 찾았는데, 그러면
+#   Amazon이 새 AMI를 낼 때마다 id가 바뀌어 apply 시 인스턴스 강제 재생성이 발동함
+#   (AMI는 생성 후 못 바꾸는 속성 → in-place 불가 → destroy+create = 실사용자 다운타임).
+#   그래서 지금 돌고 있는 AMI id로 명시 고정한다. 보안 업데이트는 박스 안 dnf로 처리.
+#   새 AMI로 갈아탈 땐 아래 id를 의도적으로 바꿔서 계획된 재생성으로 진행.
+#   (최신 AL2023 arm64 조회: aws ec2 describe-images --owners amazon
+#     --filters "Name=name,Values=al2023-ami-*-arm64" --query
+#     'sort_by(Images,&CreationDate)[-1].ImageId' --output text)
 # ────────────────────────────────────────────────
-data "aws_ami" "al2023" {
-  most_recent = true
-  owners      = ["amazon"]   # Amazon 공식 이미지만
-
-  filter {
-    name   = "name"
-    values = ["al2023-ami-*-arm64"]   # Amazon Linux 2023, ARM64
-  }
-  filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
-  }
-}
 
 # ────────────────────────────────────────────────
 # ③ user-data — 부팅 시 1회 실행되는 초기화 스크립트
@@ -48,7 +41,7 @@ locals {
 # ④ EC2 인스턴스 — 위 ①②③을 조립
 # ────────────────────────────────────────────────
 resource "aws_instance" "app" {
-  ami           = data.aws_ami.al2023.id       # ②에서 찾은 최신 이미지
+  ami           = "ami-03c1733c4f6df5149"      # ②에서 고정한 AL2023 arm64 (최초 생성분)
   instance_type = "t4g.micro"                  # ARM
 
   subnet_id                   = aws_subnet.public_a.id          # public subnet
