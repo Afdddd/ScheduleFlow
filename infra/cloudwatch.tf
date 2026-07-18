@@ -100,7 +100,7 @@ resource "aws_cloudwatch_metric_alarm" "mem_high" {
   datapoints_to_alarm = 3
   comparison_operator = "GreaterThanOrEqualToThreshold"
   threshold           = 90
-  treat_missing_data  = "missing" # 데이터 끊김(배포/재시작)은 알람 아님 — 죽음 감지는 UptimeRobot 몫
+  treat_missing_data  = "missing" # 데이터 끊김(배포/재시작)은 알람 아님. 박스 통째 죽음은 내부 감시로 못 잡음(사용자 신고로 감지 — 10명 내부도구라 UptimeRobot 생략)
 
   alarm_actions = [aws_sns_topic.alarms.arn]
   ok_actions    = [aws_sns_topic.alarms.arn] # 복구됐을 때도 통지
@@ -156,4 +156,136 @@ resource "aws_cloudwatch_metric_alarm" "rds_storage_low" {
 
   alarm_actions = [aws_sns_topic.alarms.arn]
   ok_actions    = [aws_sns_topic.alarms.arn]
+}
+
+# ════════════════════════════════════════════════════════════════
+# [Layer 4] 대시보드 — 한 판에 EC2 + RDS + 최근 에러 로그
+#   콘솔 애드혹 조회 대신 "자주 같이 보는 지표"를 고정 배치. 상시무료 3개 중 1개(=$0).
+#   그래프 위 점선 = 알람 임계선(annotations). InstanceId/RDS식별자는 리소스 참조.
+#   레이아웃: 24열 그리드, 위젯당 높이 6. 1행 EC2 / 2행 RDS / 3행 로그.
+# ════════════════════════════════════════════════════════════════
+resource "aws_cloudwatch_dashboard" "main" {
+  dashboard_name = "scheduleflow"
+
+  dashboard_body = jsonencode({
+    widgets = [
+      # ── 1행: EC2 ──
+      {
+        type   = "metric"
+        x      = 0
+        y      = 0
+        width  = 8
+        height = 6
+        properties = {
+          title   = "EC2 메모리 사용률 (%)"
+          region  = "ap-northeast-2"
+          stat    = "Average"
+          period  = 300
+          metrics = [["CWAgent", "mem_used_percent", "InstanceId", aws_instance.app.id]]
+          yAxis   = { left = { min = 0, max = 100 } }
+          annotations = {
+            horizontal = [{ label = "알람 90%", value = 90 }]
+          }
+        }
+      },
+      {
+        type   = "metric"
+        x      = 8
+        y      = 0
+        width  = 8
+        height = 6
+        properties = {
+          title  = "EC2 디스크 사용률 (%)"
+          region = "ap-northeast-2"
+          stat   = "Average"
+          period = 300
+          metrics = [[
+            "CWAgent", "disk_used_percent",
+            "InstanceId", aws_instance.app.id,
+            "path", "/", "device", "nvme0n1p1", "fstype", "xfs"
+          ]]
+          yAxis = { left = { min = 0, max = 100 } }
+          annotations = {
+            horizontal = [{ label = "알람 85%", value = 85 }]
+          }
+        }
+      },
+      {
+        type   = "metric"
+        x      = 16
+        y      = 0
+        width  = 8
+        height = 6
+        properties = {
+          title   = "EC2 CPU 사용률 (%)"
+          region  = "ap-northeast-2"
+          stat    = "Average"
+          period  = 300
+          metrics = [["AWS/EC2", "CPUUtilization", "InstanceId", aws_instance.app.id]]
+          yAxis   = { left = { min = 0, max = 100 } }
+        }
+      },
+      # ── 2행: RDS ──
+      {
+        type   = "metric"
+        x      = 0
+        y      = 6
+        width  = 8
+        height = 6
+        properties = {
+          title   = "RDS 여유 스토리지 (bytes)"
+          region  = "ap-northeast-2"
+          stat    = "Average"
+          period  = 300
+          metrics = [["AWS/RDS", "FreeStorageSpace", "DBInstanceIdentifier", aws_db_instance.main.identifier]]
+          annotations = {
+            horizontal = [{ label = "알람 2GiB", value = 2147483648 }]
+          }
+        }
+      },
+      {
+        type   = "metric"
+        x      = 8
+        y      = 6
+        width  = 8
+        height = 6
+        properties = {
+          title   = "RDS CPU 사용률 (%)"
+          region  = "ap-northeast-2"
+          stat    = "Average"
+          period  = 300
+          metrics = [["AWS/RDS", "CPUUtilization", "DBInstanceIdentifier", aws_db_instance.main.identifier]]
+          yAxis   = { left = { min = 0, max = 100 } }
+        }
+      },
+      {
+        type   = "metric"
+        x      = 16
+        y      = 6
+        width  = 8
+        height = 6
+        properties = {
+          title   = "RDS 연결 수"
+          region  = "ap-northeast-2"
+          stat    = "Average"
+          period  = 300
+          metrics = [["AWS/RDS", "DatabaseConnections", "DBInstanceIdentifier", aws_db_instance.main.identifier]]
+        }
+      },
+      # ── 3행: 로그 ──
+      {
+        type   = "log"
+        x      = 0
+        y      = 12
+        width  = 24
+        height = 6
+        properties = {
+          title  = "최근 에러 로그 (/scheduleflow/docker)"
+          region = "ap-northeast-2"
+          view   = "table"
+          query  = "SOURCE '/scheduleflow/docker' | fields @timestamp, @message | filter @message like /ERROR/ | sort @timestamp desc | limit 50"
+        }
+      },
+    ]
+  })
 }
