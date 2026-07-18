@@ -60,3 +60,100 @@ resource "aws_ssm_parameter" "cwagent_config" {
     Name = "scheduleflow-cwagent-config"
   }
 }
+
+# ════════════════════════════════════════════════════════════════
+# [Layer 3] SNS + 알람
+#   알람은 "숫자가 임계값 넘었나"만 판단하고, 넘으면 액션으로 SNS ARN을 호출한다.
+#   SNS는 CloudWatch가 아닌 별개 서비스 — 알람은 SNS든 Lambda든 상관 안 하고 ARN만 부름.
+# ════════════════════════════════════════════════════════════════
+
+# ── 알림 채널: SNS 토픽 + 이메일 구독 ──────────────
+#   이메일 구독은 생성 직후 "PendingConfirmation" 상태 — AWS가 보낸 확인 메일의
+#   링크를 클릭해야 실제로 알림이 온다. (apply만으론 활성화 안 됨)
+resource "aws_sns_topic" "alarms" {
+  name = "scheduleflow-alarms"
+}
+
+resource "aws_sns_topic_subscription" "alarms_email" {
+  topic_arn = aws_sns_topic.alarms.arn
+  protocol  = "email"
+  endpoint  = var.alarm_email
+}
+
+# ── 알람 ①: 메모리 ────────────────────────────────
+#   정상 상태가 이미 ~80%(t4g.micro 1GB에 JVM 등 4프로세스)라, 85% 단발이면
+#   GC 스파이크마다 울린다. 진짜 위험은 "지속적으로 90% 넘어 OOM으로 가는" 상황 →
+#   5분 평균 × 3회 연속(=15분 지속)일 때만 발화하게 해서 잔진동을 걸러낸다.
+resource "aws_cloudwatch_metric_alarm" "mem_high" {
+  alarm_name        = "scheduleflow-mem-high"
+  alarm_description = "메모리 사용률이 15분 이상 지속적으로 90%를 초과 (OOM 위험)"
+
+  namespace   = "CWAgent"
+  metric_name = "mem_used_percent"
+  dimensions = {
+    InstanceId = aws_instance.app.id
+  }
+
+  statistic           = "Average"
+  period              = 300   # 5분
+  evaluation_periods  = 3     # 3회 연속
+  datapoints_to_alarm = 3
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  threshold           = 90
+  treat_missing_data  = "missing" # 데이터 끊김(배포/재시작)은 알람 아님 — 죽음 감지는 UptimeRobot 몫
+
+  alarm_actions = [aws_sns_topic.alarms.arn]
+  ok_actions    = [aws_sns_topic.alarms.arn] # 복구됐을 때도 통지
+}
+
+# ── 알람 ②: 디스크(루트 볼륨) ─────────────────────
+#   디스크는 로그/이미지 누적으로 천천히 차므로 지속 조건은 약하게(5분 × 2회).
+#   85%면 여유 있을 때 손 쓰라는 신호. (uploads는 prod에서 S3라 로컬 디스크 부담 아님)
+resource "aws_cloudwatch_metric_alarm" "disk_high" {
+  alarm_name        = "scheduleflow-disk-high"
+  alarm_description = "루트 볼륨 사용률이 85%를 초과 (로그/이미지 누적)"
+
+  namespace   = "CWAgent"
+  metric_name = "disk_used_percent"
+  dimensions = {
+    InstanceId = aws_instance.app.id
+    path       = "/"
+    device     = "nvme0n1p1" # 루트 파티션 (AL2023 arm64 nvme)
+    fstype     = "xfs"
+  }
+
+  statistic           = "Average"
+  period              = 300
+  evaluation_periods  = 2
+  datapoints_to_alarm = 2
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  threshold           = 85
+  treat_missing_data  = "missing"
+
+  alarm_actions = [aws_sns_topic.alarms.arn]
+  ok_actions    = [aws_sns_topic.alarms.arn]
+}
+
+# ── 알람 ③: RDS 여유 스토리지 ─────────────────────
+#   EC2 디스크만큼 조용한 살인마인데 Sentry 사각. managed라 공짜 메트릭.
+#   할당 20GB 중 2GB 미만(=90% 사용) 남으면 발화. FreeStorageSpace는 "바이트" 단위.
+resource "aws_cloudwatch_metric_alarm" "rds_storage_low" {
+  alarm_name        = "scheduleflow-rds-storage-low"
+  alarm_description = "RDS 여유 스토리지가 2GB 미만 (스토리지 고갈 임박)"
+
+  namespace   = "AWS/RDS"
+  metric_name = "FreeStorageSpace"
+  dimensions = {
+    DBInstanceIdentifier = aws_db_instance.main.identifier
+  }
+
+  statistic           = "Average"
+  period              = 300
+  evaluation_periods  = 1
+  comparison_operator = "LessThanThreshold"
+  threshold           = 2147483648 # 2 GiB (2 * 1024^3 바이트)
+  treat_missing_data  = "missing"
+
+  alarm_actions = [aws_sns_topic.alarms.arn]
+  ok_actions    = [aws_sns_topic.alarms.arn]
+}
