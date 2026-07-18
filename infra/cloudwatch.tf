@@ -39,3 +39,24 @@ resource "aws_cloudwatch_log_group" "docker" {
     Name = "scheduleflow-docker-logs"
   }
 }
+
+# ────────────────────────────────────────────────
+# [Layer 2] 에이전트 config — SSM Parameter Store에 저장
+#   에이전트가 부팅/설치 시 `-c ssm:<이름>`으로 이 값을 받아 기동한다.
+#   config 실물은 cwagent-config.json (file()로 원문 주입 — templatefile이 아니라
+#   ${aws:InstanceId} 같은 런타임 치환자를 Terraform이 안 건드리고 그대로 넘김).
+#
+#   ⚠ 이름을 반드시 "AmazonCloudWatch-"로 시작할 것.
+#   Layer 1에서 붙인 CloudWatchAgentServerPolicy는 ssm:GetParameter를
+#   Resource=parameter/AmazonCloudWatch-* 로만 허용한다. 다른 이름이면 에이전트가
+#   config를 못 읽어 별도 IAM이 필요 → AWS가 정한 이 접두사를 그대로 따른다.
+# ────────────────────────────────────────────────
+resource "aws_ssm_parameter" "cwagent_config" {
+  name  = "AmazonCloudWatch-scheduleflow-agent-config"
+  type  = "String"
+  value = file("${path.module}/cwagent-config.json")
+
+  tags = {
+    Name = "scheduleflow-cwagent-config"
+  }
+}
