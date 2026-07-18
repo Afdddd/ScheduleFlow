@@ -15,6 +15,12 @@
 #   docker/compose 설치까지만. (앱 배포는 나중에 CI/CD 또는 수동)
 #   heredoc(<<-EOF)으로 여러 줄 셸 스크립트를 그대로 넣음.
 # ────────────────────────────────────────────────
+# NOTE(#114): CloudWatch 에이전트는 이 user_data에 없음 — 라이브 인스턴스에
+#   SSM Run Command로 무중단 설치했다(dnf install amazon-cloudwatch-agent +
+#   fetch-config -c ssm:AmazonCloudWatch-scheduleflow-agent-config).
+#   재생성된 새 박스엔 자동 설치가 안 되니, 재현성이 필요하면 그 두 줄을 아래 heredoc에
+#   추가하거나 배포 스크립트로 옮길 것. (heredoc 안을 바꾸면 user_data가 변해 라이브
+#   인스턴스 in-place 업데이트가 걸리니, 이 메모는 heredoc 밖에 둔다.)
 locals {
   user_data = <<-EOF
     #!/bin/bash
