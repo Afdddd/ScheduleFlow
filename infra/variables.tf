@@ -24,3 +24,8 @@ variable "s3_bucket" {
   type        = string
   default     = "scheduleflow-files-606531136262"
 }
+
+variable "alarm_email" {
+  description = "CloudWatch 알람을 받을 이메일 (SNS 구독 → 확인 메일 클릭 필요). terraform.tfvars에 넣기."
+  type        = string
+}

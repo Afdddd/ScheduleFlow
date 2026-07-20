@@ -1,27 +1,26 @@
 # ────────────────────────────────────────────────
-# ② AMI 자동 선택 — 최신 Amazon Linux 2023 (ARM64)
-#   data 소스로 "최신 이미지"를 매번 찾아옴 → ID 하드코딩 안 함.
-#   t4g/t3 계열에 맞춰 arm64 선택 (t4g=ARM, 저렴).
+# ② AMI — 최초 생성 시점의 Amazon Linux 2023 (ARM64)에 고정
+#   과거엔 data.aws_ami(most_recent=true)로 "최신"을 매번 찾았는데, 그러면
+#   Amazon이 새 AMI를 낼 때마다 id가 바뀌어 apply 시 인스턴스 강제 재생성이 발동함
+#   (AMI는 생성 후 못 바꾸는 속성 → in-place 불가 → destroy+create = 실사용자 다운타임).
+#   그래서 지금 돌고 있는 AMI id로 명시 고정한다. 보안 업데이트는 박스 안 dnf로 처리.
+#   새 AMI로 갈아탈 땐 아래 id를 의도적으로 바꿔서 계획된 재생성으로 진행.
+#   (최신 AL2023 arm64 조회: aws ec2 describe-images --owners amazon
+#     --filters "Name=name,Values=al2023-ami-*-arm64" --query
+#     'sort_by(Images,&CreationDate)[-1].ImageId' --output text)
 # ────────────────────────────────────────────────
-data "aws_ami" "al2023" {
-  most_recent = true
-  owners      = ["amazon"]   # Amazon 공식 이미지만
-
-  filter {
-    name   = "name"
-    values = ["al2023-ami-*-arm64"]   # Amazon Linux 2023, ARM64
-  }
-  filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
-  }
-}
 
 # ────────────────────────────────────────────────
 # ③ user-data — 부팅 시 1회 실행되는 초기화 스크립트
 #   docker/compose 설치까지만. (앱 배포는 나중에 CI/CD 또는 수동)
 #   heredoc(<<-EOF)으로 여러 줄 셸 스크립트를 그대로 넣음.
 # ────────────────────────────────────────────────
+# NOTE(#114): CloudWatch 에이전트는 이 user_data에 없음 — 라이브 인스턴스에
+#   SSM Run Command로 무중단 설치했다(dnf install amazon-cloudwatch-agent +
+#   fetch-config -c ssm:AmazonCloudWatch-scheduleflow-agent-config).
+#   재생성된 새 박스엔 자동 설치가 안 되니, 재현성이 필요하면 그 두 줄을 아래 heredoc에
+#   추가하거나 배포 스크립트로 옮길 것. (heredoc 안을 바꾸면 user_data가 변해 라이브
+#   인스턴스 in-place 업데이트가 걸리니, 이 메모는 heredoc 밖에 둔다.)
 locals {
   user_data = <<-EOF
     #!/bin/bash
@@ -48,7 +47,7 @@ locals {
 # ④ EC2 인스턴스 — 위 ①②③을 조립
 # ────────────────────────────────────────────────
 resource "aws_instance" "app" {
-  ami           = data.aws_ami.al2023.id       # ②에서 찾은 최신 이미지
+  ami           = "ami-03c1733c4f6df5149"      # ②에서 고정한 AL2023 arm64 (최초 생성분)
   instance_type = "t4g.micro"                  # ARM
 
   subnet_id                   = aws_subnet.public_a.id          # public subnet

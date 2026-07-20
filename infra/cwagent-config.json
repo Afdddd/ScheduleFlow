@@ -1,0 +1,34 @@
+{
+  "agent": {
+    "metrics_collection_interval": 60,
+    "run_as_user": "root"
+  },
+  "metrics": {
+    "namespace": "CWAgent",
+    "append_dimensions": {
+      "InstanceId": "${aws:InstanceId}"
+    },
+    "metrics_collected": {
+      "mem": {
+        "measurement": ["mem_used_percent"]
+      },
+      "disk": {
+        "measurement": ["disk_used_percent"],
+        "resources": ["/"]
+      }
+    }
+  },
+  "logs": {
+    "logs_collected": {
+      "files": {
+        "collect_list": [
+          {
+            "file_path": "/var/lib/docker/containers/*/*-json.log",
+            "log_group_name": "/scheduleflow/docker",
+            "log_stream_name": "{instance_id}"
+          }
+        ]
+      }
+    }
+  }
+}
