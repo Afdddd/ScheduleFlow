@@ -33,7 +33,14 @@ services:
     image: ${ECR}/scheduleflow-backend:latest
     container_name: scheduleflow-backend
     restart: unless-stopped
+    mem_limit: 512m
     environment:
+      JAVA_TOOL_OPTIONS: >-
+        -Xms160m
+        -Xmx160m
+        -XX:MaxMetaspaceSize=192m
+        -XX:+HeapDumpOnOutOfMemoryError
+        -XX:HeapDumpPath=/tmp
       SPRING_PROFILES_ACTIVE: prod
       SPRING_DATASOURCE_URL: jdbc:mysql://${RDS_ENDPOINT}:3306/scheduleflow?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
       MYSQL_USER: ${MYSQL_USER}
