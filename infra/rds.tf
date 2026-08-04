@@ -18,7 +18,9 @@ resource "aws_db_subnet_group" "main" {
 resource "aws_db_instance" "main" {
   identifier     = "scheduleflow-db"     # AWS 상의 RDS 식별자
   engine         = "mysql"
-  engine_version = "8.0"
+  # 8.0은 2026-07-31 표준 지원 종료 → Extended Support 과금(vCPU-시간당 $0.12,
+  #   t4g.micro 기준 하루 $5.76 = 인스턴스 본체의 9.6배)이 붙는다. 8.4는 LTS라 과금 없음.
+  engine_version = "8.4"
   instance_class = "db.t4g.micro"        # 프리티어(12개월 750h 무료), ARM 기반
 
   allocated_storage = 20                 # GB. 프리티어 한도 20GB
